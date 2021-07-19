@@ -68,7 +68,7 @@ public class SampleMecanumDrive extends MecanumDrive {
 
     private TrajectoryFollower follower;
 
-    private DcMotorEx leftFront, leftRear, rightRear, rightFront;
+    public DcMotorEx leftFront, leftBack, rightBack, rightFront;
     private List<DcMotorEx> motors;
 
     private BNO055IMU imu;
@@ -99,11 +99,11 @@ public class SampleMecanumDrive extends MecanumDrive {
         // BNO055IMUUtil.remapAxes(imu, AxesOrder.XYZ, AxesSigns.NPN);
 
         leftFront = hardwareMap.get(DcMotorEx.class, "LF");
-        leftRear = hardwareMap.get(DcMotorEx.class, "LB");
-        rightRear = hardwareMap.get(DcMotorEx.class, "RB");
+        leftBack = hardwareMap.get(DcMotorEx.class, "LB");
+        rightBack = hardwareMap.get(DcMotorEx.class, "RB");
         rightFront = hardwareMap.get(DcMotorEx.class, "RF");
 
-        motors = Arrays.asList(leftFront, leftRear, rightRear, rightFront);
+        motors = Arrays.asList(leftFront, leftBack, rightBack, rightFront);
 
         for (DcMotorEx motor : motors) {
             MotorConfigurationType motorConfigurationType = motor.getMotorType().clone();
@@ -121,7 +121,10 @@ public class SampleMecanumDrive extends MecanumDrive {
             setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, MOTOR_VELO_PID);
         }
 
-        // TODO: reverse any motors using DcMotor.setDirection()
+        leftFront.setDirection(DcMotor.Direction.REVERSE);
+        rightFront.setDirection(DcMotor.Direction.FORWARD);
+        leftBack.setDirection(DcMotor.Direction.REVERSE);
+        rightBack.setDirection(DcMotor.Direction.FORWARD);
 
         // TODO: if desired, use setLocalizer() to change the localization method
         // for instance, setLocalizer(new ThreeTrackingWheelLocalizer(...));
@@ -268,8 +271,8 @@ public class SampleMecanumDrive extends MecanumDrive {
     @Override
     public void setMotorPowers(double v, double v1, double v2, double v3) {
         leftFront.setPower(v);
-        leftRear.setPower(v1);
-        rightRear.setPower(v2);
+        leftBack.setPower(v1);
+        rightBack.setPower(v2);
         rightFront.setPower(v3);
     }
 
