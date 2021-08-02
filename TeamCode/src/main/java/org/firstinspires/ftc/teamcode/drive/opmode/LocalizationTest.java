@@ -1,11 +1,14 @@
 package org.firstinspires.ftc.teamcode.drive.opmode;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
+import org.firstinspires.ftc.teamcode.drive.StandardTrackingWheelLocalizer;
 
 /**
  * This is a simple teleop routine for testing localization. Drive the robot around like a normal
@@ -43,7 +46,11 @@ public class LocalizationTest extends LinearOpMode {
             telemetry.addData("RF encoder", drive.rightFront.getCurrentPosition());
             telemetry.addData("LB encoder", drive.leftBack.getCurrentPosition());
             telemetry.addData("RB encoder", drive.rightBack.getCurrentPosition());
-            drive.leftFront.setPower(0.5);
+            telemetry.addData("Encoder", ((StandardTrackingWheelLocalizer) drive.getLocalizer()).getWheelPositions());
+
+            drive.trajectorySequenceRunner.packetData.put("Enocoder 1", ((StandardTrackingWheelLocalizer) SampleMecanumDrive.getInstance().getLocalizer()).getWheelPositions().get(0));
+            drive.trajectorySequenceRunner.packetData.put("Enocoder 2", ((StandardTrackingWheelLocalizer) SampleMecanumDrive.getInstance().getLocalizer()).getWheelPositions().get(1));
+            drive.trajectorySequenceRunner.packetData.put("Enocoder 3", ((StandardTrackingWheelLocalizer) SampleMecanumDrive.getInstance().getLocalizer()).getWheelPositions().get(2));
 
             telemetry.update();
         }

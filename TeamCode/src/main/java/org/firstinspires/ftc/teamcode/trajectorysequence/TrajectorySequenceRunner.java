@@ -16,6 +16,8 @@ import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.acmerobotics.roadrunner.trajectory.TrajectoryMarker;
 import com.acmerobotics.roadrunner.util.NanoClock;
 
+import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
+import org.firstinspires.ftc.teamcode.drive.StandardTrackingWheelLocalizer;
 import org.firstinspires.ftc.teamcode.trajectorysequence.sequencesegment.SequenceSegment;
 import org.firstinspires.ftc.teamcode.trajectorysequence.sequencesegment.TrajectorySegment;
 import org.firstinspires.ftc.teamcode.trajectorysequence.sequencesegment.TurnSegment;
@@ -24,8 +26,10 @@ import org.firstinspires.ftc.teamcode.util.DashboardUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 @Config
 public class TrajectorySequenceRunner {
@@ -56,6 +60,10 @@ public class TrajectorySequenceRunner {
 
     private final FtcDashboard dashboard;
     private final LinkedList<Pose2d> poseHistory = new LinkedList<>();
+
+    public static HashMap<String, Object> packetData = new HashMap<>();
+
+
 
     public TrajectorySequenceRunner(TrajectoryFollower follower, PIDCoefficients headingPIDCoefficients) {
         this.follower = follower;
@@ -191,6 +199,12 @@ public class TrajectorySequenceRunner {
         packet.put("xError", getLastPoseError().getX());
         packet.put("yError", getLastPoseError().getY());
         packet.put("headingError (deg)", Math.toDegrees(getLastPoseError().getHeading()));
+
+        for (String key : packetData.keySet()) {
+            packet.put(key, packetData.get(key));
+        }
+
+        packetData.clear();
 
         draw(fieldOverlay, currentTrajectorySequence, currentSegment, targetPose, poseEstimate);
 
