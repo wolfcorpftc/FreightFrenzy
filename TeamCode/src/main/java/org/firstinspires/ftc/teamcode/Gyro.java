@@ -59,8 +59,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
  * Use Android Studios to Copy this Class, and Paste it into your team's code folder with a new name.
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
-@Autonomous(name="Pushbot: Auto Testerino", group="Pushbot")
-public class Gyro extends LinearOpMode {
+@Autonomous(name="Kickoff Presentation: Gyro", group="Pushbot")
+public class Gyro extends LinearOpMode{
 
     /* Declare OpMode members. */
     HardwarePushbot         robot   = new HardwarePushbot();   // Use a Pushbot's hardware
@@ -74,7 +74,7 @@ public class Gyro extends LinearOpMode {
     private double currAngle = 0.0;
 
     @Override
-    public void runOpMode() {
+    public void runOpMode() throws InterruptedException{
 
         /*
          * Initialize the drive system variables.
@@ -93,68 +93,94 @@ public class Gyro extends LinearOpMode {
 
         sleep(3000);
 
-        turn(90, 5);
+        Thread a = new Thread(() ->
+                turn(90)
+        );
+
+        a.start();
+
+        // Do other stuff here
+
+        a.join();
 
         sleep(3000);
 
-        new Thread(() ->
-                turn(90, 5)
-        ).start();
+        turnTo(90);
 
-        telemetry.addData("Status", "Still turning, but I'ma go do something else.");
+        sleep(3000);
+
+        Thread b = new Thread(() ->
+                turnTo(-90)
+        );
+
+        b.start();
+
+        // Do other stuff here
+
+        b.join();
 
     }
 
+    // resets currAngle Value
     public void resetAngle() {
         lastAngles = robot.imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
         currAngle = 0;
     }
 
     public double getAngle() {
+
+        // Get current orientation
         Orientation orientation = robot.imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
 
+        // Change in angle = current angle - previous angle
         double deltaAngle = orientation.firstAngle - lastAngles.firstAngle;
 
+        // Gyro only ranges from -179 to 180
+        // If it turns -1 degree over from -179 to 180, subtract 360 from the 359 to get -1
         if (deltaAngle < -180) {
             deltaAngle += 360;
         } else if (deltaAngle > 180) {
             deltaAngle -= 360;
         }
 
+        // Add change in angle to current angle to get current angle
         currAngle += deltaAngle;
         lastAngles = orientation;
+        telemetry.addData("gyro", orientation.firstAngle);
         return currAngle;
     }
 
     public void turn(double degrees){
+        //set
+
         resetAngle();
 
         double error = degrees;
 
         while (opModeIsActive() && Math.abs(error) > 2) {
-            double motorPower = (error < 0 ? -0.5 : 0.5);
-            robot.setMotorPower(motorPower, -motorPower, motorPower, -motorPower);
-            error = degrees + getAngle();
+            double motorPower = (error < 0 ? -0.3 : 0.3);
+            robot.setMotorPower(-motorPower, motorPower, -motorPower, motorPower);
+            error = degrees - getAngle();
             telemetry.addData("error", error);
             telemetry.update();
         }
+
+        robot.setAllPower(0);
     }
 
-    public void turn(double degrees, int timeout){
-        resetAngle();
+    public void turnTo(double degrees){
 
-        double error = degrees;
+        Orientation orientation = robot.imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
 
-        runtime.reset();
+        System.out.println(orientation.firstAngle);
+        double error = degrees - orientation.firstAngle;
 
-        while (opModeIsActive() && timeout > runtime.milliseconds()) {
-            double motorPower = (error < 0 ? -0.5 : 0.5);
-            robot.setMotorPower(motorPower, -motorPower, motorPower, -motorPower);
-            error = degrees + getAngle();
-            telemetry.addData("error", error);
-            telemetry.update();
+        if (error > 180) {
+            error -= 360;
+        } else if (error < -180) {
+            error += 360;
         }
+
+        turn(error);
     }
-
-
 }
