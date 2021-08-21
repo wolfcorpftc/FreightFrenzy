@@ -32,7 +32,6 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
@@ -182,5 +181,21 @@ public class Gyro extends LinearOpMode{
         }
 
         turn(error);
+    }
+
+    void turnPID(double degrees) {
+        turnToPID(degrees + getAngle());
+    }
+
+    void turnToPID(double targetAngle) {
+        resetAngle();
+
+        TurnPIDController pid = new TurnPIDController(targetAngle, 0.1, 0, 0.5);
+        double motorPower = 0;
+        while (targetAngle != getAngle()) {
+            motorPower = pid.update(getAngle());
+            robot.setMotorPower(-motorPower, motorPower, -motorPower, motorPower);
+        }
+        robot.setAllPower(0);
     }
 }

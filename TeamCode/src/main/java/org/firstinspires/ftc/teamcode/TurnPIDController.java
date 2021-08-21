@@ -18,7 +18,7 @@ public class TurnPIDController {
         targetAngle = target;
     }
 
-    public double calculate(double currentAngle) {
+    public double update(double currentAngle) {
         // TODO: make sure angles are within bounds and are in same format (e.g., 0 <= | angle | <= 180)
         //   and ensure direction is correct
 
@@ -39,6 +39,7 @@ public class TurnPIDController {
         lastTime = timer.milliseconds();
 
         // TODO: find out what feedforward power is, and replace multiplier with (1 - kF)
-        return 0.7 * Math.tanh(kP * error + kI * accumulatedError + kD * slope);
+        double motorPower = (error < 0 ? -0.3 : 0.3);
+        return motorPower + 0.7 * Math.tanh(kP * error + kI * accumulatedError + kD * slope);
     }
 }
