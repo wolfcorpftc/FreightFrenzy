@@ -1,3 +1,4 @@
+
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -10,6 +11,8 @@ public class TurnPIDController {
     private double lastError = 0;
     private double accumulatedError = 0;
     private double lastTime = -1;
+    private double lastSlope = 0;
+    private double lastSpeed = 0;
 
     public TurnPIDController(double target, double p, double i, double d) {
         kP = p;
@@ -24,10 +27,17 @@ public class TurnPIDController {
 
         // P
         double error = targetAngle - currentAngle;
+        error %= 360;
+        error += 360;
+        error %= 360;
+        error = (error > 180 ? error - 360 : error);
+        lastError = error;
 
         // I
+        accumulatedError *= Math.signum(error);
         accumulatedError += error;
-        if (error == 0) {
+
+        if (Math.abs(error) < 0.1) {
             accumulatedError = 0;
         }
 
@@ -36,10 +46,26 @@ public class TurnPIDController {
         if (lastTime > 0) {
             slope = (error - lastError) / (timer.milliseconds() - lastTime);
         }
+        lastSlope = slope;
         lastTime = timer.milliseconds();
 
-        // TODO: find out what feedforward power is, and replace multiplier with (1 - kF)
-        double motorPower = (error < 0 ? -0.3 : 0.3);
-        return motorPower + 0.7 * Math.tanh(kP * error + kI * accumulatedError + kD * slope);
+        double motorPower = (error < 0 ? -0.1 : 0.1) +
+                0.9 * Math.tanh(kP * error + kI * accumulatedError - kD * slope);
+
+        if (Math.abs(motorPower - lastSpeed) > 0.1){
+            motorPower = lastSpeed + 0.1 * Math.signum(motorPower - lastSpeed);
+        }
+
+        lastSpeed = motorPower;
+
+        return Math.abs(motorPower) < 0.104 ? 0 : motorPower;
+    }
+
+    public double getLastSlope() {
+        return lastSlope;
+    }
+
+    public double getLastError() {
+        return lastError;
     }
 }
