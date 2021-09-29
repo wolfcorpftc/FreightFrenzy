@@ -1,13 +1,11 @@
 package org.firstinspires.ftc.teamcode.drive.opmode;
 
-import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
-import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
+import org.firstinspires.ftc.teamcode.drive.Drivetrain;
 import org.firstinspires.ftc.teamcode.drive.StandardTrackingWheelLocalizer;
 
 /**
@@ -21,7 +19,7 @@ import org.firstinspires.ftc.teamcode.drive.StandardTrackingWheelLocalizer;
 public class LocalizationTest extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
-        SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
+        Drivetrain drive = new Drivetrain(hardwareMap);
 
         drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
@@ -48,9 +46,9 @@ public class LocalizationTest extends LinearOpMode {
             telemetry.addData("RB encoder", drive.rightBack.getCurrentPosition());
             telemetry.addData("Encoder", ((StandardTrackingWheelLocalizer) drive.getLocalizer()).getWheelPositions());
 
-            drive.trajectorySequenceRunner.packetData.put("Enocoder 1", ((StandardTrackingWheelLocalizer) SampleMecanumDrive.getInstance().getLocalizer()).getWheelPositions().get(0));
-            drive.trajectorySequenceRunner.packetData.put("Enocoder 2", ((StandardTrackingWheelLocalizer) SampleMecanumDrive.getInstance().getLocalizer()).getWheelPositions().get(1));
-            drive.trajectorySequenceRunner.packetData.put("Enocoder 3", ((StandardTrackingWheelLocalizer) SampleMecanumDrive.getInstance().getLocalizer()).getWheelPositions().get(2));
+            drive.trajectorySequenceRunner.packetData.put("Enocoder 1", ((StandardTrackingWheelLocalizer) Drivetrain.getInstance().getLocalizer()).getWheelPositions().get(0));
+            drive.trajectorySequenceRunner.packetData.put("Enocoder 2", ((StandardTrackingWheelLocalizer) Drivetrain.getInstance().getLocalizer()).getWheelPositions().get(1));
+            drive.trajectorySequenceRunner.packetData.put("Enocoder 3", ((StandardTrackingWheelLocalizer) Drivetrain.getInstance().getLocalizer()).getWheelPositions().get(2));
 
             telemetry.update();
         }
