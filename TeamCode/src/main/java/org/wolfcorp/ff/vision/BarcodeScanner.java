@@ -15,6 +15,7 @@ import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
 import org.openftc.easyopencv.OpenCvPipeline;
 import org.openftc.easyopencv.OpenCvWebcam;
+import org.wolfcorp.ff.opmode.StartingLocation;
 
 public class BarcodeScanner extends OpenCvPipeline {
     Mat mat;
@@ -102,5 +103,13 @@ public class BarcodeScanner extends OpenCvPipeline {
         Imgproc.rectangle(input, rightROI, rightColor);
 
         return input;
+    }
+
+    public Barcode getBarcode() {
+        return barcode;
+    }
+
+    public void stop() {
+        webcam.stopStreaming();
     }
 }
