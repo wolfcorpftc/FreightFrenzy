@@ -3,10 +3,12 @@ package org.wolfcorp.ff.opmode;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.wolfcorp.ff.robot.Drivetrain;
 
+@TeleOp(name = "TeleOp", group = "TeleOp")
 public class TeleOpMode extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
