@@ -8,29 +8,40 @@ import org.wolfcorp.ff.trajectorysequence.TrajectorySequence;
 import org.wolfcorp.ff.vision.Barcode;
 import org.wolfcorp.ff.vision.BarcodeScanner;
 
-import java.util.ArrayList;
-
-public class AutoMode extends LinearOpMode {
+public abstract class AutonomousMode extends LinearOpMode {
+    protected StartingLocation location;
+    protected boolean wallrunner = true;
     protected boolean invert = false;
-    protected StartingLocation location = StartingLocation.BLU_WH;
 
     // blue side warehouse
     protected Pose2d initialPose;
     protected Pose2d elementPose;
     protected Pose2d hubPose;
     protected Pose2d whPose;
+    protected Pose2d parkPose;
 
-    public AutoMode() {
+    protected Drivetrain drive = null;
+
+    public AutonomousMode(StartingLocation loc, boolean wr) {
+        location = loc;
+        wallrunner = wr;
+
         if (isRed())
             invert = true;
 
+        // TODO: add heading
+        // TODO: take robot width into account
         initialPose = pos(-72, 12);
         elementPose = pos(-72, -72);
         hubPose = pos(-72, 12);
         whPose = pos(-72, 72);
+        if (wallrunner)
+            parkPose = pos(-60, 36);
+        else
+            parkPose = pos(-48, 36);
 
         Pose2d[] poses = {initialPose, elementPose, hubPose, whPose};
-        if (isCarousel())
+        if (isNearCarousel())
             for (Pose2d pose : poses)
                 initialPose.plus(pos(0, -48));
     }
@@ -39,15 +50,25 @@ public class AutoMode extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         Barcode barcode = null;
         BarcodeScanner scanner = new BarcodeScanner(telemetry, hardwareMap);
-        Drivetrain drive = new Drivetrain(hardwareMap);
+        drive = new Drivetrain(hardwareMap);
         // TODO: set up traj seq
         waitForStart();
         barcode = scanner.getBarcode();
         scanner.stop();
         drive.setPoseEstimate(initialPose);
-        TrajectorySequence t1 = drive
-                .from(initialPose)
-                .build();
+//        TrajectorySequence t1 = drive
+//                .from(initialPose)
+//                .build();
+        if (isNearCarousel()) {
+            // TODO: carousel
+        }
+        // TODO: barcode
+        if (wallrunner) {
+            // TODO: cycle WR
+        } else {
+            // TODO: cycle over barrier
+        }
+        // TODO: park
     }
 
     public Pose2d pos(double x, double y) {
@@ -65,8 +86,8 @@ public class AutoMode extends LinearOpMode {
     }
 
     public boolean isRed() { return location.toString().startsWith("RED"); }
-    public boolean isBlue() { return location.toString().startsWith("BLU"); }
-    public boolean isCarousel() { return location.toString().endsWith("CA"); }
-    public boolean isWarehouse() { return location.toString().endsWith("WH"); }
+    public boolean isBlue() { return !isRed(); }
+    public boolean isNearCarousel() { return location.toString().endsWith("CA"); }
+    public boolean isNearWarehouse() { return !isNearCarousel(); }
 
 }
