@@ -22,7 +22,7 @@ public class DriveConstants {
     /*
      * These are motor constants that should be listed online for your motors.
      */
-    public static final double TICKS_PER_REV = 537.6;
+    public static final double TICKS_PER_REV = 537.7;
     public static final double MAX_RPM = 312;
 
     /*
@@ -49,8 +49,8 @@ public class DriveConstants {
     public static double TICKS_PER_INCH = TICKS_PER_REV / (2 * Math.PI * WHEEL_RADIUS);
     public static double GEAR_RATIO = 1; // output (wheel) speed / input (motor) speed
     // TODO: figure out track width
-    public static double TRACK_WIDTH = 16.34; // in
-    public static double WIDTH = 13;
+    public static double TRACK_WIDTH = 10.25; // in
+    public static double WIDTH = 12.25;
 
     /*
      * These are the feedforward parameters used to model the drive motor behavior. If you are using
@@ -91,10 +91,10 @@ public class DriveConstants {
 
      */
     // TODO: tune constants
-    public static double MAX_VEL = 60.5;
-    public static double MAX_ACCEL = 60.5;
-    public static double MAX_ANG_VEL = Math.toRadians(184.02607784577722);
-    public static double MAX_ANG_ACCEL = Math.toRadians(184.02607784577722);
+    public static double MAX_VEL = 91.9;
+    public static double MAX_ACCEL = 91.9;
+    public static double MAX_ANG_VEL = 1.184;
+    public static double MAX_ANG_ACCEL = 1.184;
 
 
     public static double encoderTicksToInches(double ticks) {
