@@ -5,22 +5,31 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.wolfcorp.ff.robot.Drivetrain;
 import org.wolfcorp.ff.trajectorysequence.TrajectorySequence;
+import org.wolfcorp.ff.trajectorysequence.TrajectorySequenceBuilder;
 import org.wolfcorp.ff.vision.Barcode;
 import org.wolfcorp.ff.vision.BarcodeScanner;
 
+import java.util.ArrayList;
+import java.util.concurrent.Callable;
+import java.util.function.Supplier;
+
 public abstract class AutonomousMode extends LinearOpMode {
     protected StartingLocation location;
-    protected boolean wallrunner = true;
+    protected boolean wallrunner;
     protected boolean invert = false;
 
     // blue side warehouse
     protected Pose2d initialPose;
+    protected Pose2d carouselPose;
     protected Pose2d elementPose;
     protected Pose2d hubPose;
+    protected Pose2d preWhPose;
     protected Pose2d whPose;
     protected Pose2d parkPose;
 
     protected Drivetrain drive = null;
+
+    ArrayList<Object> tasks = new ArrayList<>();
 
     public AutonomousMode(StartingLocation loc, boolean wr) {
         location = loc;
@@ -32,9 +41,11 @@ public abstract class AutonomousMode extends LinearOpMode {
         // TODO: add heading
         // TODO: take robot width into account
         initialPose = pos(-72, 12);
+        carouselPose = pos(-60, -60);
         elementPose = pos(-72, -72);
         hubPose = pos(-72, 12);
-        whPose = pos(-72, 72);
+        preWhPose = pos(-72, 72);
+        whPose = pos(12, 72);
         if (wallrunner)
             parkPose = pos(-60, 36);
         else
@@ -51,24 +62,43 @@ public abstract class AutonomousMode extends LinearOpMode {
         Barcode barcode = null;
         BarcodeScanner scanner = new BarcodeScanner(telemetry, hardwareMap);
         drive = new Drivetrain(hardwareMap);
-        // TODO: set up traj seq
+        drive.setPoseEstimate(initialPose);
+
+        // *** Carousel ***
+        if (isNearCarousel()) {
+            addTask(fromHere().splineToSplineHeading(carouselPose).build());
+        }
+        // *** Barcode ***
+        addTask(fromHere().splineToSplineHeading(hubPose).build());
+        addTask(() -> {
+            // TODO: score preloaded freight
+        });
+
+        // *** Cycling ***
+        Supplier<TrajectorySequence> goToWh =
+                () -> fromHere().splineToSplineHeading(preWhPose).lineTo(whPose.vec()).build();
+        Supplier<TrajectorySequence> goToHub =
+                () -> fromHere().lineTo(preWhPose.vec()).splineToSplineHeading(hubPose).build();
+        addTask(goToWh);
+        // TODO: pick up freight
+        addTask(goToHub);
+        // TODO: score freight
+        // TODO: put above in a loop
+
+        // *** Park ***
+        addTask(fromHere().splineToSplineHeading(preWhPose).lineTo(whPose.vec()).lineTo(parkPose.vec()).build());
         waitForStart();
+
         barcode = scanner.getBarcode();
         scanner.stop();
-        drive.setPoseEstimate(initialPose);
-//        TrajectorySequence t1 = drive
-//                .from(initialPose)
-//                .build();
-        if (isNearCarousel()) {
-            // TODO: carousel
+        for (Object task : tasks) {
+            if (task instanceof TrajectorySequence) {
+                drive.follow((TrajectorySequence) task);
+            }
+            else {
+                ((Runnable) tasks).run();
+            }
         }
-        // TODO: barcode
-        if (wallrunner) {
-            // TODO: cycle WR
-        } else {
-            // TODO: cycle over barrier
-        }
-        // TODO: park
     }
 
     public Pose2d pos(double x, double y) {
@@ -89,5 +119,28 @@ public abstract class AutonomousMode extends LinearOpMode {
     public boolean isBlue() { return !isRed(); }
     public boolean isNearCarousel() { return location.toString().endsWith("CA"); }
     public boolean isNearWarehouse() { return !isNearCarousel(); }
+    protected Pose2d getLastPose() {
+        for (int i = tasks.size() - 1; i >= 0; i--) {
+            if (tasks.get(i) instanceof TrajectorySequence) {
+                return ((TrajectorySequence) tasks.get(i)).end();
+            }
+        }
+        return initialPose;
+    }
+    // Helper methods (to enforce type)
+    protected void addTask(TrajectorySequence seq) {
+        tasks.add(seq);
+    }
 
+    protected void addTask(Supplier<TrajectorySequence> seq) {
+        tasks.add(seq.get());
+    }
+
+    protected void addTask(Runnable run) {
+        tasks.add(run);
+    }
+
+    protected TrajectorySequenceBuilder fromHere() {
+        return drive.from(getLastPose());
+    }
 }
