@@ -10,7 +10,6 @@ import org.wolfcorp.ff.vision.Barcode;
 import org.wolfcorp.ff.vision.BarcodeScanner;
 
 import java.util.ArrayList;
-import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
 public abstract class AutonomousMode extends LinearOpMode {
@@ -66,11 +65,11 @@ public abstract class AutonomousMode extends LinearOpMode {
 
         // *** Carousel ***
         if (isNearCarousel()) {
-            addTask(fromHere().splineToSplineHeading(carouselPose).build());
+            queue(fromHere().splineToSplineHeading(carouselPose).build());
         }
         // *** Barcode ***
-        addTask(fromHere().splineToSplineHeading(hubPose).build());
-        addTask(() -> {
+        queue(fromHere().splineToSplineHeading(hubPose).build());
+        queue(() -> {
             // TODO: score preloaded freight
         });
 
@@ -79,18 +78,20 @@ public abstract class AutonomousMode extends LinearOpMode {
                 () -> fromHere().splineToSplineHeading(preWhPose).lineTo(whPose.vec()).build();
         Supplier<TrajectorySequence> goToHub =
                 () -> fromHere().lineTo(preWhPose.vec()).splineToSplineHeading(hubPose).build();
-        addTask(goToWh);
+        queue(goToWh);
         // TODO: pick up freight
-        addTask(goToHub);
+        queue(goToHub);
         // TODO: score freight
         // TODO: put above in a loop
 
         // *** Park ***
-        addTask(fromHere().splineToSplineHeading(preWhPose).lineTo(whPose.vec()).lineTo(parkPose.vec()).build());
+        queue(fromHere().splineToSplineHeading(preWhPose).lineTo(whPose.vec()).lineTo(parkPose.vec()).build());
         waitForStart();
 
         barcode = scanner.getBarcode();
         scanner.stop();
+
+        // *** Empty queue (run tasks) ***
         for (Object task : tasks) {
             if (task instanceof TrajectorySequence) {
                 drive.follow((TrajectorySequence) task);
@@ -102,9 +103,7 @@ public abstract class AutonomousMode extends LinearOpMode {
     }
 
     public Pose2d pos(double x, double y) {
-        if (invert)
-            return new Pose2d(-y, -x);
-        return new Pose2d(+y, -x);
+        return invert ? new Pose2d(-y, -x) : new Pose2d(+y, -x);
     }
 
     public Pose2d pos(double x, double y, double angle) {
@@ -112,7 +111,8 @@ public abstract class AutonomousMode extends LinearOpMode {
         angle = ((angle - 90) % 360 + 360) % 360;
         if (invert)
             return new Pose2d(-y, -x, Math.toRadians(-angle));
-        return new Pose2d(+y, -x, Math.toRadians(angle));
+        else
+            return new Pose2d(+y, -x, Math.toRadians(angle));
     }
 
     public boolean isRed() { return location.toString().startsWith("RED"); }
@@ -128,15 +128,15 @@ public abstract class AutonomousMode extends LinearOpMode {
         return initialPose;
     }
     // Helper methods (to enforce type)
-    protected void addTask(TrajectorySequence seq) {
+    protected void queue(TrajectorySequence seq) {
         tasks.add(seq);
     }
 
-    protected void addTask(Supplier<TrajectorySequence> seq) {
+    protected void queue(Supplier<TrajectorySequence> seq) {
         tasks.add(seq.get());
     }
 
-    protected void addTask(Runnable run) {
+    protected void queue(Runnable run) {
         tasks.add(run);
     }
 
