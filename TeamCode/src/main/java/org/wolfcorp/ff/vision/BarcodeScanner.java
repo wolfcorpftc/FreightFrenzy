@@ -111,5 +111,6 @@ public class BarcodeScanner extends OpenCvPipeline {
 
     public void stop() {
         webcam.stopStreaming();
+        // Don't close webcam since we will be using it for WarehouseGuide
     }
 }
