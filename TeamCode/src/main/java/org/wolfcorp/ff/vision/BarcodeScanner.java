@@ -17,41 +17,22 @@ import org.openftc.easyopencv.OpenCvPipeline;
 import org.openftc.easyopencv.OpenCvWebcam;
 import org.wolfcorp.ff.opmode.StartingLocation;
 
-public class BarcodeScanner extends OpenCvPipeline {
-    Mat mat;
-    Rect leftROI, midROI, rightROI;
-    Mat leftMat, midMat, rightMat;
+public class BarcodeScanner extends Detector {
+    private Mat mat;
+    private Rect leftROI, midROI, rightROI;
+    private Mat leftMat, midMat, rightMat;
     private Telemetry telemetry;
     private HardwareMap hardwareMap;
-    private Barcode barcode;
-    private OpenCvWebcam webcam;
+    private Barcode barcode = null;
 
-    public BarcodeScanner(Telemetry t, HardwareMap hardwareMap) {
+    public BarcodeScanner(OpenCvWebcam cam, Telemetry t) {
+        super(cam);
         telemetry = t;
 
         // TODO: figure out coordinates of ROIs
         leftROI  = new Rect(new Point(), new Point());
         midROI   = new Rect(new Point(), new Point());
         rightROI = new Rect(new Point(), new Point());
-
-        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
-                "cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-        webcam = OpenCvCameraFactory.getInstance().createWebcam(
-                hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
-
-        // OR...  Do Not Activate the Camera Monitor View
-        //webcam = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"));
-        webcam.setPipeline(this);
-        webcam.setMillisecondsPermissionTimeout(2500); // Timeout for obtaining permission is configurable. Set before opening.
-        webcam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
-            @Override
-            public void onOpened() {
-                webcam.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
-            }
-
-            @Override
-            public void onError(int errorCode) {}
-        });
     }
 
     @Override
@@ -113,10 +94,5 @@ public class BarcodeScanner extends OpenCvPipeline {
 
     public Barcode getBarcode() {
         return barcode;
-    }
-
-    public void stop() {
-        webcam.stopStreaming();
-        // Don't close webcam since we will be using it for WarehouseGuide
     }
 }
