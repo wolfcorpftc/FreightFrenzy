@@ -26,9 +26,8 @@ public class BarcodeScanner extends OpenCvPipeline {
     private Barcode barcode;
     private OpenCvWebcam webcam;
 
-    public BarcodeScanner(Telemetry t, HardwareMap hwMap) {
+    public BarcodeScanner(Telemetry t, HardwareMap hardwareMap) {
         telemetry = t;
-        hardwareMap = hwMap;
 
         // TODO: figure out coordinates of ROIs
         leftROI  = new Rect(new Point(), new Point());
@@ -72,6 +71,9 @@ public class BarcodeScanner extends OpenCvPipeline {
         double leftValue = Core.mean(leftMat).val[2];
         double midValue = Core.mean(midMat).val[2];
         double rightValue = Core.mean(rightMat).val[2];
+        telemetry.addData("Left", leftValue);
+        telemetry.addData("Middle", midValue);
+        telemetry.addData("Right", rightValue);
 
         leftMat.release();
         midMat.release();
@@ -84,19 +86,23 @@ public class BarcodeScanner extends OpenCvPipeline {
         Scalar leftColor, midColor, rightColor;
         if (max == leftValue) {
             barcode = Barcode.BOT;
+            telemetry.addData("Result", "left / bottom");
             leftColor = matchColor;
             midColor = rightColor = mismatchColor;
         }
         else if (max == midValue) {
             barcode = Barcode.MID;
+            telemetry.addData("Result", "middle");
             midColor = matchColor;
             leftColor = rightColor = mismatchColor;
         }
         else {
             barcode = Barcode.TOP;
+            telemetry.addData("Result", "right / top");
             rightColor = matchColor;
             leftColor = midColor = mismatchColor;
         }
+        telemetry.update();
 
         Imgproc.rectangle(input, leftROI, leftColor);
         Imgproc.rectangle(input, midROI, midColor);
