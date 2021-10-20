@@ -7,18 +7,22 @@ import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
+import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 import org.openftc.easyopencv.OpenCvWebcam;
 
 import java.util.ArrayList;
+import java.util.concurrent.CountDownLatch;
 
 public class WarehouseGuide extends Detector {
+    private static final double INVALID_ANGLE = Double.MIN_VALUE;
+
     private Mat mat = null;
     private Mat hierarchy = null;
     private ArrayList<MatOfPoint> contours = new ArrayList<>();
-    private Freight target = Freight.GOLD;
-    private double goldAngle = 0;
-    private double silverAngle = 0;
+    private volatile Freight target = Freight.GOLD;
+    private volatile double targetAngle = INVALID_ANGLE;
+    private ResettableCountDownLatch latch = new ResettableCountDownLatch(1);
 
     public WarehouseGuide(OpenCvWebcam cam) {
         super(cam);
@@ -26,7 +30,7 @@ public class WarehouseGuide extends Detector {
 
     public WarehouseGuide(OpenCvWebcam cam, Freight target) {
         super(cam);
-        setTargetType(target);
+        this.target = target;
     }
 
     public Mat processFrame(Mat input) {
@@ -38,7 +42,6 @@ public class WarehouseGuide extends Detector {
             Scalar lowerBound = new Scalar(0, 198, 0);
             Scalar upperBound = new Scalar(180, 255, 255);
             Core.inRange(mat, lowerBound, upperBound, mat);
-            goldAngle = findFreightAngle();
         }
         else { // target == Freight.SILVER
             // HSL is better for identifying the color white
@@ -48,13 +51,16 @@ public class WarehouseGuide extends Detector {
             Scalar lowerBound = new Scalar(0, 216.75, 0);
             Scalar upperBound = new Scalar(179, 255, 255);
             Core.inRange(mat, lowerBound, upperBound, mat);
-            silverAngle = findFreightAngle();
         }
+        Imgproc.erode(mat, mat, new Mat(), new Point(-1, -1), 15);
+        Imgproc.dilate(mat, mat, new Mat(), new Point(-1, -1), 15);
+        targetAngle = findFreightAngle(input);
+        latch.countDown();
         return input;
     }
 
     // Calculate angle to freight given a threshed image (mat)
-    protected double findFreightAngle() {
+    protected double findFreightAngle(Mat input) {
         // *** Find coutours ***
         Imgproc.findContours(mat, contours, hierarchy, Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_SIMPLE);
         double width = mat.width();
@@ -65,11 +71,14 @@ public class WarehouseGuide extends Detector {
         // *** Find bounding rectangles ***
         MatOfPoint2f contoursPoly = new MatOfPoint2f();
         Rect[] boundRect = new Rect[contours.size()];
+        Scalar rectColor =
+                target == Freight.GOLD ? new Scalar(255, 171, 23, 1) : new Scalar(192, 192, 192, 1);
         for (int i = 0; i < contours.size(); i++) {
             Imgproc.approxPolyDP(new MatOfPoint2f(contours.get(i).toArray()), contoursPoly, 3, true);
             boundRect[i] = Imgproc.boundingRect(new MatOfPoint(contoursPoly.toArray()));
             contours.get(i).release();
             contoursPoly.release();
+            Imgproc.rectangle(input, boundRect[i], rectColor);
         }
 
         // *** Find center coordinates of rectangles ***
@@ -92,19 +101,17 @@ public class WarehouseGuide extends Detector {
                 minDist = dist;
             }
         }
+        Imgproc.circle(input, minPoint, 15, new Scalar(0, 255, 0, 1), 5);
 
         // assume a 60 deg field of view (value sourced from cam spec)
         return 60 * minPoint.x / width - 30.0;
     }
 
-    public double getGoldAngle() throws InterruptedException {
-        while (goldAngle == -9999) Thread.sleep(10);
-        return goldAngle;
-    }
-
-    public double getSilverAngle() throws InterruptedException {
-        while (silverAngle == -9999) Thread.sleep(10);
-        return silverAngle;
+    public double getTargetAngle() throws InterruptedException {
+        if (targetAngle == INVALID_ANGLE) {
+            latch.await();
+        }
+        return targetAngle;
     }
 
     public Freight getTargetType() {
@@ -112,10 +119,14 @@ public class WarehouseGuide extends Detector {
     }
 
     public void setTargetType(Freight f) {
-        target = f;
-        if (f == Freight.GOLD)
-            silverAngle = -9999;
-        else
-            goldAngle = -9999;
+        if (f != target) {
+            targetAngle = INVALID_ANGLE;
+            // being paranoid here
+            target = f;
+            latch.reset();
+        }
+        else {
+            target = f;
+        }
     }
 }
