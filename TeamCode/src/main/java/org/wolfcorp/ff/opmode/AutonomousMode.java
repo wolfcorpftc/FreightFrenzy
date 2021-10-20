@@ -26,6 +26,7 @@ public abstract class AutonomousMode extends LinearOpMode {
     protected StartingLocation location;
     protected boolean wallrunner;
     protected boolean invert;
+    protected boolean testVision = false;
 
     // All of the following poses assume that the robot starts at blue warehouse
     protected Pose2d initialPose;
@@ -67,9 +68,9 @@ public abstract class AutonomousMode extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         initCam();
-        Barcode barcode = null;
 
         BarcodeScanner scanner = new BarcodeScanner(webcam, telemetry);
+        Barcode barcode = null;
         WarehouseGuide guide = new WarehouseGuide(webcam);
 
         drive = new Drivetrain(hardwareMap);
@@ -77,10 +78,10 @@ public abstract class AutonomousMode extends LinearOpMode {
 
         // *** Carousel ***
         if (isNearCarousel()) {
-            queue(fromHere().splineToSplineHeading(carouselPose).build());
+            queue(fromHere().splineToSplineHeading(carouselPose));
         }
         // *** Barcode ***
-        queue(fromHere().splineToSplineHeading(hubPose).build());
+        queue(fromHere().splineToSplineHeading(hubPose));
         queue(() -> {
             // TODO: score preloaded freight
         });
@@ -99,7 +100,7 @@ public abstract class AutonomousMode extends LinearOpMode {
         // TODO: put above in a loop
 
         // *** Park ***
-        queue(fromHere().splineToSplineHeading(preWhPose).lineTo(whPose.vec()).lineTo(parkPose.vec()).build());
+        queue(fromHere().splineToSplineHeading(preWhPose).lineTo(whPose.vec()).lineTo(parkPose.vec()));
 
         scanner.start();
         waitForStart();
@@ -117,7 +118,7 @@ public abstract class AutonomousMode extends LinearOpMode {
         webcam = OpenCvCameraFactory.getInstance().createWebcam(
                 hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
 
-        webcam.setMillisecondsPermissionTimeout(2500); // Timeout for obtaining permission is configurable. Set before opening.
+        webcam.setMillisecondsPermissionTimeout(2500);
         webcam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
             @Override
             public void onOpened() {}
@@ -132,7 +133,7 @@ public abstract class AutonomousMode extends LinearOpMode {
             if (task instanceof TrajectorySequence) {
                 drive.follow((TrajectorySequence) task);
             }
-            else {
+            else if (task instanceof Runnable){
                 ((Runnable) tasks).run();
             }
         }
@@ -141,17 +142,19 @@ public abstract class AutonomousMode extends LinearOpMode {
 
     // *** Helper methods ***
 
+    // Rotate the coordinate plane 90 degrees clockwise (positive y-axis points at the shared hub)
     public Pose2d pos(double x, double y) {
         return invert ? new Pose2d(-y, -x) : new Pose2d(+y, -x);
     }
 
-    public Pose2d pos(double x, double y, double angle) {
+    // Rotate the coordinate plane 90 degrees clockwise (positive y-axis points at the shared hub)
+    // The positive y-axis represents a heading of 0 degree
+    public Pose2d pos(double x, double y, double heading) {
         // Roadrunner shouldn't care but we do it to be safe.
-        angle = ((angle - 90) % 360 + 360) % 360;
         if (invert)
-            return new Pose2d(-y, -x, Math.toRadians(-angle));
+            return new Pose2d(-y, -x, Math.toRadians(-heading));
         else
-            return new Pose2d(+y, -x, Math.toRadians(angle));
+            return new Pose2d(+y, -x, Math.toRadians(heading));
     }
 
     public boolean isRed() { return location.toString().startsWith("RED"); }
@@ -166,6 +169,11 @@ public abstract class AutonomousMode extends LinearOpMode {
         tasks.add(seq);
     }
 
+    protected void queue(TrajectorySequenceBuilder seqBuilder) {
+        if (!testVision)
+            tasks.add(seqBuilder.build());
+    }
+
     protected void queue(Supplier<TrajectorySequence> seq) {
         tasks.add(seq.get());
     }
@@ -174,10 +182,16 @@ public abstract class AutonomousMode extends LinearOpMode {
         tasks.add(run);
     }
 
+    // Set the last pose manually when robot.turn() is used between trajectory sequences
+    protected void queue(Pose2d pose) { tasks.add(pose); }
+
     protected Pose2d getLastPose() {
         for (int i = tasks.size() - 1; i >= 0; i--) {
             if (tasks.get(i) instanceof TrajectorySequence) {
                 return ((TrajectorySequence) tasks.get(i)).end();
+            }
+            else if (tasks.get(i) instanceof Pose2d) {
+                return (Pose2d) tasks.get(i);
             }
         }
         return initialPose;
