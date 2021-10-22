@@ -1,29 +1,23 @@
 package org.wolfcorp.ff.vision;
 
-import com.qualcomm.robotcore.hardware.HardwareMap;
-
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
-import org.openftc.easyopencv.OpenCvCamera;
-import org.openftc.easyopencv.OpenCvCameraFactory;
-import org.openftc.easyopencv.OpenCvCameraRotation;
-import org.openftc.easyopencv.OpenCvPipeline;
 import org.openftc.easyopencv.OpenCvWebcam;
-import org.wolfcorp.ff.opmode.StartingLocation;
+
+import java.util.concurrent.CountDownLatch;
 
 public class BarcodeScanner extends Detector {
     private Mat mat;
     private Rect leftROI, midROI, rightROI;
     private Mat leftMat, midMat, rightMat;
     private Telemetry telemetry;
-    private HardwareMap hardwareMap;
-    private Barcode barcode = null;
+    private volatile Barcode barcode = null;
+    private CountDownLatch latch = new CountDownLatch(1);
 
     public BarcodeScanner(OpenCvWebcam cam, Telemetry t) {
         super(cam);
@@ -83,6 +77,7 @@ public class BarcodeScanner extends Detector {
             rightColor = matchColor;
             leftColor = midColor = mismatchColor;
         }
+        latch.countDown();
         telemetry.update();
 
         Imgproc.rectangle(input, leftROI, leftColor);
@@ -92,7 +87,10 @@ public class BarcodeScanner extends Detector {
         return input;
     }
 
-    public Barcode getBarcode() {
+    public Barcode getBarcode() throws InterruptedException {
+        if (barcode == null) {
+            latch.await();
+        }
         return barcode;
     }
 }
