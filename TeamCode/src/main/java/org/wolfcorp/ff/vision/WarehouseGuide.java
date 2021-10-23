@@ -38,7 +38,7 @@ public class WarehouseGuide extends Detector {
         // Use blurring to reduce extraneous contours (e.g., holes in silver)
         Imgproc.medianBlur(mat, mat, 20);
         // TODO: Idea -- perform edge detection on mat here, bitwise-and that matrix with threshed,
-        //   and add to the contour matrix
+        //   and add to the contour matrix; erode, edge-detect, and dilate if necessary
         if (target == Freight.GOLD) {
             Imgproc.cvtColor(mat, mat, Imgproc.COLOR_RGB2HSV);
             Scalar lowerBound = new Scalar(0, 198, 0);
@@ -121,10 +121,9 @@ public class WarehouseGuide extends Detector {
 
     public void setTargetType(Freight f) {
         if (f != target) {
-            targetAngle = INVALID_ANGLE;
-            // being paranoid here
-            target = f;
             latch.reset();
+            target = f;
+            targetAngle = INVALID_ANGLE;
         }
         else {
             target = f;
