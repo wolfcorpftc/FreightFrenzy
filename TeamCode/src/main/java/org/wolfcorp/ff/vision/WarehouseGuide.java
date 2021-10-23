@@ -35,10 +35,12 @@ public class WarehouseGuide extends Detector {
 
     public Mat processFrame(Mat input) {
         Imgproc.cvtColor(input, mat, Imgproc.COLOR_RGBA2RGB);
+        // Use blurring to reduce extraneous contours (e.g., holes in silver)
+        Imgproc.medianBlur(mat, mat, 20);
+        // TODO: Idea -- perform edge detection on mat here, bitwise-and that matrix with threshed,
+        //   and add to the contour matrix
         if (target == Freight.GOLD) {
             Imgproc.cvtColor(mat, mat, Imgproc.COLOR_RGB2HSV);
-            // Use blurring to reduce extraneous contours (e.g., holes in silver)
-            Imgproc.medianBlur(mat, mat, 20);
             Scalar lowerBound = new Scalar(0, 198, 0);
             Scalar upperBound = new Scalar(180, 255, 255);
             Core.inRange(mat, lowerBound, upperBound, mat);
@@ -46,8 +48,7 @@ public class WarehouseGuide extends Detector {
         else { // target == Freight.SILVER
             // HSL is better for identifying the color white
             Imgproc.cvtColor(mat, mat, Imgproc.COLOR_RGB2HLS);
-            // Use blurring to reduce extraneous contours (e.g., holes in silver)
-            Imgproc.medianBlur(mat, mat, 20);
+            // TODO: color temperature? normalize on field, make it tunable (text file?)
             Scalar lowerBound = new Scalar(0, 216.75, 0);
             Scalar upperBound = new Scalar(179, 255, 255);
             Core.inRange(mat, lowerBound, upperBound, mat);
