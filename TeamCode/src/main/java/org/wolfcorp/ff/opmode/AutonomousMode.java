@@ -23,9 +23,7 @@ public abstract class AutonomousMode extends LinearOpMode {
     protected OpenCvWebcam webcam = null;
 
     // Configuration
-    protected StartingLocation location;
-    protected boolean wallrunner;
-    protected boolean invert;
+    protected boolean invert = isRed();
     protected boolean testVision = false;
 
     // All of the following poses assume that the robot starts at blue warehouse
@@ -39,11 +37,7 @@ public abstract class AutonomousMode extends LinearOpMode {
 
     ArrayList<Object> tasks = new ArrayList<>();
 
-    public AutonomousMode(StartingLocation loc, boolean wr) {
-        location = loc;
-        wallrunner = wr;
-        invert = isRed();
-
+    public AutonomousMode() {
         // TODO: add heading
         // TODO: take robot width into account
         initialPose = pos(-72, 12);
@@ -52,7 +46,7 @@ public abstract class AutonomousMode extends LinearOpMode {
         hubPose = pos(-72, 12);
         preWhPose = pos(-72, 72);
         whPose = pos(12, 72);
-        if (wallrunner)
+        if (isWallrunner())
             parkPose = pos(-60, 36);
         else
             parkPose = pos(-48, 36);
@@ -157,13 +151,15 @@ public abstract class AutonomousMode extends LinearOpMode {
             return new Pose2d(+y, -x, Math.toRadians(heading));
     }
 
-    public boolean isRed() { return location.toString().startsWith("RED"); }
+    public boolean isRed() { return this.getClass().getSimpleName().contains("RED"); }
 
     public boolean isBlue() { return !isRed(); }
 
-    public boolean isNearCarousel() { return location.toString().endsWith("CA"); }
+    public boolean isNearCarousel() { return this.getClass().getSimpleName().contains("CA"); }
 
     public boolean isNearWarehouse() { return !isNearCarousel(); }
+
+    public boolean isWallrunner() { return this.getClass().getSimpleName().contains("WR"); }
 
     protected void queue(TrajectorySequence seq) {
         tasks.add(seq);
