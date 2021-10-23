@@ -12,19 +12,26 @@ import org.wolfcorp.ff.trajectorysequence.TrajectorySequence;
 import org.wolfcorp.ff.trajectorysequence.TrajectorySequenceBuilder;
 import org.wolfcorp.ff.vision.Barcode;
 import org.wolfcorp.ff.vision.BarcodeScanner;
+import org.wolfcorp.ff.vision.VuforiaNavigator;
 import org.wolfcorp.ff.vision.WarehouseGuide;
 
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 public abstract class AutonomousMode extends LinearOpMode {
     // Hardware
     protected Drivetrain drive = null;
-    protected OpenCvWebcam webcam = null;
+    protected OpenCvCamera camera = null;
 
     // Configuration
     protected boolean invert = isRed();
     protected boolean disableQueue = false;
+
+    // Vision
+    private BarcodeScanner scanner;
+    private WarehouseGuide guide;
+    protected VuforiaNavigator navigator;
 
     // All of the following poses assume that the robot starts at blue warehouse
     protected Pose2d initialPose;
@@ -57,24 +64,22 @@ public abstract class AutonomousMode extends LinearOpMode {
                 initialPose.plus(pos(0, -48));
     }
 
-    // *** Core logic ***
-
     @Override
     public void runOpMode() throws InterruptedException {
-        initCam();
-
-        BarcodeScanner scanner = new BarcodeScanner(webcam, telemetry);
         Barcode barcode = null;
-        WarehouseGuide guide = new WarehouseGuide(webcam);
+        Thread initVisionThread = new Thread(this::initVision);
+        initVisionThread.start();
 
         drive = new Drivetrain(hardwareMap);
         drive.setPoseEstimate(initialPose);
 
         // *** Carousel ***
         if (isNearCarousel()) {
-            queue(fromHere().splineToSplineHeading(carouselPose));
+                    // TODO: pick up shipping element
+        queue(fromHere().splineToSplineHeading(hubPose));queue(fromHere().splineToSplineHeading(carouselPose));
         }
         // *** Barcode ***
+        // TODO: pick up shipping element
         queue(fromHere().splineToSplineHeading(hubPose));
         queue(() -> {
             // TODO: score preloaded freight
@@ -83,9 +88,9 @@ public abstract class AutonomousMode extends LinearOpMode {
         // *** Cycling ***
         Supplier<TrajectorySequence> goToWh =
                 () -> fromHere().splineToSplineHeading(preWhPose)
-                        .addDisplacementMarker(guide::start).lineTo(whPose.vec()).build();
+                        .addDisplacementMarker(this::startGuide).lineTo(whPose.vec()).build();
         Supplier<TrajectorySequence> goToHub =
-                () -> fromHere().addDisplacementMarker(guide::stop)
+                () -> fromHere().addDisplacementMarker(this::stopGuide)
                         .lineTo(preWhPose.vec()).splineToSplineHeading(hubPose).build();
         queue(goToWh);
         // TODO: pick up freight
@@ -96,6 +101,7 @@ public abstract class AutonomousMode extends LinearOpMode {
         // *** Park ***
         queue(fromHere().splineToSplineHeading(preWhPose).lineTo(whPose.vec()).lineTo(parkPose.vec()));
 
+        initVisionThread.join();
         scanner.start();
         waitForStart();
 
@@ -106,14 +112,27 @@ public abstract class AutonomousMode extends LinearOpMode {
         runTasks();
     }
 
-    private void initCam() {
+    // *** Vision ***
+
+    private void initVision() {
+        initVisionPassthru();
+        scanner = new BarcodeScanner(camera, telemetry);
+        guide = new WarehouseGuide(camera);
+    }
+
+    private void initVisionPassthru() {
+        navigator = new VuforiaNavigator(hardwareMap, telemetry);
+        camera = navigator.createOpenCvPassthru();
+    }
+
+    private void initVisionWebcam() {
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
                 "cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-        webcam = OpenCvCameraFactory.getInstance().createWebcam(
+        camera = OpenCvCameraFactory.getInstance().createWebcam(
                 hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
 
-        webcam.setMillisecondsPermissionTimeout(2500);
-        webcam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
+        ((OpenCvWebcam) camera).setMillisecondsPermissionTimeout(2500);
+        camera.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
             @Override
             public void onOpened() {}
 
@@ -121,6 +140,8 @@ public abstract class AutonomousMode extends LinearOpMode {
             public void onError(int errorCode) {}
         });
     }
+
+    // *** Helper methods ***
 
     private void runTasks() {
         for (Object task : tasks) {
@@ -134,7 +155,6 @@ public abstract class AutonomousMode extends LinearOpMode {
         tasks.clear();
     }
 
-    // *** Helper methods ***
 
     // Rotate the coordinate plane 90 degrees clockwise (positive y-axis points at the shared hub)
     public Pose2d pos(double x, double y) {
@@ -211,5 +231,22 @@ public abstract class AutonomousMode extends LinearOpMode {
 
     protected TrajectorySequenceBuilder fromHere() {
         return drive.from(getLastPose());
+    }
+
+    // *** Multithreading Helper ***
+    protected void startGuide() {
+        guide.start();
+    }
+
+    protected void stopGuide() {
+        guide.stop();
+    }
+
+    protected void startScanner() {
+        scanner.start();
+    }
+
+    protected void stopScanner() {
+        scanner.stop();
     }
 }

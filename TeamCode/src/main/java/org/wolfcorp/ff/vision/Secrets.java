@@ -1,0 +1,5 @@
+package org.wolfcorp.ff.vision;
+
+public class Secrets {
+    public static final String VUFORIA_KEY = "AUcu35D/////AAABmer3MVoNukWSioOAPSP1/2YNbFvGn7LMuIf/rf8vJgd49JLvcmubdYcxQgVip8z19dpclK0kev+8CN2As3WqZFLVXkXhGocJImJLKh36GmIJAZw9wP+pJ740KQkeOk9MwWa7y1MIBXbn1ffN1w7nt5RopcJXPzzbqkdfiyp4upQUN/ikOJTuoMzsj1u2lknPSD7esA/U5l0Z8eiMNeUlGZ/ZyDc95Fmm/Q55MYaJ6vXJg2CYaQyQWfzdAbIHYyKYXZyNNH1fJD6sKSVi0IqvJIStfx9pbtBsurWVUGNpVLZX60gvfRyFG2rvaDfF+A0vPEWZ2/sVthmPzMqOE1ZgUvKfeMFV0De8v/dZX2mfJxK8";
+}

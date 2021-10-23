@@ -9,6 +9,7 @@ import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
+import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvWebcam;
 
 import java.util.ArrayList;
@@ -26,11 +27,11 @@ public class WarehouseGuide extends Detector {
     private final Object updateLock = new Object();
     private final ResettableCountDownLatch latch = new ResettableCountDownLatch(1);
 
-    public WarehouseGuide(OpenCvWebcam cam) {
+    public WarehouseGuide(OpenCvCamera cam) {
         super(cam);
     }
 
-    public WarehouseGuide(OpenCvWebcam cam, Freight target) {
+    public WarehouseGuide(OpenCvCamera cam, Freight target) {
         super(cam);
         this.target = target;
     }

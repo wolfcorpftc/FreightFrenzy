@@ -7,6 +7,7 @@ import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
+import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvWebcam;
 
 import java.util.concurrent.CountDownLatch;
@@ -19,7 +20,7 @@ public class BarcodeScanner extends Detector {
     private volatile Barcode barcode = null;
     private CountDownLatch latch = new CountDownLatch(1);
 
-    public BarcodeScanner(OpenCvWebcam cam, Telemetry t) {
+    public BarcodeScanner(OpenCvCamera cam, Telemetry t) {
         super(cam);
         telemetry = t;
 

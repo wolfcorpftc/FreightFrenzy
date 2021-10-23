@@ -96,3 +96,7 @@ fabric.properties
 local.properties
 .gradle/
 build/
+
+# Project-specific
+tags
+Secrets.java
