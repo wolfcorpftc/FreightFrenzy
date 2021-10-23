@@ -24,7 +24,7 @@ public abstract class AutonomousMode extends LinearOpMode {
 
     // Configuration
     protected boolean invert = isRed();
-    protected boolean testVision = false;
+    protected boolean disableQueue = false;
 
     // All of the following poses assume that the robot starts at blue warehouse
     protected Pose2d initialPose;
@@ -46,7 +46,7 @@ public abstract class AutonomousMode extends LinearOpMode {
         hubPose = pos(-72, 12);
         preWhPose = pos(-72, 72);
         whPose = pos(12, 72);
-        if (isWallrunner())
+        if (isWallRunner())
             parkPose = pos(-60, 36);
         else
             parkPose = pos(-48, 36);
@@ -151,35 +151,51 @@ public abstract class AutonomousMode extends LinearOpMode {
             return new Pose2d(+y, -x, Math.toRadians(heading));
     }
 
-    public boolean isRed() { return this.getClass().getSimpleName().contains("RED"); }
+    public boolean isRed() {
+        return this.getClass().getSimpleName().contains("RED");
+    }
 
-    public boolean isBlue() { return !isRed(); }
+    public boolean isBlue() {
+        return !isRed();
+    }
 
-    public boolean isNearCarousel() { return this.getClass().getSimpleName().contains("CA"); }
+    public boolean isNearCarousel() {
+        return this.getClass().getSimpleName().contains("CA");
+    }
 
-    public boolean isNearWarehouse() { return !isNearCarousel(); }
+    public boolean isNearWarehouse() {
+        return !isNearCarousel();
+    }
 
-    public boolean isWallrunner() { return this.getClass().getSimpleName().contains("WR"); }
+    public boolean isWallRunner() {
+        return this.getClass().getSimpleName().contains("WR");
+    }
 
     protected void queue(TrajectorySequence seq) {
-        tasks.add(seq);
+        if (!disableQueue)
+            tasks.add(seq);
     }
 
     protected void queue(TrajectorySequenceBuilder seqBuilder) {
-        if (!testVision)
+        if (!disableQueue)
             tasks.add(seqBuilder.build());
     }
 
     protected void queue(Supplier<TrajectorySequence> seq) {
-        tasks.add(seq.get());
+        if (!disableQueue)
+            tasks.add(seq.get());
     }
 
     protected void queue(Runnable run) {
-        tasks.add(run);
+        if (!disableQueue)
+            tasks.add(run);
     }
 
     // Set the last pose manually when robot.turn() is used between trajectory sequences
-    protected void queue(Pose2d pose) { tasks.add(pose); }
+    protected void queue(Pose2d pose) {
+        if (!disableQueue)
+            tasks.add(pose);
+    }
 
     protected Pose2d getLastPose() {
         for (int i = tasks.size() - 1; i >= 0; i--) {
