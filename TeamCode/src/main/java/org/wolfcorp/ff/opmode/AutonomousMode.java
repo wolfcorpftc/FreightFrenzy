@@ -172,7 +172,7 @@ public abstract class AutonomousMode extends LinearOpMode {
     }
 
     public boolean isRed() {
-        return this.getClass().getSimpleName().contains("RED");
+        return this.getClass().getSimpleName().contains("Red");
     }
 
     public boolean isBlue() {
@@ -180,7 +180,7 @@ public abstract class AutonomousMode extends LinearOpMode {
     }
 
     public boolean isNearCarousel() {
-        return this.getClass().getSimpleName().contains("CA");
+        return this.getClass().getSimpleName().contains("Carousel");
     }
 
     public boolean isNearWarehouse() {
