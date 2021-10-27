@@ -3,6 +3,7 @@ package org.wolfcorp.ff.opmode;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
@@ -17,6 +18,7 @@ import org.wolfcorp.ff.vision.VuforiaNavigator;
 import org.wolfcorp.ff.vision.WarehouseGuide;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
@@ -80,12 +82,25 @@ public abstract class AutonomousMode extends LinearOpMode {
 
         // *** Carousel ***
         if (isNearCarousel()) {
-                    // TODO: pick up shipping element
-        queue(fromHere().splineToSplineHeading(hubPose));queue(fromHere().splineToSplineHeading(carouselPose));
+            // TODO: pick up shipping element
+            queue(fromHere().splineToSplineHeading(hubPose));
+            queue(fromHere().splineToSplineHeading(carouselPose));
         }
-        // *** Barcode ***
-        // TODO: pick up shipping element
-        queue(fromHere().splineToSplineHeading(hubPose));
+
+        // *** Barcode & Pre-loaded cube ***
+        queue("elementSeq");
+        Pose2d preElement = getLastPose();
+        TrajectorySequence elementLeftSeq = from(preElement).lineToLinearHeading(elementLeftPose).build();
+        TrajectorySequence elementMidSeq = from(preElement).lineToLinearHeading(elementMidPose).build();
+        TrajectorySequence elementRightSeq = from(preElement).lineToLinearHeading(elementRightPose).build();
+        queue(() -> {
+            // TODO: pick up shipping element
+        });
+
+        queue("hubSeq");
+        TrajectorySequence hubLeftSeq = from(elementLeftPose).strafeTo(hubPose.vec()).build();
+        TrajectorySequence hubMidSeq = from(elementMidPose).strafeTo(hubPose.vec()).build();
+        TrajectorySequence hubRightSeq = from(elementRightPose).strafeTo(hubPose.vec()).build();
         queue(() -> {
             // TODO: score preloaded freight
         });
@@ -106,12 +121,31 @@ public abstract class AutonomousMode extends LinearOpMode {
         // *** Park ***
         queue(fromHere().splineToSplineHeading(preWhPose).lineTo(whPose.vec()).lineTo(parkPose.vec()));
 
+        // *** Wrapping up ***
         initVisionThread.join();
         scanner.start();
+        telemetry.addLine("BarcodeScanner started");
+        telemetry.addLine("Waiting for start");
+        telemetry.update();
         waitForStart();
 
+        // *** Scan barcode ***
         barcode = scanner.getBarcode();
         scanner.stop();
+        switch (barcode) {
+            case TOP: // left
+                dynamicTasks.put("elementSeq", elementLeftSeq);
+                dynamicTasks.put("hubSeq", hubLeftSeq);
+                break;
+            case MID: // mid
+                dynamicTasks.put("elementSeq", elementMidSeq);
+                dynamicTasks.put("hubSeq", hubMidSeq);
+                break;
+            case BOT: // right
+                dynamicTasks.put("elementSeq", elementRightSeq);
+                dynamicTasks.put("hubSeq", hubRightSeq);
+                break;
+        }
 
         // *** Empty queue (run tasks) ***
         runTasks();
@@ -151,6 +185,10 @@ public abstract class AutonomousMode extends LinearOpMode {
 
     private void runTasks() {
         for (Object task : tasks) {
+            if (task instanceof String) {
+                task = dynamicTasks.get(task);
+            }
+
             if (task instanceof TrajectorySequence) {
                 drive.follow((TrajectorySequence) task);
             }
@@ -163,11 +201,13 @@ public abstract class AutonomousMode extends LinearOpMode {
 
 
     // Rotate the coordinate plane 90 degrees clockwise (positive y-axis points at the shared hub)
+    // Basically converts a point from Cartesian to Roadrunner
     public Pose2d pos(double x, double y) {
         return invert ? new Pose2d(-y, -x) : new Pose2d(+y, -x);
     }
 
     // Rotate the coordinate plane 90 degrees clockwise (positive y-axis points at the shared hub)
+    // Basically converts a point from Cartesian to Roadrunner
     // The positive y-axis represents a heading of 0 degree
     public Pose2d pos(double x, double y, double heading) {
         // Roadrunner shouldn't care but we do it to be safe.
@@ -181,46 +221,36 @@ public abstract class AutonomousMode extends LinearOpMode {
         return this.getClass().getSimpleName().contains("Red");
     }
 
-    public boolean isBlue() {
-        return !isRed();
-    }
-
     public boolean isNearCarousel() {
         return this.getClass().getSimpleName().contains("Carousel");
-    }
-
-    public boolean isNearWarehouse() {
-        return !isNearCarousel();
     }
 
     public boolean isWallRunner() {
         return this.getClass().getSimpleName().contains("WR");
     }
 
-    protected void queue(TrajectorySequence seq) {
+    protected void queue(Object o) {
         if (!disableQueue)
-            tasks.add(seq);
+            tasks.add(o);
     }
 
     protected void queue(TrajectorySequenceBuilder seqBuilder) {
-        if (!disableQueue)
-            tasks.add(seqBuilder.build());
+        queue(seqBuilder.build());
     }
 
     protected void queue(Supplier<TrajectorySequence> seq) {
-        if (!disableQueue)
-            tasks.add(seq.get());
+        queue(seq.get());
     }
 
     protected void queue(Runnable run) {
-        if (!disableQueue)
-            tasks.add(run);
+        queue(run);
     }
 
     // Set the last pose manually when robot.turn() is used between trajectory sequences
-    protected void queue(Pose2d pose) {
+    protected double queue(Pose2d pose) {
         if (!disableQueue)
             tasks.add(pose);
+        return tasks.size() - 1;
     }
 
     protected Pose2d getLastPose() {
@@ -239,6 +269,10 @@ public abstract class AutonomousMode extends LinearOpMode {
         return drive.from(getLastPose());
     }
 
+    protected TrajectorySequenceBuilder from(Pose2d pose) {
+        return drive.from(pose);
+    }
+
     // *** Multithreading Helper ***
     protected void startGuide() {
         guide.start();
@@ -246,13 +280,5 @@ public abstract class AutonomousMode extends LinearOpMode {
 
     protected void stopGuide() {
         guide.stop();
-    }
-
-    protected void startScanner() {
-        scanner.start();
-    }
-
-    protected void stopScanner() {
-        scanner.stop();
     }
 }
