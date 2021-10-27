@@ -7,6 +7,7 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvWebcam;
+import org.wolfcorp.ff.robot.DriveConstants;
 import org.wolfcorp.ff.robot.Drivetrain;
 import org.wolfcorp.ff.trajectorysequence.TrajectorySequence;
 import org.wolfcorp.ff.trajectorysequence.TrajectorySequenceBuilder;
@@ -36,32 +37,36 @@ public abstract class AutonomousMode extends LinearOpMode {
     // All of the following poses assume that the robot starts at blue warehouse
     protected Pose2d initialPose;
     protected Pose2d carouselPose;
-    protected Pose2d elementPose;
+    protected Pose2d elementLeftPose;
+    protected Pose2d elementMidPose;
+    protected Pose2d elementRightPose;
     protected Pose2d hubPose;
     protected Pose2d preWhPose;
     protected Pose2d whPose;
     protected Pose2d parkPose;
 
     ArrayList<Object> tasks = new ArrayList<>();
+    HashMap<String, Object> dynamicTasks = new HashMap<>();
 
     public AutonomousMode() {
-        // TODO: add heading
-        // TODO: take robot width into account
-        initialPose = pos(-72, 12);
-        carouselPose = pos(-60, -60);
-        elementPose = pos(-72, -72);
-        hubPose = pos(-72, 12);
-        preWhPose = pos(-72, 72);
-        whPose = pos(12, 72);
+        initialPose = pos(-72 + DriveConstants.LENGTH / 2, 12, 90);
+        carouselPose = pos(-60, -60, 180);
+        elementLeftPose = pos(-72 + DriveConstants.LENGTH / 2, 20.4, 90);
+        elementMidPose = pos(-72 + DriveConstants.LENGTH / 2, 12, 90);
+        elementRightPose = pos(-72 + DriveConstants.LENGTH / 2, 3.6, 90);
+        hubPose = pos(-72 + DriveConstants.LENGTH / 2, -12, 90);
+        preWhPose = pos(-72 + DriveConstants.WIDTH / 2, 24 - DriveConstants.LENGTH / 2);
+        whPose = pos(-72 + DriveConstants.WIDTH / 2, 36);
+
         if (isWallRunner())
             parkPose = pos(-60, 36);
         else
-            parkPose = pos(-48, 36);
+            parkPose = pos(-36, 36);
 
-        Pose2d[] poses = {initialPose, elementPose, hubPose, whPose};
+        Pose2d[] poses = {initialPose, elementLeftPose, elementMidPose, elementRightPose};
         if (isNearCarousel())
             for (Pose2d pose : poses)
-                initialPose.plus(pos(0, -48));
+                pose.plus(pos(0, -48));
     }
 
     @Override
