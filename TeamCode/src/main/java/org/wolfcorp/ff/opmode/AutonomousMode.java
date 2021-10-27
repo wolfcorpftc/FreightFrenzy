@@ -82,8 +82,6 @@ public abstract class AutonomousMode extends LinearOpMode {
 
         // *** Carousel ***
         if (isNearCarousel()) {
-            // TODO: pick up shipping element
-            queue(fromHere().splineToSplineHeading(hubPose));
             queue(fromHere().splineToSplineHeading(carouselPose));
         }
 
