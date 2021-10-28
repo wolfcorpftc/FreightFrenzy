@@ -31,10 +31,10 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
-import org.wolfcorp.ff.trajectorysequence.TrajectorySequence;
-import org.wolfcorp.ff.trajectorysequence.TrajectorySequenceBuilder;
-import org.wolfcorp.ff.trajectorysequence.TrajectorySequenceRunner;
-import org.wolfcorp.ff.util.LynxModuleUtil;
+import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequence;
+import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequenceBuilder;
+import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequenceRunner;
+import org.wolfcorp.ff.robot.util.LynxModuleUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;

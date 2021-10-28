@@ -1,4 +1,4 @@
-package org.wolfcorp.ff.util;
+package org.wolfcorp.ff.robot.util;
 
 import com.qualcomm.hardware.bosch.BNO055IMU;
 

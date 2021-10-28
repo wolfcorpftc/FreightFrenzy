@@ -1,4 +1,4 @@
-package org.wolfcorp.ff.trajectorysequence.sequencesegment;
+package org.wolfcorp.ff.robot.trajectorysequence.sequencesegment;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.trajectory.TrajectoryMarker;

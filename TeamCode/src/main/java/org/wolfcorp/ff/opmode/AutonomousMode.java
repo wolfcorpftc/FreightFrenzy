@@ -3,15 +3,14 @@ package org.wolfcorp.ff.opmode;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
-import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvWebcam;
 import org.wolfcorp.ff.robot.DriveConstants;
 import org.wolfcorp.ff.robot.Drivetrain;
-import org.wolfcorp.ff.trajectorysequence.TrajectorySequence;
-import org.wolfcorp.ff.trajectorysequence.TrajectorySequenceBuilder;
+import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequence;
+import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequenceBuilder;
 import org.wolfcorp.ff.vision.Barcode;
 import org.wolfcorp.ff.vision.BarcodeScanner;
 import org.wolfcorp.ff.vision.VuforiaNavigator;
@@ -19,7 +18,6 @@ import org.wolfcorp.ff.vision.WarehouseGuide;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 public abstract class AutonomousMode extends LinearOpMode {

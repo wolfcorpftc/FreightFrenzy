@@ -1,4 +1,4 @@
-package org.wolfcorp.ff.util;
+package org.wolfcorp.ff.robot.util;
 
 import com.acmerobotics.roadrunner.util.NanoClock;
 import com.qualcomm.robotcore.hardware.DcMotorEx;

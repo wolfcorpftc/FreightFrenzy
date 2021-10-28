@@ -1,4 +1,4 @@
-package org.wolfcorp.ff.trajectorysequence;
+package org.wolfcorp.ff.robot.trajectorysequence;
 
 import androidx.annotation.Nullable;
 
@@ -16,11 +16,11 @@ import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.acmerobotics.roadrunner.trajectory.TrajectoryMarker;
 import com.acmerobotics.roadrunner.util.NanoClock;
 
-import org.wolfcorp.ff.trajectorysequence.sequencesegment.SequenceSegment;
-import org.wolfcorp.ff.trajectorysequence.sequencesegment.TrajectorySegment;
-import org.wolfcorp.ff.trajectorysequence.sequencesegment.TurnSegment;
-import org.wolfcorp.ff.trajectorysequence.sequencesegment.WaitSegment;
-import org.wolfcorp.ff.util.DashboardUtil;
+import org.wolfcorp.ff.robot.trajectorysequence.sequencesegment.SequenceSegment;
+import org.wolfcorp.ff.robot.trajectorysequence.sequencesegment.TrajectorySegment;
+import org.wolfcorp.ff.robot.trajectorysequence.sequencesegment.TurnSegment;
+import org.wolfcorp.ff.robot.trajectorysequence.sequencesegment.WaitSegment;
+import org.wolfcorp.ff.robot.util.DashboardUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;

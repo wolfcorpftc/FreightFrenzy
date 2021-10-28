@@ -6,7 +6,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.wolfcorp.ff.robot.Drivetrain;
-import org.wolfcorp.ff.trajectorysequence.TrajectorySequence;
+import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequence;
 
 /*
  * Op mode for preliminary tuning of the follower PID coefficients (located in the drive base

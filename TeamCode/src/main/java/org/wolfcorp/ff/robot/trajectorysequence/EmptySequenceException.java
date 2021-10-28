@@ -1,4 +1,4 @@
-package org.wolfcorp.ff.trajectorysequence;
+package org.wolfcorp.ff.robot.trajectorysequence;
 
 
 public class EmptySequenceException extends RuntimeException { }

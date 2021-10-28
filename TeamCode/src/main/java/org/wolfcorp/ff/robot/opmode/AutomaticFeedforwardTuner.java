@@ -11,8 +11,8 @@ import com.qualcomm.robotcore.util.RobotLog;
 
 import org.firstinspires.ftc.robotcore.internal.system.Misc;
 import org.wolfcorp.ff.robot.Drivetrain;
-import org.wolfcorp.ff.util.LoggingUtil;
-import org.wolfcorp.ff.util.RegressionUtil;
+import org.wolfcorp.ff.robot.util.LoggingUtil;
+import org.wolfcorp.ff.robot.util.RegressionUtil;
 
 import java.util.ArrayList;
 import java.util.List;

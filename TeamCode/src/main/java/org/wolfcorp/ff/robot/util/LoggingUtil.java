@@ -1,4 +1,4 @@
-package org.wolfcorp.ff.util;
+package org.wolfcorp.ff.robot.util;
 
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 

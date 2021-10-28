@@ -1,4 +1,4 @@
-package org.wolfcorp.ff.trajectorysequence;
+package org.wolfcorp.ff.robot.trajectorysequence;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
@@ -19,10 +19,10 @@ import com.acmerobotics.roadrunner.trajectory.constraints.TrajectoryAcceleration
 import com.acmerobotics.roadrunner.trajectory.constraints.TrajectoryVelocityConstraint;
 import com.acmerobotics.roadrunner.util.Angle;
 
-import org.wolfcorp.ff.trajectorysequence.sequencesegment.SequenceSegment;
-import org.wolfcorp.ff.trajectorysequence.sequencesegment.TrajectorySegment;
-import org.wolfcorp.ff.trajectorysequence.sequencesegment.TurnSegment;
-import org.wolfcorp.ff.trajectorysequence.sequencesegment.WaitSegment;
+import org.wolfcorp.ff.robot.trajectorysequence.sequencesegment.SequenceSegment;
+import org.wolfcorp.ff.robot.trajectorysequence.sequencesegment.TrajectorySegment;
+import org.wolfcorp.ff.robot.trajectorysequence.sequencesegment.TurnSegment;
+import org.wolfcorp.ff.robot.trajectorysequence.sequencesegment.WaitSegment;
 
 import java.util.ArrayList;
 import java.util.Collections;

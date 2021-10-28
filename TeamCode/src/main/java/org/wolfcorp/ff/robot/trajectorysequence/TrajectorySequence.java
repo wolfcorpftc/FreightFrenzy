@@ -1,8 +1,8 @@
-package org.wolfcorp.ff.trajectorysequence;
+package org.wolfcorp.ff.robot.trajectorysequence;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 
-import org.wolfcorp.ff.trajectorysequence.sequencesegment.SequenceSegment;
+import org.wolfcorp.ff.robot.trajectorysequence.sequencesegment.SequenceSegment;
 
 import java.util.Collections;
 import java.util.List;

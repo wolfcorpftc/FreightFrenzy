@@ -1,4 +1,4 @@
-package org.wolfcorp.ff.util;
+package org.wolfcorp.ff.robot.util;
 
 /**
  * IMU axes signs in the order XYZ (after remapping).
