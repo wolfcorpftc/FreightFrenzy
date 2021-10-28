@@ -71,7 +71,7 @@ public abstract class AutonomousMode extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
-        Barcode barcode = null;
+        Barcode barcode;
         Thread initVisionThread = new Thread(this::initVision);
         initVisionThread.start();
 
@@ -206,7 +206,6 @@ public abstract class AutonomousMode extends LinearOpMode {
     // Basically converts a point from Cartesian to Roadrunner
     // The positive y-axis represents a heading of 0 degree
     public Pose2d pos(double x, double y, double heading) {
-        // Roadrunner shouldn't care but we do it to be safe.
         if (invert)
             return new Pose2d(-y, -x, Math.toRadians(-heading));
         else
@@ -239,7 +238,7 @@ public abstract class AutonomousMode extends LinearOpMode {
     }
 
     protected void queue(Runnable run) {
-        queue(run);
+        queue((Object) run);
     }
 
     // Set the last pose manually when robot.turn() is used between trajectory sequences
