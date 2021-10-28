@@ -21,19 +21,23 @@ import java.util.HashMap;
 import java.util.function.Supplier;
 
 public abstract class AutonomousMode extends LinearOpMode {
-    // Hardware
+    // region Hardware
     protected Drivetrain drive = null;
     protected OpenCvCamera camera = null;
+    // endregion
 
-    // Configuration
+    // region Configuration
     protected boolean invert = isRed();
     protected boolean disableQueue = false;
+    // endregion
 
-    // Vision
+    // region Vision Fields
     private BarcodeScanner scanner;
     private WarehouseGuide guide;
     protected VuforiaNavigator navigator;
+    // endregion
 
+    // region Poses
     // All of the following poses assume that the robot starts at blue warehouse
     protected Pose2d initialPose;
     protected Pose2d carouselPose;
@@ -44,10 +48,14 @@ public abstract class AutonomousMode extends LinearOpMode {
     protected Pose2d preWhPose;
     protected Pose2d whPose;
     protected Pose2d parkPose;
+    // endregion
 
+    // region Task Queue
     ArrayList<Object> tasks = new ArrayList<>();
     HashMap<String, Object> dynamicTasks = new HashMap<>();
+    // endregion
 
+    // region Robot Logic
     public AutonomousMode() {
         initialPose = pos(-72 + DriveConstants.LENGTH / 2, 12, 90);
         carouselPose = pos(-60, -60, 180);
@@ -78,12 +86,13 @@ public abstract class AutonomousMode extends LinearOpMode {
         drive = new Drivetrain(hardwareMap);
         drive.setPoseEstimate(initialPose);
 
-        // *** Carousel ***
+        // region Carousel
         if (isNearCarousel()) {
             queue(fromHere().splineToSplineHeading(carouselPose));
         }
+        // endregion
 
-        // *** Barcode & Pre-loaded cube ***
+        // region Barcode & Pre-loaded cube
         queue("elementSeq");
         Pose2d preElement = getLastPose();
         TrajectorySequence elementLeftSeq = from(preElement).lineToLinearHeading(elementLeftPose).build();
@@ -100,8 +109,9 @@ public abstract class AutonomousMode extends LinearOpMode {
         queue(() -> {
             // TODO: score preloaded freight
         });
+        // endregion
 
-        // *** Cycling ***
+        // region Cycling
         Supplier<TrajectorySequence> goToWh =
                 () -> fromHere().splineToSplineHeading(preWhPose)
                         .addDisplacementMarker(this::startGuide).lineTo(whPose.vec()).build();
@@ -116,16 +126,19 @@ public abstract class AutonomousMode extends LinearOpMode {
 
         // *** Park ***
         queue(fromHere().splineToSplineHeading(preWhPose).lineTo(whPose.vec()).lineTo(parkPose.vec()));
+        // endregion
 
-        // *** Wrapping up ***
+        // region Wrapping Up
         initVisionThread.join();
         scanner.start();
         telemetry.addLine("BarcodeScanner started");
         telemetry.addLine("Waiting for start");
         telemetry.update();
+        // endregion
+
         waitForStart();
 
-        // *** Scan barcode ***
+        // region Scan Barcode
         barcode = scanner.getBarcode();
         scanner.stop();
         switch (barcode) {
@@ -142,13 +155,13 @@ public abstract class AutonomousMode extends LinearOpMode {
                 dynamicTasks.put("hubSeq", hubRightSeq);
                 break;
         }
+        // endregion
 
-        // *** Empty queue (run tasks) ***
         runTasks();
     }
+    // endregion
 
-    // *** Vision ***
-
+    // region Vision Initialization
     private void initVision() {
         initVisionPassthru();
         scanner = new BarcodeScanner(camera, telemetry);
@@ -176,9 +189,9 @@ public abstract class AutonomousMode extends LinearOpMode {
             public void onError(int errorCode) {}
         });
     }
+    // endregion
 
-    // *** Helper methods ***
-
+    // region Helper Methods
     private void runTasks() {
         for (Object task : tasks) {
             if (task instanceof String) {
@@ -194,7 +207,6 @@ public abstract class AutonomousMode extends LinearOpMode {
         }
         tasks.clear();
     }
-
 
     // Rotate the coordinate plane 90 degrees clockwise (positive y-axis points at the shared hub)
     // Basically converts a point from Cartesian to Roadrunner
@@ -268,7 +280,6 @@ public abstract class AutonomousMode extends LinearOpMode {
         return drive.from(pose);
     }
 
-    // *** Multithreading Helper ***
     protected void startGuide() {
         guide.start();
     }
@@ -276,4 +287,5 @@ public abstract class AutonomousMode extends LinearOpMode {
     protected void stopGuide() {
         guide.stop();
     }
+    // endregion
 }
