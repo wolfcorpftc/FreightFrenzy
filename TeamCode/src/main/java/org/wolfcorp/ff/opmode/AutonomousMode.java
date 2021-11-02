@@ -86,13 +86,12 @@ public abstract class AutonomousMode extends LinearOpMode {
         drive = new Drivetrain(hardwareMap);
         drive.setPoseEstimate(initialPose);
 
-        // region Carousel
+        // *** Carousel ***
         if (isNearCarousel()) {
             queue(fromHere().splineToSplineHeading(carouselPose));
         }
-        // endregion
 
-        // region Barcode & Pre-loaded cube
+        // *** Barcode & Pre-loaded cube ***
         queue("elementSeq");
         Pose2d preElement = getLastPose();
         TrajectorySequence elementLeftSeq = from(preElement).lineToLinearHeading(elementLeftPose).build();
@@ -109,9 +108,8 @@ public abstract class AutonomousMode extends LinearOpMode {
         queue(() -> {
             // TODO: score preloaded freight
         });
-        // endregion
 
-        // region Cycling
+        // *** Cycling ***
         Supplier<TrajectorySequence> goToWh =
                 () -> fromHere().splineToSplineHeading(preWhPose)
                         .addDisplacementMarker(this::startGuide).lineTo(whPose.vec()).build();
@@ -126,19 +124,17 @@ public abstract class AutonomousMode extends LinearOpMode {
 
         // *** Park ***
         queue(fromHere().splineToSplineHeading(preWhPose).lineTo(whPose.vec()).lineTo(parkPose.vec()));
-        // endregion
 
-        // region Wrapping Up
+        // *** Wrapping Up ***
         initVisionThread.join();
         scanner.start();
         telemetry.addLine("BarcodeScanner started");
         telemetry.addLine("Waiting for start");
         telemetry.update();
-        // endregion
 
         waitForStart();
 
-        // region Scan Barcode
+        // *** Scan Barcode ***
         barcode = scanner.getBarcode();
         scanner.stop();
         switch (barcode) {
@@ -155,7 +151,6 @@ public abstract class AutonomousMode extends LinearOpMode {
                 dynamicTasks.put("hubSeq", hubRightSeq);
                 break;
         }
-        // endregion
 
         runTasks();
     }
