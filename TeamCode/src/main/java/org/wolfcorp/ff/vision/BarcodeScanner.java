@@ -62,19 +62,22 @@ public class BarcodeScanner extends Detector {
         Scalar leftColor, midColor, rightColor;
         if (max == leftValue) {
             barcode = Barcode.BOT;
-            telemetry.addData("Result", "left / bottom");
+            telemetry.addData("Barcode", "left");
+            telemetry.addData("Target Level", "bottom");
             leftColor = matchColor;
             midColor = rightColor = mismatchColor;
         }
         else if (max == midValue) {
             barcode = Barcode.MID;
-            telemetry.addData("Result", "middle");
+            telemetry.addData("Barcode", "middle");
+            telemetry.addData("Target Level", "middle");
             midColor = matchColor;
             leftColor = rightColor = mismatchColor;
         }
         else {
             barcode = Barcode.TOP;
-            telemetry.addData("Result", "right / top");
+            telemetry.addData("Barcode", "right");
+            telemetry.addData("Result", "top");
             rightColor = matchColor;
             leftColor = midColor = mismatchColor;
         }

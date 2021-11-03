@@ -100,3 +100,4 @@ build/
 # Project-specific
 tags
 Secrets.java
+*.hprof

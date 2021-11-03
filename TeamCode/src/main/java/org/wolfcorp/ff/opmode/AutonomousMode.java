@@ -32,8 +32,8 @@ public abstract class AutonomousMode extends LinearOpMode {
     // endregion
 
     // region Vision Fields
-    private BarcodeScanner scanner;
-    private WarehouseGuide guide;
+    protected BarcodeScanner scanner;
+    protected WarehouseGuide guide;
     protected VuforiaNavigator navigator;
     // endregion
 
@@ -159,7 +159,7 @@ public abstract class AutonomousMode extends LinearOpMode {
     // endregion
 
     // region Vision Initialization
-    private void initVision() {
+    protected void initVision() {
         initVisionPassthru();
         scanner = new BarcodeScanner(camera, telemetry);
         // TODO: compare TFWarehouseGuide and WarehouseGuide performance
