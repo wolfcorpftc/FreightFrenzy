@@ -208,7 +208,7 @@ public abstract class AutonomousMode extends LinearOpMode {
     // Rotate the coordinate plane 90 degrees clockwise (positive y-axis points at the shared hub)
     // Basically converts a point from Cartesian to Roadrunner
     public Pose2d pos(double x, double y) {
-        return invert ? new Pose2d(-y, -x) : new Pose2d(+y, -x);
+        return invert ? new Pose2d(+y, +x) : new Pose2d(+y, -x);
     }
 
     // Rotate the coordinate plane 90 degrees clockwise (positive y-axis points at the shared hub)
@@ -216,7 +216,7 @@ public abstract class AutonomousMode extends LinearOpMode {
     // The positive y-axis represents a heading of 0 degree
     public Pose2d pos(double x, double y, double heading) {
         if (invert)
-            return new Pose2d(-y, -x, Math.toRadians(-heading));
+            return new Pose2d(+y, +x, Math.toRadians(-heading));
         else
             return new Pose2d(+y, -x, Math.toRadians(heading));
     }
