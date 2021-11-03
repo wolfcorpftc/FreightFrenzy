@@ -49,9 +49,9 @@ public class DriveConstants {
     public static double TICKS_PER_INCH = TICKS_PER_REV / (2 * Math.PI * WHEEL_RADIUS);
     public static double GEAR_RATIO = 1.015; // output (wheel) speed / input (motor) speed
     // TODO: figure out track width
-    public static double TRACK_WIDTH = 10.25; // in
-    public static double WIDTH = 12.25;
-    public static double LENGTH = 17.25;
+    public static double TRACK_WIDTH = 10; // in
+    public static double WIDTH = 12;
+    public static double LENGTH = 13.55;
 
     /*
      * These are the feedforward parameters used to model the drive motor behavior. If you are using
