@@ -71,12 +71,12 @@ public abstract class AutonomousMode extends LinearOpMode {
         else
             parkPose = pos(-36, 36);
 
-        Pose2d[] poses = {initialPose, elementLeftPose, elementMidPose, elementRightPose};
-        if (isNearCarousel())
-            for (Pose2d pose : poses) {
-                Pose2d shifted = pose.plus(pos(0, -48));
-                pose.copy(shifted.getX(), shifted.getY(), shifted.getHeading());
-            }
+        if (isNearCarousel()) {
+            initialPose = initialPose.plus(pos(0, -48));
+            elementLeftPose = elementLeftPose.plus(pos(0, -48));
+            elementMidPose = elementMidPose.plus(pos(0, -48));
+            elementRightPose = elementRightPose.plus(pos(0, -48));
+        }
     }
 
     @Override
