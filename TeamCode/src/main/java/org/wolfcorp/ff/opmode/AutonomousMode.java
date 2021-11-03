@@ -57,12 +57,12 @@ public abstract class AutonomousMode extends LinearOpMode {
 
     // region Robot Logic
     public AutonomousMode() {
-        initialPose = pos(-72 + DriveConstants.LENGTH / 2, 12, 90);
+        initialPose = pos(-72 + DriveConstants.LENGTH / 2, 12, -90);
         carouselPose = pos(-60, -60, 180);
-        elementLeftPose = pos(-72 + DriveConstants.LENGTH / 2, 20.4, 90);
-        elementMidPose = pos(-72 + DriveConstants.LENGTH / 2, 12, 90);
-        elementRightPose = pos(-72 + DriveConstants.LENGTH / 2, 3.6, 90);
-        hubPose = pos(-72 + DriveConstants.LENGTH / 2, -12, 90);
+        elementLeftPose = pos(-72 + DriveConstants.LENGTH / 2, 20.4, -90);
+        elementMidPose = pos(-72 + DriveConstants.LENGTH / 2, 12, -90);
+        elementRightPose = pos(-72 + DriveConstants.LENGTH / 2, 3.6, -90);
+        hubPose = pos(-72 + DriveConstants.LENGTH / 2, -12, -90);
         preWhPose = pos(-72 + DriveConstants.WIDTH / 2, 24 - DriveConstants.LENGTH / 2);
         whPose = pos(-72 + DriveConstants.WIDTH / 2, 36);
 
@@ -73,8 +73,10 @@ public abstract class AutonomousMode extends LinearOpMode {
 
         Pose2d[] poses = {initialPose, elementLeftPose, elementMidPose, elementRightPose};
         if (isNearCarousel())
-            for (Pose2d pose : poses)
-                pose.plus(pos(0, -48));
+            for (Pose2d pose : poses) {
+                Pose2d shifted = pose.plus(pos(0, -48));
+                pose.copy(shifted.getX(), shifted.getY(), shifted.getHeading());
+            }
     }
 
     @Override
