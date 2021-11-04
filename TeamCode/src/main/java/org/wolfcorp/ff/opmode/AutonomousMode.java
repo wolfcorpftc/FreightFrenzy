@@ -28,8 +28,8 @@ public abstract class AutonomousMode extends LinearOpMode {
     // endregion
 
     // region Configuration
-    protected boolean invert = isRed();
-    protected final Boolean DISABLE_QUEUE;
+    protected final Boolean INVERT = isRed();
+    protected final Boolean USE_QUEUE;
     protected final Boolean USE_VISION;
     // endregion
 
@@ -60,13 +60,13 @@ public abstract class AutonomousMode extends LinearOpMode {
     // region Robot Logic
     public AutonomousMode() {
         USE_VISION = true;
-        DISABLE_QUEUE = false;
+        USE_QUEUE = true;
         initPoses();
     }
 
-    public AutonomousMode(boolean useVision, boolean disableQueue) {
+    public AutonomousMode(boolean useVision, boolean useQueue) {
         USE_VISION = useVision;
-        DISABLE_QUEUE = disableQueue;
+        USE_QUEUE = useQueue;
         initPoses();
     }
 
@@ -236,14 +236,14 @@ public abstract class AutonomousMode extends LinearOpMode {
     // Rotate the coordinate plane 90 degrees clockwise (positive y-axis points at the shared hub)
     // Basically converts a point from Cartesian to Roadrunner
     public Pose2d pos(double x, double y) {
-        return invert ? new Pose2d(+y, +x) : new Pose2d(+y, -x);
+        return INVERT ? new Pose2d(+y, +x) : new Pose2d(+y, -x);
     }
 
     // Rotate the coordinate plane 90 degrees clockwise (positive y-axis points at the shared hub)
     // Basically converts a point from Cartesian to Roadrunner
     // The positive y-axis represents a heading of 0 degree
     public Pose2d pos(double x, double y, double heading) {
-        if (invert)
+        if (INVERT)
             return new Pose2d(+y, +x, Math.toRadians(-heading));
         else
             return new Pose2d(+y, -x, Math.toRadians(heading));
@@ -262,7 +262,7 @@ public abstract class AutonomousMode extends LinearOpMode {
     }
 
     protected void queue(Object o) {
-        if (!DISABLE_QUEUE)
+        if (USE_QUEUE)
             tasks.add(o);
     }
 
@@ -279,10 +279,8 @@ public abstract class AutonomousMode extends LinearOpMode {
     }
 
     // Set the last pose manually when robot.turn() is used between trajectory sequences
-    protected double queue(Pose2d pose) {
-        if (!DISABLE_QUEUE)
-            tasks.add(pose);
-        return tasks.size() - 1;
+    protected void queue(Pose2d pose) {
+        queue((Object) pose);
     }
 
     protected Pose2d getLastPose() {
