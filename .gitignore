@@ -99,5 +99,5 @@ build/
 
 # Project-specific
 tags
-Secrets.java
+**/Secrets.java
 *.hprof
