@@ -7,6 +7,7 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvWebcam;
+import org.wolfcorp.ff.BuildConfig;
 import org.wolfcorp.ff.robot.DriveConstants;
 import org.wolfcorp.ff.robot.Drivetrain;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequence;
@@ -28,7 +29,8 @@ public abstract class AutonomousMode extends LinearOpMode {
 
     // region Configuration
     protected boolean invert = isRed();
-    protected boolean disableQueue = false;
+    protected final Boolean DISABLE_QUEUE;
+    protected final Boolean USE_VISION;
     // endregion
 
     // region Vision Fields
@@ -57,6 +59,18 @@ public abstract class AutonomousMode extends LinearOpMode {
 
     // region Robot Logic
     public AutonomousMode() {
+        USE_VISION = true;
+        DISABLE_QUEUE = false;
+        initPoses();
+    }
+
+    public AutonomousMode(boolean useVision, boolean disableQueue) {
+        USE_VISION = useVision;
+        DISABLE_QUEUE = disableQueue;
+        initPoses();
+    }
+
+    private void initPoses() {
         initialPose = pos(-72 + DriveConstants.LENGTH / 2, 12, -90);
         carouselPose = pos(-60, -60, 180);
         elementLeftPose = pos(-72 + DriveConstants.LENGTH / 2, 20.4, -90);
@@ -83,7 +97,8 @@ public abstract class AutonomousMode extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         Barcode barcode;
         Thread initVisionThread = new Thread(this::initVision);
-        initVisionThread.start();
+        if (USE_VISION)
+            initVisionThread.start();
 
         drive = new Drivetrain(hardwareMap);
         drive.setPoseEstimate(initialPose);
@@ -128,30 +143,37 @@ public abstract class AutonomousMode extends LinearOpMode {
         queue(fromHere().splineToSplineHeading(preWhPose).lineTo(whPose.vec()).lineTo(parkPose.vec()));
 
         // *** Wrapping Up ***
-        initVisionThread.join();
-        scanner.start();
-        telemetry.addLine("BarcodeScanner started");
-        telemetry.addLine("Waiting for start");
-        telemetry.update();
-
+        if (USE_VISION) {
+            initVisionThread.join();
+            scanner.start();
+            telemetry.addLine("BarcodeScanner started");
+            telemetry.addLine("Waiting for start");
+            telemetry.update();
+        }
         waitForStart();
 
         // *** Scan Barcode ***
-        barcode = scanner.getBarcode();
-        scanner.stop();
-        switch (barcode) {
-            case TOP: // left
-                dynamicTasks.put("elementSeq", elementLeftSeq);
-                dynamicTasks.put("hubSeq", hubLeftSeq);
-                break;
-            case MID: // mid
-                dynamicTasks.put("elementSeq", elementMidSeq);
-                dynamicTasks.put("hubSeq", hubMidSeq);
-                break;
-            case BOT: // right
-                dynamicTasks.put("elementSeq", elementRightSeq);
-                dynamicTasks.put("hubSeq", hubRightSeq);
-                break;
+        if (USE_VISION) {
+            barcode = scanner.getBarcode();
+            scanner.stop();
+            switch (barcode) {
+                case TOP: // left
+                    dynamicTasks.put("elementSeq", elementLeftSeq);
+                    dynamicTasks.put("hubSeq", hubLeftSeq);
+                    break;
+                case MID: // mid
+                    dynamicTasks.put("elementSeq", elementMidSeq);
+                    dynamicTasks.put("hubSeq", hubMidSeq);
+                    break;
+                case BOT: // right
+                    dynamicTasks.put("elementSeq", elementRightSeq);
+                    dynamicTasks.put("hubSeq", hubRightSeq);
+                    break;
+            }
+        }
+        else {
+            dynamicTasks.put("elementSeq", elementMidSeq);
+            dynamicTasks.put("hubSeq", hubMidSeq);
         }
 
         runTasks();
@@ -192,7 +214,13 @@ public abstract class AutonomousMode extends LinearOpMode {
     private void runTasks() {
         for (Object task : tasks) {
             if (task instanceof String) {
-                task = dynamicTasks.get(task);
+                if (dynamicTasks.containsKey(task))
+                    task = dynamicTasks.get(task);
+                else if (BuildConfig.DEBUG) {
+                    throw new IllegalArgumentException("Please initialize the dynamic task `" + task + "`");
+                }
+                else
+                    continue;
             }
 
             if (task instanceof TrajectorySequence) {
@@ -234,7 +262,7 @@ public abstract class AutonomousMode extends LinearOpMode {
     }
 
     protected void queue(Object o) {
-        if (!disableQueue)
+        if (!DISABLE_QUEUE)
             tasks.add(o);
     }
 
@@ -252,7 +280,7 @@ public abstract class AutonomousMode extends LinearOpMode {
 
     // Set the last pose manually when robot.turn() is used between trajectory sequences
     protected double queue(Pose2d pose) {
-        if (!disableQueue)
+        if (!DISABLE_QUEUE)
             tasks.add(pose);
         return tasks.size() - 1;
     }
@@ -278,11 +306,13 @@ public abstract class AutonomousMode extends LinearOpMode {
     }
 
     protected void startGuide() {
-        guide.start();
+        if (USE_VISION)
+            guide.start();
     }
 
     protected void stopGuide() {
-        guide.stop();
+        if (USE_VISION)
+            guide.stop();
     }
     // endregion
 }
