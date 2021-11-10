@@ -71,14 +71,14 @@ public abstract class AutonomousMode extends LinearOpMode {
     }
 
     private void initPoses() {
-        initialPose = pos(-72 + DriveConstants.LENGTH / 2, 12, -90);
-        carouselPose = pos(-60, -60, 180);
-        elementLeftPose = pos(-72 + DriveConstants.LENGTH / 2, 20.4, -90);
-        elementMidPose = pos(-72 + DriveConstants.LENGTH / 2, 12, -90);
-        elementRightPose = pos(-72 + DriveConstants.LENGTH / 2, 3.6, -90);
-        hubPose = pos(-72 + DriveConstants.LENGTH / 2, -12, -90);
+        initialPose = pos(-72 + DriveConstants.LENGTH / 2, 12, 0);
+        carouselPose = pos(-50, -60, 0);
+        elementLeftPose = pos(-60 + DriveConstants.LENGTH / 2, 20.4, -90);
+        elementMidPose = pos(-60 + DriveConstants.LENGTH / 2, 12, -90);
+        elementRightPose = pos(-60 + DriveConstants.LENGTH / 2, 3.6, -90);
+        hubPose = pos(-72 + DriveConstants.LENGTH / 2, -12, 0);
         preWhPose = pos(-72 + DriveConstants.WIDTH / 2, 24 - DriveConstants.LENGTH / 2);
-        whPose = pos(-72 + DriveConstants.WIDTH / 2, 36);
+        whPose = pos(-72 + DriveConstants.WIDTH / 2, 46);
 
         if (isWallRunner())
             parkPose = pos(-60, 36);
@@ -105,34 +105,34 @@ public abstract class AutonomousMode extends LinearOpMode {
 
         // *** Carousel ***
         if (isNearCarousel()) {
-            queue(fromHere().splineToSplineHeading(carouselPose));
+            queue(fromHere().lineToLinearHeading(carouselPose));
         }
 
         // *** Barcode & Pre-loaded cube ***
         queue("elementSeq");
         Pose2d preElement = getLastPose();
-        TrajectorySequence elementLeftSeq = from(preElement).lineToLinearHeading(elementLeftPose).build();
-        TrajectorySequence elementMidSeq = from(preElement).lineToLinearHeading(elementMidPose).build();
-        TrajectorySequence elementRightSeq = from(preElement).lineToLinearHeading(elementRightPose).build();
+        TrajectorySequence elementLeftSeq = from(preElement).lineToConstantHeading(elementLeftPose.plus(pos(0,-5)).vec()).splineToSplineHeading(elementLeftPose.plus(pos(13,0))).build();
+        TrajectorySequence elementMidSeq = from(preElement).lineToConstantHeading(elementMidPose.plus(pos(0,-5)).vec()).splineToSplineHeading(elementMidPose.plus(pos(13,0))).build();
+        TrajectorySequence elementRightSeq = from(preElement).lineToConstantHeading(elementRightPose.plus(pos(0,-5)).vec()).splineToSplineHeading(elementRightPose.plus(pos(13,0))).build();
         queue(() -> {
             // TODO: pick up shipping element
         });
 
         queue("hubSeq");
-        TrajectorySequence hubLeftSeq = from(elementLeftPose).strafeTo(hubPose.vec()).build();
-        TrajectorySequence hubMidSeq = from(elementMidPose).strafeTo(hubPose.vec()).build();
-        TrajectorySequence hubRightSeq = from(elementRightPose).strafeTo(hubPose.vec()).build();
+        TrajectorySequence hubLeftSeq = from(elementLeftPose.plus(pos(13,0))).lineToLinearHeading(hubPose).build();
+        TrajectorySequence hubMidSeq = from(elementMidPose.plus(pos(13,0))).lineToLinearHeading(hubPose).build();
+        TrajectorySequence hubRightSeq = from(elementRightPose.plus(pos(13,0))).lineToLinearHeading(hubPose).build();
         queue(() -> {
             // TODO: score preloaded freight
         });
 
         // *** Cycling ***
         Supplier<TrajectorySequence> goToWh =
-                () -> fromHere().splineToSplineHeading(preWhPose)
+                () -> fromHere().lineToLinearHeading(preWhPose)
                         .addDisplacementMarker(this::startGuide).lineTo(whPose.vec()).build();
         Supplier<TrajectorySequence> goToHub =
                 () -> fromHere().addDisplacementMarker(this::stopGuide)
-                        .lineTo(preWhPose.vec()).splineToSplineHeading(hubPose).build();
+                        .lineTo(preWhPose.vec()).lineToLinearHeading(hubPose).build();
         queue(goToWh);
         // TODO: pick up freight
         queue(goToHub);
@@ -140,7 +140,7 @@ public abstract class AutonomousMode extends LinearOpMode {
         // TODO: put above in a loop
 
         // *** Park ***
-        queue(fromHere().splineToSplineHeading(preWhPose).lineTo(whPose.vec()).lineTo(parkPose.vec()));
+        queue(fromHere().lineToLinearHeading(preWhPose).lineTo(whPose.vec()).lineTo(parkPose.vec()));
 
         // *** Wrapping Up ***
         if (USE_VISION) {
