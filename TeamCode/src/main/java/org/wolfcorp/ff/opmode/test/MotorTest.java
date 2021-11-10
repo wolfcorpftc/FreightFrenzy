@@ -1,4 +1,4 @@
-package org.wolfcorp.ff.opmode;
+package org.wolfcorp.ff.opmode.test;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
@@ -9,8 +9,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.wolfcorp.ff.robot.Drivetrain;
 
-@TeleOp(name = "TeleOp", group = "TeleOp")
-public class TeleOpMode extends LinearOpMode {
+@TeleOp(name = "Motor Test", group = "TeleOp")
+public class MotorTest extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         FtcDashboard dashboard = FtcDashboard.getInstance();
@@ -31,13 +31,7 @@ public class TeleOpMode extends LinearOpMode {
         timer.reset();
         while (opModeIsActive()) {
             // Drivetrain
-            drive.drive(
-                    -gamepad1.right_stick_y,
-                    gamepad1.right_stick_x,
-                    gamepad1.left_stick_x,
-                    1,
-                    gamepad1.right_trigger > 0.8
-            );
+            drive.setMotorPowers(0, 0, 0, 0.5);
             drive.update(); // odometry update
             telemetry.addData("LF Power", drive.leftFront.getPower());
             telemetry.addData("LF Current", drive.leftFront.getCurrent(CurrentUnit.MILLIAMPS));
