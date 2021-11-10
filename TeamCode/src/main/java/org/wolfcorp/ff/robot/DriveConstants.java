@@ -23,7 +23,7 @@ public class DriveConstants {
      * These are motor constants that should be listed online for your motors.
      */
     public static final double TICKS_PER_REV = 537.7;
-    public static final double MAX_RPM = 312;
+    public static final double MAX_RPM = 117;
 
     /*
      * Set RUN_USING_ENCODER to true to enable built-in hub velocity control using drive encoders.
@@ -46,7 +46,7 @@ public class DriveConstants {
      * convenience. Make sure to exclude any gear ratio included in MOTOR_CONFIG from GEAR_RATIO.
      */
     public static double WHEEL_RADIUS = 2.985; // in
-    public static double TICKS_PER_INCH = TICKS_PER_REV / (2 * Math.PI * WHEEL_RADIUS);
+    public static double TICKS_PER_INCH = 1425.1;
     public static double GEAR_RATIO = 1.015; // output (wheel) speed / input (motor) speed
     // TODO: figure out track width
     public static double TRACK_WIDTH = 10; // in
@@ -92,11 +92,10 @@ public class DriveConstants {
 
      */
     // TODO: tune constants
-    public static double MAX_VEL = 91.9;
-    public static double MAX_ACCEL = 91.9;
-    public static double MAX_ANG_VEL = 1.184;
-    public static double MAX_ANG_ACCEL = 1.184;
-
+    public static double MAX_VEL = 35.9;
+    public static double MAX_ACCEL = 35.9;
+    public static double MAX_ANG_VEL = 4.0956;
+    public static double MAX_ANG_ACCEL = 4.0956;
 
     public static double encoderTicksToInches(double ticks) {
         return WHEEL_RADIUS * 2 * Math.PI * GEAR_RATIO * ticks / TICKS_PER_REV;
