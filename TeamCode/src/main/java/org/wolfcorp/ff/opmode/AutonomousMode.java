@@ -97,8 +97,9 @@ public abstract class AutonomousMode extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         Barcode barcode;
         Thread initVisionThread = new Thread(this::initVision);
-        if (USE_VISION)
+        if (USE_VISION) {
             initVisionThread.start();
+        }
 
         drive = new Drivetrain(hardwareMap);
         drive.setPoseEstimate(initialPose);
@@ -217,13 +218,15 @@ public abstract class AutonomousMode extends LinearOpMode {
         log("Running tasks...");
         for (Object task : tasks) {
             if (task instanceof String) {
-                if (dynamicTasks.containsKey(task))
+                if (dynamicTasks.containsKey(task)) {
                     task = dynamicTasks.get(task);
+                }
                 else if (BuildConfig.DEBUG) {
                     throw new IllegalArgumentException("Please initialize the dynamic task `" + task + "`");
                 }
-                else
+                else {
                     continue;
+                }
             }
 
             if (task instanceof TrajectorySequence) {
@@ -246,10 +249,12 @@ public abstract class AutonomousMode extends LinearOpMode {
     // Basically converts a point from Cartesian to Roadrunner
     // The positive y-axis represents a heading of 0 degree
     public Pose2d pos(double x, double y, double heading) {
-        if (INVERT)
+        if (INVERT) {
             return new Pose2d(+y, +x, Math.toRadians(-heading));
-        else
+        }
+        else {
             return new Pose2d(+y, -x, Math.toRadians(heading));
+        }
     }
 
     public boolean isRed() {
@@ -265,8 +270,9 @@ public abstract class AutonomousMode extends LinearOpMode {
     }
 
     protected void queue(Object o) {
-        if (USE_QUEUE)
+        if (USE_QUEUE) {
             tasks.add(o);
+        }
     }
 
     protected void queue(TrajectorySequenceBuilder seqBuilder) {
@@ -307,13 +313,15 @@ public abstract class AutonomousMode extends LinearOpMode {
     }
 
     protected void startGuide() {
-        if (USE_VISION)
+        if (USE_VISION) {
             guide.start();
+        }
     }
 
     protected void stopGuide() {
-        if (USE_VISION)
+        if (USE_VISION) {
             guide.stop();
+        }
     }
 
     protected void log(String message) {

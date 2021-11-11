@@ -111,8 +111,9 @@ public class TFWarehouseGuide {
         } while (timer.milliseconds() < msTimeout && lastRecognitions == null);
         tfod.deactivate();
 
-        if (lastRecognitions == null)
+        if (lastRecognitions == null) {
             return 0;
+        }
 
         // *** Find centers of recognitions ***
         ArrayList<Point> centers = new ArrayList<>();
