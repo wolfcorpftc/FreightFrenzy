@@ -234,7 +234,7 @@ public abstract class AutonomousMode extends LinearOpMode {
                 drive.follow((TrajectorySequence) task);
             }
             else if (task instanceof Runnable){
-                ((Runnable) tasks).run();
+                ((Runnable) task).run();
             }
         }
         tasks.clear();
