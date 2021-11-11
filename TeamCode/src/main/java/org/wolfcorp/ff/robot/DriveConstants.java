@@ -22,7 +22,7 @@ public class DriveConstants {
     /*
      * These are motor constants that should be listed online for your motors.
      */
-    public static final double TICKS_PER_REV = 537.7;
+    public static final double TICKS_PER_REV = 1425.1;
     public static final double MAX_RPM = 117;
 
     /*
@@ -46,7 +46,7 @@ public class DriveConstants {
      * convenience. Make sure to exclude any gear ratio included in MOTOR_CONFIG from GEAR_RATIO.
      */
     public static double WHEEL_RADIUS = 2.985; // in
-    public static double TICKS_PER_INCH = 1425.1;
+    public static double TICKS_PER_INCH = TICKS_PER_REV / (2 * Math.PI * WHEEL_RADIUS);;
     public static double GEAR_RATIO = 1.015; // output (wheel) speed / input (motor) speed
     // TODO: figure out track width
     public static double TRACK_WIDTH = 10; // in
