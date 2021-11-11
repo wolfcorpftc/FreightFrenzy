@@ -47,7 +47,6 @@ public abstract class AutonomousMode extends LinearOpMode {
     protected Pose2d elementMidPose;
     protected Pose2d elementRightPose;
     protected Pose2d hubPose;
-    protected Pose2d preWhPose;
     protected Pose2d whPose;
     protected Pose2d parkPose;
     // endregion
@@ -77,7 +76,6 @@ public abstract class AutonomousMode extends LinearOpMode {
         elementMidPose = pos(-72 + DriveConstants.LENGTH / 2, 12, 180);
         elementRightPose = pos(-72 + DriveConstants.LENGTH / 2, 3.6, 180);
         hubPose = pos(-72 + DriveConstants.WIDTH / 2, -12, 180);
-        preWhPose = pos(-72 + DriveConstants.WIDTH / 2, 24 - DriveConstants.LENGTH / 2, 180);
         whPose = pos(-72 + DriveConstants.WIDTH / 2, 46, 180);
 
         if (isWallRunner())
@@ -140,7 +138,7 @@ public abstract class AutonomousMode extends LinearOpMode {
         // TODO: put above in a loop
 
         // *** Park ***
-        queue(fromHere().lineToLinearHeading(preWhPose).lineTo(whPose.vec()).lineTo(parkPose.vec()));
+        queue(fromHere().lineTo(whPose.vec()).lineTo(parkPose.vec()));
 
         // *** Wrapping Up ***
         if (USE_VISION) {

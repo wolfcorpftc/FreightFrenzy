@@ -9,7 +9,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.wolfcorp.ff.robot.Drivetrain;
 
-@TeleOp(name = "Motor Test", group = "TeleOp")
+@TeleOp(name = "Motor Test", group = "test")
 public class MotorTest extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
