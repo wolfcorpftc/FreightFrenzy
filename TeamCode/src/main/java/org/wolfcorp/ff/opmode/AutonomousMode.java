@@ -103,6 +103,8 @@ public abstract class AutonomousMode extends LinearOpMode {
         drive = new Drivetrain(hardwareMap);
         drive.setPoseEstimate(initialPose);
 
+        log("Post Init");
+
         // *** Carousel ***
         if (isNearCarousel()) {
             queue(fromHere().lineToLinearHeading(carouselPose));
@@ -150,7 +152,12 @@ public abstract class AutonomousMode extends LinearOpMode {
             telemetry.addLine("Waiting for start");
             telemetry.update();
         }
+
+        log("Post Path Initialization");
+
         waitForStart();
+
+        log("Start");
 
         // *** Scan Barcode ***
         if (USE_VISION) {
@@ -311,6 +318,11 @@ public abstract class AutonomousMode extends LinearOpMode {
     protected void stopGuide() {
         if (USE_VISION)
             guide.stop();
+    }
+
+    protected void log(String message) {
+        telemetry.addLine(message);
+        telemetry.update();
     }
     // endregion
 }
