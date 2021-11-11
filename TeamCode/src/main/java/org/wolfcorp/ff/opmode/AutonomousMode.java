@@ -71,19 +71,19 @@ public abstract class AutonomousMode extends LinearOpMode {
     }
 
     private void initPoses() {
-        initialPose = pos(-72 + DriveConstants.LENGTH / 2, 12, 0);
-        carouselPose = pos(-50, -60, 0);
-        elementLeftPose = pos(-60 + DriveConstants.LENGTH / 2, 20.4, -90);
-        elementMidPose = pos(-60 + DriveConstants.LENGTH / 2, 12, -90);
-        elementRightPose = pos(-60 + DriveConstants.LENGTH / 2, 3.6, -90);
-        hubPose = pos(-72 + DriveConstants.LENGTH / 2, -12, 0);
-        preWhPose = pos(-72 + DriveConstants.WIDTH / 2, 24 - DriveConstants.LENGTH / 2);
-        whPose = pos(-72 + DriveConstants.WIDTH / 2, 46);
+        initialPose = pos(-72 + DriveConstants.LENGTH / 2, 12, 180);
+        carouselPose = pos(-50, -60, 180);
+        elementLeftPose = pos(-60 + DriveConstants.LENGTH / 2, 20.4, 90);
+        elementMidPose = pos(-60 + DriveConstants.LENGTH / 2, 12, 90);
+        elementRightPose = pos(-60 + DriveConstants.LENGTH / 2, 3.6, 90);
+        hubPose = pos(-72 + DriveConstants.LENGTH / 2, -12, 180);
+        preWhPose = pos(-72 + DriveConstants.WIDTH / 2, 24 - DriveConstants.LENGTH / 2, 180);
+        whPose = pos(-72 + DriveConstants.WIDTH / 2, 46, 180);
 
         if (isWallRunner())
-            parkPose = pos(-60, 36);
+            parkPose = pos(-60, 36, 180);
         else
-            parkPose = pos(-36, 36);
+            parkPose = pos(-36, 36, 180);
 
         if (isNearCarousel()) {
             initialPose = initialPose.plus(pos(0, -48));
@@ -111,9 +111,9 @@ public abstract class AutonomousMode extends LinearOpMode {
         // *** Barcode & Pre-loaded cube ***
         queue("elementSeq");
         Pose2d preElement = getLastPose();
-        TrajectorySequence elementLeftSeq = from(preElement).lineToConstantHeading(elementLeftPose.plus(pos(0,-5)).vec()).splineToSplineHeading(elementLeftPose.plus(pos(13,0))).build();
-        TrajectorySequence elementMidSeq = from(preElement).lineToConstantHeading(elementMidPose.plus(pos(0,-5)).vec()).splineToSplineHeading(elementMidPose.plus(pos(13,0))).build();
-        TrajectorySequence elementRightSeq = from(preElement).lineToConstantHeading(elementRightPose.plus(pos(0,-5)).vec()).splineToSplineHeading(elementRightPose.plus(pos(13,0))).build();
+        TrajectorySequence elementLeftSeq = from(preElement).lineToLinearHeading(elementLeftPose).lineToLinearHeading(elementLeftPose.plus(pos(13,0))).build();
+        TrajectorySequence elementMidSeq = from(preElement).lineToLinearHeading(elementMidPose).lineToLinearHeading(elementMidPose.plus(pos(13,0))).build();
+        TrajectorySequence elementRightSeq = from(preElement).lineToLinearHeading(elementRightPose).lineToLinearHeading(elementRightPose.plus(pos(13,0))).build();
         queue(() -> {
             // TODO: pick up shipping element
         });

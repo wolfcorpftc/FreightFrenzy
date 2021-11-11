@@ -55,9 +55,9 @@ public class MeepMeepTesting {
                 .followTrajectorySequence(drive ->
                         drive.trajectorySequenceBuilder(bot.initialPose)
                                 .lineToLinearHeading(bot.carouselPose)
-                                .waitSeconds(15)
-                                .lineToConstantHeading(bot.elementLeftPose.plus(bot.pos(0,-5)).vec())
-                                .splineToSplineHeading(bot.elementLeftPose.plus(bot.pos(13,0)),bot.elementLeftPose.getHeading())
+                                .waitSeconds(1)
+                                .lineToLinearHeading(bot.elementLeftPose)
+                                .lineToLinearHeading(bot.elementLeftPose.plus(bot.pos(13,0)))
                                 .lineToLinearHeading(bot.hubPose)
                                 .waitSeconds(1)
                                 .lineToLinearHeading(bot.preWhPose)
@@ -87,19 +87,19 @@ public class MeepMeepTesting {
         whPose = pos(-72 + width / 2, 36);
         */
 
-        initialPose = pos(-72 + length / 2, 12, 0);
-        carouselPose = pos(-50, -60, 0);
-        elementLeftPose = pos(-60 + length / 2, 20.4, -90);
-        elementMidPose = pos(-60 + length / 2, 12, -90);
-        elementRightPose = pos(-60 + length / 2, 3.6, -90);
-        hubPose = pos(-72 + length / 2, -12, 0);
-        preWhPose = pos(-72 + width / 2, 24 - length / 2);
-        whPose = pos(-72 + width / 2, 46);
+        initialPose = pos(-72 + length / 2, 12, 180);
+        carouselPose = pos(-50, -60, 180);
+        elementLeftPose = pos(-60 + length / 2, 20.4, 90);
+        elementMidPose = pos(-60 + length / 2, 12, 90);
+        elementRightPose = pos(-60 + length / 2, 3.6, 90);
+        hubPose = pos(-72 + length / 2, -12, 180);
+        preWhPose = pos(-72 + width / 2, 24 - length / 2, 180);
+        whPose = pos(-72 + width / 2, 46, 180);
 
         if (isWallRunner)
-            parkPose = pos(-72 + width / 2, 42);
+            parkPose = pos(-72 + width / 2, 42, 180);
         else
-            parkPose = pos(-36, 46);
+            parkPose = pos(-36, 46, 180);
 
         if (isNearCarousel){
             initialPose = initialPose.plus(pos(0, -48));
