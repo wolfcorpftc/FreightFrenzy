@@ -53,8 +53,8 @@ public abstract class AutonomousMode extends LinearOpMode {
     // endregion
 
     // region Task Queue
-    ArrayList<Object> tasks = new ArrayList<>();
-    HashMap<String, Object> dynamicTasks = new HashMap<>();
+    private ArrayList<Object> tasks = new ArrayList<>();
+    private HashMap<String, Object> dynamicTasks = new HashMap<>();
     // endregion
 
     // region Robot Logic
