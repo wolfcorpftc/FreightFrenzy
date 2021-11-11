@@ -71,12 +71,12 @@ public abstract class AutonomousMode extends LinearOpMode {
     }
 
     private void initPoses() {
-        initialPose = pos(-72 + DriveConstants.LENGTH / 2, 12, 180);
+        initialPose = pos(-72 + DriveConstants.WIDTH / 2, 12, 180);
         carouselPose = pos(-50, -60, 180);
-        elementLeftPose = pos(-60 + DriveConstants.LENGTH / 2, 20.4, 90);
-        elementMidPose = pos(-60 + DriveConstants.LENGTH / 2, 12, 90);
-        elementRightPose = pos(-60 + DriveConstants.LENGTH / 2, 3.6, 90);
-        hubPose = pos(-72 + DriveConstants.LENGTH / 2, -12, 180);
+        elementLeftPose = pos(-72 + DriveConstants.LENGTH / 2, 20.4, 180);
+        elementMidPose = pos(-72 + DriveConstants.LENGTH / 2, 12, 180);
+        elementRightPose = pos(-72 + DriveConstants.LENGTH / 2, 3.6, 180);
+        hubPose = pos(-72 + DriveConstants.WIDTH / 2, -12, 180);
         preWhPose = pos(-72 + DriveConstants.WIDTH / 2, 24 - DriveConstants.LENGTH / 2, 180);
         whPose = pos(-72 + DriveConstants.WIDTH / 2, 46, 180);
 
@@ -103,7 +103,7 @@ public abstract class AutonomousMode extends LinearOpMode {
         drive = new Drivetrain(hardwareMap);
         drive.setPoseEstimate(initialPose);
 
-        log("Post Init");
+        log("Robot Initialized, preparing task queue");
 
         // *** Carousel ***
         if (isNearCarousel()) {
@@ -112,29 +112,26 @@ public abstract class AutonomousMode extends LinearOpMode {
 
         // *** Barcode & Pre-loaded cube ***
         queue("elementSeq");
-        Pose2d preElement = getLastPose();
-        TrajectorySequence elementLeftSeq = from(preElement).lineToLinearHeading(elementLeftPose).lineToLinearHeading(elementLeftPose.plus(pos(13,0))).build();
-        TrajectorySequence elementMidSeq = from(preElement).lineToLinearHeading(elementMidPose).lineToLinearHeading(elementMidPose.plus(pos(13,0))).build();
-        TrajectorySequence elementRightSeq = from(preElement).lineToLinearHeading(elementRightPose).lineToLinearHeading(elementRightPose.plus(pos(13,0))).build();
+        TrajectorySequence elementLeftSeq = fromHere().lineToLinearHeading(elementLeftPose).build();
+        TrajectorySequence elementMidSeq = fromHere().lineToLinearHeading(elementMidPose).build();
+        TrajectorySequence elementRightSeq = fromHere().lineToLinearHeading(elementRightPose).build();
         queue(() -> {
             // TODO: pick up shipping element
         });
 
         queue("hubSeq");
-        TrajectorySequence hubLeftSeq = from(elementLeftPose.plus(pos(13,0))).lineToLinearHeading(hubPose).build();
-        TrajectorySequence hubMidSeq = from(elementMidPose.plus(pos(13,0))).lineToLinearHeading(hubPose).build();
-        TrajectorySequence hubRightSeq = from(elementRightPose.plus(pos(13,0))).lineToLinearHeading(hubPose).build();
+        TrajectorySequence hubLeftSeq = from(elementLeftPose).lineToLinearHeading(hubPose).build();
+        TrajectorySequence hubMidSeq = from(elementMidPose).lineToLinearHeading(hubPose).build();
+        TrajectorySequence hubRightSeq = from(elementRightPose).lineToLinearHeading(hubPose).build();
         queue(() -> {
             // TODO: score preloaded freight
         });
 
         // *** Cycling ***
         Supplier<TrajectorySequence> goToWh =
-                () -> fromHere().lineToLinearHeading(preWhPose)
-                        .addDisplacementMarker(this::startGuide).lineTo(whPose.vec()).build();
+                () -> fromHere().addDisplacementMarker(this::startGuide).lineTo(whPose.vec()).build();
         Supplier<TrajectorySequence> goToHub =
-                () -> fromHere().addDisplacementMarker(this::stopGuide)
-                        .lineTo(preWhPose.vec()).lineToLinearHeading(hubPose).build();
+                () -> fromHere().addDisplacementMarker(this::stopGuide).lineTo(hubPose.vec()).build();
         queue(goToWh);
         // TODO: pick up freight
         queue(goToHub);
@@ -148,16 +145,14 @@ public abstract class AutonomousMode extends LinearOpMode {
         if (USE_VISION) {
             initVisionThread.join();
             scanner.start();
-            telemetry.addLine("BarcodeScanner started");
-            telemetry.addLine("Waiting for start");
-            telemetry.update();
+            log("BarcodeScanner started");
         }
 
-        log("Post Path Initialization");
+        log("Task queue ready, waiting for start");
 
         waitForStart();
 
-        log("Start");
+        log("Start!");
 
         // *** Scan Barcode ***
         if (USE_VISION) {
@@ -219,6 +214,7 @@ public abstract class AutonomousMode extends LinearOpMode {
 
     // region Helper Methods
     private void runTasks() {
+        log("Running tasks...");
         for (Object task : tasks) {
             if (task instanceof String) {
                 if (dynamicTasks.containsKey(task))
