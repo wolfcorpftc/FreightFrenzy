@@ -29,7 +29,7 @@ public class MeepMeepTesting {
 
     boolean invert = true;
     boolean isWallRunner = true;
-    boolean isNearCarousel = true;
+    boolean isNearCarousel = false;
 
     public static void main(String[] args) {
         // TODO: If you experience poor performance, enable this flag
@@ -122,7 +122,7 @@ public class MeepMeepTesting {
     // The positive y-axis represents a heading of 0 degree
     public Pose2d pos(double x, double y, double heading) {
         if (invert)
-            return new Pose2d(+y, +x, Math.toRadians(-heading));
+            return new Pose2d(+y, +x, Math.toRadians(180+heading));
         else
             return new Pose2d(+y, -x, Math.toRadians(heading));
     }

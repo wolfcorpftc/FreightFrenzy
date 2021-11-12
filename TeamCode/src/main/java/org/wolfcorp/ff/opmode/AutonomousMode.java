@@ -178,6 +178,11 @@ public abstract class AutonomousMode extends LinearOpMode {
         }
 
         runTasks();
+
+        sleep(1000);
+        PoseStorage.currentPose = drive.getPoseEstimate();
+        PoseStorage.hubPose = hubPose;
+
     }
     // endregion
 

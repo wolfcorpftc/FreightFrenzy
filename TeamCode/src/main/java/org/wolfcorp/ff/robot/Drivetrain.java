@@ -76,6 +76,8 @@ public class Drivetrain extends MecanumDrive {
     public DcMotorEx leftFront, leftBack, rightBack, rightFront;
     private List<DcMotorEx> motors;
 
+    private boolean abort = false;
+
     private BNO055IMU imu;
     private VoltageSensor batteryVoltageSensor;
 
@@ -177,6 +179,7 @@ public class Drivetrain extends MecanumDrive {
     }
 
     public void followAsync(Trajectory trajectory) {
+        abort = false;
         trajectorySequenceRunner.followTrajectorySequenceAsync(
                 from(trajectory.start())
                         .addTrajectory(trajectory)
@@ -190,6 +193,7 @@ public class Drivetrain extends MecanumDrive {
     }
 
     public void followAsync(TrajectorySequence trajectorySequence) {
+        abort = false;
         trajectorySequenceRunner.followTrajectorySequenceAsync(trajectorySequence);
     }
 
@@ -202,8 +206,16 @@ public class Drivetrain extends MecanumDrive {
         return trajectorySequenceRunner.getLastPoseError();
     }
 
+    public void abort(){
+        abort = true;
+    }
+
     public void update() {
         updatePoseEstimate();
+        if(abort){
+            trajectorySequenceRunner.followTrajectorySequenceAsync(null);
+            return;
+        }
         DriveSignal signal = trajectorySequenceRunner.update(getPoseEstimate(), getPoseVelocity());
         if (signal != null) setDriveSignal(signal);
     }
