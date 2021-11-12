@@ -248,7 +248,7 @@ public abstract class AutonomousMode extends LinearOpMode {
     // The positive y-axis represents a heading of 0 degree
     public Pose2d pos(double x, double y, double heading) {
         if (INVERT) {
-            return new Pose2d(+y, +x, Math.toRadians(-heading));
+            return new Pose2d(+y, +x, Math.toRadians(heading + 180));
         }
         else {
             return new Pose2d(+y, -x, Math.toRadians(heading));
