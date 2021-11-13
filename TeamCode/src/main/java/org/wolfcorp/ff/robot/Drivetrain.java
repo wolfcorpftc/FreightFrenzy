@@ -52,9 +52,6 @@ import static org.wolfcorp.ff.robot.DriveConstants.kA;
 import static org.wolfcorp.ff.robot.DriveConstants.kStatic;
 import static org.wolfcorp.ff.robot.DriveConstants.kV;
 
-/*
- * Simple mecanum drive hardware implementation for REV hardware.
- */
 @Config
 public class Drivetrain extends MecanumDrive {
     public static PIDCoefficients TRANSLATIONAL_PID = new PIDCoefficients(4, 0, 0);
@@ -83,16 +80,9 @@ public class Drivetrain extends MecanumDrive {
 
     public double speedMultiplier = 1;
 
-    private static Drivetrain instance;
-
-    public static Drivetrain getInstance() {
-        return instance;
-    }
-
     public Drivetrain(HardwareMap hardwareMap) {
         super(kV, kA, kStatic, TRACK_WIDTH, TRACK_WIDTH, LATERAL_MULTIPLIER);
 
-        instance = this;
         follower = new HolonomicPIDVAFollower(TRANSLATIONAL_PID, TRANSLATIONAL_PID, HEADING_PID,
                 new Pose2d(0.5, 0.5, Math.toRadians(5.0)), 0.5);
 
@@ -491,6 +481,7 @@ public class Drivetrain extends MecanumDrive {
                 && leftBack.isBusy()
                 && rightBack.isBusy()) {
             setMotorPowers(Math.abs(speed) + controller.update(leftFront.getCurrentPosition()));
+            updatePoseEstimate();
         }
 
         setMotorPowers(0);
