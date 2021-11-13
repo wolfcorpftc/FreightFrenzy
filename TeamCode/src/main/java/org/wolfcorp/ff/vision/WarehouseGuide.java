@@ -7,22 +7,21 @@ import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
-import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 import org.openftc.easyopencv.OpenCvCamera;
-import org.openftc.easyopencv.OpenCvWebcam;
 
 import java.util.ArrayList;
-import java.util.concurrent.CountDownLatch;
 
 public class WarehouseGuide extends Detector {
-    private static final double INVALID_ANGLE = Double.MIN_VALUE;
+    public static final PolarPoint INVALID_RESULT = new PolarPoint(Double.MIN_VALUE, Double.MIN_VALUE);
+    // TODO: Find an empirical value
+    public static final double DIST_FACTOR = 1;
 
     private Mat mat = new Mat();
     private Mat hierarchy = new Mat();
     private ArrayList<MatOfPoint> contours = new ArrayList<>();
     private Freight target = Freight.GOLD;
-    private double targetAngle = INVALID_ANGLE;
+    private PolarPoint targetPoint = INVALID_RESULT;
 
     private final Object updateLock = new Object();
     private final ResettableCountDownLatch latch = new ResettableCountDownLatch(1);
@@ -108,18 +107,18 @@ public class WarehouseGuide extends Detector {
             Imgproc.circle(input, minPoint, 15, new Scalar(0, 255, 0, 1), 5);
 
             // assume a 60 deg field of view (value sourced from cam spec)
-            targetAngle = 60 * minPoint.x / width - 30.0;
+            targetPoint = new PolarPoint(DIST_FACTOR * minDist, 60 * minPoint.x / width - 30.0);
             latch.countDown();
         }
 
         return input;
     }
 
-    public double getTargetAngle() throws InterruptedException {
-        if (targetAngle == INVALID_ANGLE) {
+    public PolarPoint getTargetPoint() throws InterruptedException {
+        if (targetPoint == INVALID_RESULT) {
             latch.await();
         }
-        return targetAngle;
+        return targetPoint;
     }
 
     public Freight getTargetType() {
@@ -130,7 +129,7 @@ public class WarehouseGuide extends Detector {
         synchronized (updateLock) {
             latch.reset();
             target = f;
-            targetAngle = INVALID_ANGLE;
+            targetPoint = INVALID_RESULT;
         }
     }
 }

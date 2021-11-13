@@ -40,7 +40,7 @@ public class TFWarehouseGuide {
             "Duck",
             "Marker"
     };
-    private static final double INVALID_ANGLE = Double.MIN_VALUE;
+    public static final PolarPoint INVALID_RESULT = new PolarPoint(Double.MIN_VALUE, Double.MIN_VALUE);
 
     private VuforiaLocalizer vuforia;
     private TFObjectDetector tfod;
@@ -85,7 +85,7 @@ public class TFWarehouseGuide {
         }
     }
 
-    public double getTargetAngle(double msTimeout) {
+    public PolarPoint getTargetPoint(double msTimeout) {
         tfod.activate();
         // getUpdatedRecognitions() will return null if no new information is available since
         // the last time that call was made.
@@ -112,7 +112,7 @@ public class TFWarehouseGuide {
         tfod.deactivate();
 
         if (lastRecognitions == null) {
-            return 0;
+            return INVALID_RESULT;
         }
 
         // *** Find centers of recognitions ***
@@ -144,10 +144,10 @@ public class TFWarehouseGuide {
         }
 
         // assume a 60 deg field of view (value sourced from cam spec)
-        return 60 * minPoint.x /  - 30.0;
+        return new PolarPoint(WarehouseGuide.DIST_FACTOR * minDist, 60 * minPoint.x /  - 30.0);
     }
 
-    public double getTargetAngle() {
-        return getTargetAngle(0);
+    public PolarPoint getTargetPoint() {
+        return getTargetPoint(0);
     }
 }
