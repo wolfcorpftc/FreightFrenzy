@@ -57,8 +57,8 @@ public abstract class AutonomousMode extends LinearOpMode {
     // endregion
 
     // region Task Queue
-    private ArrayList<Object> tasks = new ArrayList<>();
-    private HashMap<String, Object> dynamicTasks = new HashMap<>();
+    private final ArrayList<Object> tasks = new ArrayList<>();
+    private final HashMap<String, Object> dynamicTasks = new HashMap<>();
     // endregion
 
     // region Robot Logic
@@ -121,10 +121,8 @@ public abstract class AutonomousMode extends LinearOpMode {
         });
 
         // *** Cycling ***
-        Supplier<TrajectorySequence> goToWh =
-                () -> fromHere().addDisplacementMarker(this::startGuide).lineTo(whPose.vec()).build();
-        Supplier<TrajectorySequence> goToHub =
-                () -> fromHere().addDisplacementMarker(this::stopGuide).lineTo(hubPose.vec()).build();
+        TrajectorySequence goToWh = fromHere().now(this::startGuide).lineTo(whPose.vec()).build();
+        TrajectorySequence goToHub = fromHere().now(this::stopGuide).lineTo(hubPose.vec()).build();
         queue(goToWh);
         // TODO: pick up freight
         queue(goToHub);

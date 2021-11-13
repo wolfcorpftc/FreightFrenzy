@@ -452,6 +452,11 @@ public class TrajectorySequenceBuilder {
         return this.addDisplacementMarker(currentDisplacement, callback);
     }
 
+    // call `callback` at this moment in the trajectory
+    public TrajectorySequenceBuilder now(MarkerCallback callback) {
+        return addDisplacementMarker(callback);
+    }
+
     public TrajectorySequenceBuilder UNSTABLE_addDisplacementMarkerOffset(double offset, MarkerCallback callback) {
         return this.addDisplacementMarker(currentDisplacement + offset, callback);
     }
