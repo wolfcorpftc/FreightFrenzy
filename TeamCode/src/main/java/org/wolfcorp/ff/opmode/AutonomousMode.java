@@ -22,15 +22,19 @@ import java.util.HashMap;
 import java.util.function.Supplier;
 
 public abstract class AutonomousMode extends LinearOpMode {
+    static private AutonomousMode instance = null;
+
     // region Hardware
     protected Drivetrain drive = null;
     protected OpenCvCamera camera = null;
     // endregion
 
     // region Configuration
-    protected final Boolean INVERT = isRed();
-    protected final Boolean USE_QUEUE;
-    protected final Boolean USE_VISION;
+    public final boolean USE_QUEUE = !this.getClass().getSimpleName().contains("NQ");
+    public final boolean USE_VISION = !this.getClass().getSimpleName().contains("NV");
+    public final boolean CAROUSEL = this.getClass().getSimpleName().contains("Carousel");
+    public final boolean WALL_RUNNER = this.getClass().getSimpleName().contains("WR");
+    public final boolean RED = this.getClass().getSimpleName().contains("Red");
     // endregion
 
     // region Vision Fields
@@ -58,18 +62,8 @@ public abstract class AutonomousMode extends LinearOpMode {
 
     // region Robot Logic
     public AutonomousMode() {
-        USE_VISION = true;
-        USE_QUEUE = true;
-        initPoses();
-    }
+        instance = this;
 
-    public AutonomousMode(boolean useVision, boolean useQueue) {
-        USE_VISION = useVision;
-        USE_QUEUE = useQueue;
-        initPoses();
-    }
-
-    private void initPoses() {
         initialPose = pos(-72 + DriveConstants.WIDTH / 2, 12, 180);
         carouselPose = pos(-50, -60, 180);
         elementLeftPose = pos(-72 + DriveConstants.LENGTH / 2, 20.4, 180);
@@ -78,12 +72,12 @@ public abstract class AutonomousMode extends LinearOpMode {
         hubPose = pos(-72 + DriveConstants.WIDTH / 2, -12, 180);
         whPose = pos(-72 + DriveConstants.WIDTH / 2, 46, 180);
 
-        if (isWallRunner())
+        if (WALL_RUNNER)
             parkPose = pos(-60, 36, 180);
         else
             parkPose = pos(-36, 36, 180);
 
-        if (isNearCarousel()) {
+        if (CAROUSEL) {
             initialPose = initialPose.plus(pos(0, -48));
             elementLeftPose = elementLeftPose.plus(pos(0, -48));
             elementMidPose = elementMidPose.plus(pos(0, -48));
@@ -105,7 +99,7 @@ public abstract class AutonomousMode extends LinearOpMode {
         log("Robot Initialized, preparing task queue");
 
         // *** Carousel ***
-        if (isNearCarousel()) {
+        if (CAROUSEL) {
             queue(fromHere().lineToLinearHeading(carouselPose));
         }
 
@@ -183,6 +177,8 @@ public abstract class AutonomousMode extends LinearOpMode {
         PoseStorage.currentPose = drive.getPoseEstimate();
         PoseStorage.hubPose = hubPose;
 
+        // allow the current object to be GC'd
+        instance = null;
     }
     // endregion
 
@@ -242,34 +238,26 @@ public abstract class AutonomousMode extends LinearOpMode {
         tasks.clear();
     }
 
+    public static AutonomousMode getInstance() {
+        return instance;
+    }
+
     // Rotate the coordinate plane 90 degrees clockwise (positive y-axis points at the shared hub)
     // Basically converts a point from Cartesian to Roadrunner
     public Pose2d pos(double x, double y) {
-        return INVERT ? new Pose2d(+y, +x) : new Pose2d(+y, -x);
+        return RED ? new Pose2d(+y, +x) : new Pose2d(+y, -x);
     }
 
     // Rotate the coordinate plane 90 degrees clockwise (positive y-axis points at the shared hub)
     // Basically converts a point from Cartesian to Roadrunner
     // The positive y-axis represents a heading of 0 degree
     public Pose2d pos(double x, double y, double heading) {
-        if (INVERT) {
+        if (RED) {
             return new Pose2d(+y, +x, Math.toRadians(heading + 180));
         }
         else {
             return new Pose2d(+y, -x, Math.toRadians(heading));
         }
-    }
-
-    public boolean isRed() {
-        return this.getClass().getSimpleName().contains("Red");
-    }
-
-    public boolean isNearCarousel() {
-        return this.getClass().getSimpleName().contains("Carousel");
-    }
-
-    public boolean isWallRunner() {
-        return this.getClass().getSimpleName().contains("WR");
     }
 
     protected void queue(Object o) {

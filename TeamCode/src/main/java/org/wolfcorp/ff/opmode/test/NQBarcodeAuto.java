@@ -4,17 +4,17 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
 import org.wolfcorp.ff.opmode.AutonomousMode;
 
-@Autonomous(name = "Guide Demo", group = "test")
-public class GuideDemo extends AutonomousMode {
+@Autonomous(name = "Barcode Vision Test", group = "test")
+public class NQBarcodeAuto extends AutonomousMode {
     @Override
     public void runOpMode() throws InterruptedException {
         initVision();
-        guide.start();
+        scanner.start();
         while (opModeIsActive()) {
-            // Guide annotates the stream
+            // Scanner already does the logging
             idle();
             if (Thread.interrupted()) {
-                guide.stop();
+                scanner.stop();
                 throw new InterruptedException();
             }
         }
