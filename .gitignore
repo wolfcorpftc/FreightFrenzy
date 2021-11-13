@@ -101,3 +101,4 @@ build/
 tags
 **/Secrets.java
 *.hprof
+*.class
