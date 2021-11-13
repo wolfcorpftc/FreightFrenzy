@@ -25,9 +25,6 @@ public class BarcodeScanner extends Detector {
         telemetry = t;
 
         // TODO: figure out coordinates of ROIs
-        leftROI  = new Rect(new Point(), new Point());
-        midROI   = new Rect(new Point(), new Point());
-        rightROI = new Rect(new Point(), new Point());
     }
 
     @Override
@@ -39,6 +36,23 @@ public class BarcodeScanner extends Detector {
         Scalar lowerBound = new Scalar(0,0,0);
         Scalar upperBound = new Scalar(0,0,0);
         Core.inRange(mat, lowerBound, upperBound, mat);
+
+        // TODO: switch to exact ROIs once we have actual camera placement
+        if (leftROI == null) {
+            // casting int-division to int to suppress linter
+            leftROI  = new Rect(
+                    new Point(0, 0),
+                    new Point((int)(mat.width() / 3), mat.height())
+            );
+            midROI   = new Rect(
+                    new Point((int)(mat.width() / 3) + 1, 0),
+                    new Point((int)(2 * mat.width() / 3), mat.height())
+            );
+            rightROI = new Rect(
+                    new Point((int)(2 * mat.width() / 3) + 1, 0),
+                    new Point(mat.width(), mat.height())
+            );
+        }
 
         leftMat = mat.submat(leftROI);
         midMat = mat.submat(midROI);
