@@ -41,6 +41,7 @@ public abstract class AutonomousMode extends LinearOpMode {
     protected BarcodeScanner scanner;
     protected WarehouseGuide guide;
     protected VuforiaNavigator navigator;
+    protected Barcode barcode;
     // endregion
 
     // region Poses
@@ -87,7 +88,6 @@ public abstract class AutonomousMode extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
-        Barcode barcode;
         Thread initVisionThread = new Thread(this::initVision);
         if (USE_VISION) {
             initVisionThread.start();
@@ -281,6 +281,10 @@ public abstract class AutonomousMode extends LinearOpMode {
     // Set the last pose manually when robot.turn() is used between trajectory sequences
     protected void queue(Pose2d pose) {
         queue((Object) pose);
+    }
+
+    protected Barcode getBarcode() {
+        return barcode;
     }
 
     protected Pose2d getLastPose() {
