@@ -1,9 +1,7 @@
 package org.wolfcorp.ff.opmode.meet0;
 
-import com.acmerobotics.roadrunner.geometry.Pose2d;
-
 import org.wolfcorp.ff.opmode.AutonomousMode;
-import org.wolfcorp.ff.opmode.PoseStorage;
+import org.wolfcorp.ff.opmode.Match;
 import org.wolfcorp.ff.robot.CarouselSpinner;
 import org.wolfcorp.ff.robot.DriveConstants;
 import org.wolfcorp.ff.robot.Drivetrain;
@@ -47,8 +45,8 @@ public class Meet0Auto extends AutonomousMode {
         waitForStart();
         runTasks();
         sleep(1000);
-        PoseStorage.currentPose = drive.getPoseEstimate();
-        PoseStorage.hubPose = hubPose;
+        Match.teleOpInitialPose = drive.getPoseEstimate();
+        Match.hubPose = hubPose;
 
         // allow the current object to be GC'd
         instance = null;

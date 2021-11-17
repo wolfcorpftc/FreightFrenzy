@@ -9,9 +9,10 @@ import org.wolfcorp.ff.robot.DriveConstants;
  * This allows different classes/opmodes to set and read from a central source of truth.
  * A static field allows data to persist between opmodes.
  */
-public class PoseStorage {
+public class Match {
     // Temporary values to prevent errors if Tele-op is run without Autonomous
     // Will be replaced with actual locations when autonomous runs
-    public static Pose2d currentPose = new Pose2d(12, 72 - DriveConstants.WIDTH/2, Math.toRadians(180));
-    public static Pose2d hubPose = new Pose2d(-12, 72 - DriveConstants.WIDTH/2, Math.toRadians(180));
+    public static Pose2d teleOpInitialPose = new Pose2d(12, 72 - DriveConstants.WIDTH / 2, Math.toRadians(180));
+    public static Pose2d hubPose = new Pose2d(-12, 72 - DriveConstants.WIDTH / 2, Math.toRadians(180));
+    public static boolean isRed = true;
 }

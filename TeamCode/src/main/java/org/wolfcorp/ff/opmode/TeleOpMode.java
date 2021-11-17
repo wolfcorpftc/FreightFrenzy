@@ -3,7 +3,6 @@ package org.wolfcorp.ff.opmode;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
 
@@ -12,10 +11,13 @@ import org.wolfcorp.ff.robot.CarouselSpinner;
 import org.wolfcorp.ff.robot.Drivetrain;
 import org.wolfcorp.ff.robot.Shovel;
 
-@TeleOp(name = "TeleOp", group = "TeleOp")
 public class TeleOpMode extends LinearOpMode {
 
     private boolean click = false;
+
+    public TeleOpMode() {
+        Match.isRed = this.getClass().getSimpleName().contains("Red");
+    }
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -32,7 +34,7 @@ public class TeleOpMode extends LinearOpMode {
 
         //Pose2d initialPose = new Pose2d(12, 36, Math.toRadians(0));
 
-        drive.setPoseEstimate(PoseStorage.currentPose);
+        drive.setPoseEstimate(Match.teleOpInitialPose);
         shovel.setTargetPos(shovel.getCurrentPos());
 
 
@@ -85,14 +87,14 @@ public class TeleOpMode extends LinearOpMode {
                 click = true;
                 System.out.println("b");
                 Trajectory toHub = drive.trajectoryBuilder(drive.getPoseEstimate())
-                        .lineToLinearHeading(PoseStorage.hubPose)
+                        .lineToLinearHeading(Match.hubPose)
                         .build();
                 drive.followAsync(toHub);
             }
 
             if (gamepad1.y && !click){
                 click = true;
-                drive.setPoseEstimate(PoseStorage.hubPose);
+                drive.setPoseEstimate(Match.hubPose);
             }
 
             if (Math.abs(gamepad1.right_stick_y) + Math.abs(gamepad1.right_stick_x) + Math.abs(gamepad1.left_stick_x) > 0.1){

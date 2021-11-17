@@ -1,11 +1,10 @@
 package org.wolfcorp.ff.robot;
 
 import com.qualcomm.robotcore.hardware.CRServo;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.wolfcorp.ff.opmode.AutonomousMode;
+import org.wolfcorp.ff.opmode.Match;
 
 import java.util.function.Consumer;
 
@@ -20,7 +19,7 @@ public class CarouselSpinner {
     public CarouselSpinner(HardwareMap hwMap, Consumer<Long> s) {
         servo = hwMap.get(CRServo.class, "carouselSpinner");
         sleep = s;
-        if (AutonomousMode.getInstance().RED) {
+        if (Match.isRed) {
             servo.setDirection(CRServo.Direction.REVERSE);
         }
         else {

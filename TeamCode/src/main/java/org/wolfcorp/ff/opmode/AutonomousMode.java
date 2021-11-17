@@ -36,7 +36,6 @@ public abstract class AutonomousMode extends LinearOpMode {
     public final boolean USE_VISION = !this.getClass().getSimpleName().contains("NV");
     public final boolean CAROUSEL = this.getClass().getSimpleName().contains("Carousel");
     public final boolean WALL_RUNNER = this.getClass().getSimpleName().contains("WR");
-    public final boolean RED = this.getClass().getSimpleName().contains("Red");
 
     public static final int SCORING_CYCLES = 4;
     // endregion
@@ -68,6 +67,7 @@ public abstract class AutonomousMode extends LinearOpMode {
     // region Robot Logic
     public AutonomousMode() {
         instance = this;
+        Match.isRed = this.getClass().getSimpleName().contains("Red");
 
         initialPose = pos(-72 + DriveConstants.WIDTH / 2, 12, 180);
         carouselPose = pos(-55, -74 + DriveConstants.WIDTH / 2, 90);
@@ -188,8 +188,8 @@ public abstract class AutonomousMode extends LinearOpMode {
         runTasks();
 
         sleep(1000);
-        PoseStorage.currentPose = drive.getPoseEstimate();
-        PoseStorage.hubPose = hubPose;
+        Match.teleOpInitialPose = drive.getPoseEstimate();
+        Match.hubPose = hubPose;
 
         // allow the current object to be GC'd
         instance = null;
@@ -259,14 +259,14 @@ public abstract class AutonomousMode extends LinearOpMode {
     // Rotate the coordinate plane 90 degrees clockwise (positive y-axis points at the shared hub)
     // Basically converts a point from Cartesian to Roadrunner
     public Pose2d pos(double x, double y) {
-        return RED ? new Pose2d(+y, +x) : new Pose2d(+y, -x);
+        return Match.isRed ? new Pose2d(+y, +x) : new Pose2d(+y, -x);
     }
 
     // Rotate the coordinate plane 90 degrees clockwise (positive y-axis points at the shared hub)
     // Basically converts a point from Cartesian to Roadrunner
     // The positive y-axis represents a heading of 0 degree
     public Pose2d pos(double x, double y, double heading) {
-        if (RED) {
+        if (Match.isRed) {
             return new Pose2d(+y, +x, Math.toRadians(heading + 180));
         }
         else {
