@@ -31,7 +31,7 @@ public class Meet0Auto extends AutonomousMode {
         }
 
         // *** Score pre-loaded cube ***
-        queue(fromHere().lineToLinearHeading(hubPose));
+        queue(fromHere().lineToLinearHeading(initialPose).lineTo(hubPose.vec()));
         queue(() -> {
             shovel.down();
             sleep(500);

@@ -70,7 +70,7 @@ public abstract class AutonomousMode extends LinearOpMode {
         Match.isRed = this.getClass().getSimpleName().contains("Red");
 
         initialPose = pos(-72 + DriveConstants.WIDTH / 2, 12, 180);
-        carouselPose = pos(-55, -74 + DriveConstants.WIDTH / 2, 90);
+        carouselPose = pos(55, -74 + DriveConstants.WIDTH / 2, -90);
         elementLeftPose = pos(-72 + DriveConstants.LENGTH / 2, 20.4, 180);
         elementMidPose = pos(-72 + DriveConstants.LENGTH / 2, 12, 180);
         elementRightPose = pos(-72 + DriveConstants.LENGTH / 2, 3.6, 180);
@@ -112,6 +112,7 @@ public abstract class AutonomousMode extends LinearOpMode {
                 drive.setPoseEstimate(pos(-54, -72 + DriveConstants.WIDTH / 2, 90));
                 spinner.spin();
             });
+            queue(fromHere().lineToLinearHeading(initialPose));
         }
 
         // *** Barcode & Pre-loaded cube ***
