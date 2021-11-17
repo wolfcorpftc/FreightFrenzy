@@ -37,6 +37,8 @@ public abstract class AutonomousMode extends LinearOpMode {
     public final boolean CAROUSEL = this.getClass().getSimpleName().contains("Carousel");
     public final boolean WALL_RUNNER = this.getClass().getSimpleName().contains("WR");
     public final boolean RED = this.getClass().getSimpleName().contains("Red");
+
+    public static final int SCORING_CYCLES = 4;
     // endregion
 
     // region Vision Fields
@@ -132,11 +134,16 @@ public abstract class AutonomousMode extends LinearOpMode {
         // *** Cycling ***
         TrajectorySequence goToWh = fromHere().now(this::startGuide).lineTo(whPose.vec()).build();
         TrajectorySequence goToHub = fromHere().now(this::stopGuide).lineTo(hubPose.vec()).build();
-        queue(goToWh);
-        // TODO: pick up freight
-        queue(goToHub);
-        // TODO: score freight
-        // TODO: put above in a loop
+        for (int i = SCORING_CYCLES; i >= 1; i--) {
+            queue(goToWh);
+            queue(() -> {
+                // TODO: pick up freight
+            });
+            queue(goToHub);
+            queue(() -> {
+                // TODO: score freight
+            });
+        }
 
         // *** Park ***
         queue(fromHere().lineTo(whPose.vec()).lineTo(parkPose.vec()));
