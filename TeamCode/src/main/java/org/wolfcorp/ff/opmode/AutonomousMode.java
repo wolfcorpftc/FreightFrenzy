@@ -8,6 +8,7 @@ import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvWebcam;
 import org.wolfcorp.ff.BuildConfig;
+import org.wolfcorp.ff.robot.CarouselSpinner;
 import org.wolfcorp.ff.robot.DriveConstants;
 import org.wolfcorp.ff.robot.Drivetrain;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequence;
@@ -22,10 +23,11 @@ import java.util.HashMap;
 import java.util.function.Supplier;
 
 public abstract class AutonomousMode extends LinearOpMode {
-    static private AutonomousMode instance = null;
+    static protected AutonomousMode instance = null;
 
     // region Hardware
     protected Drivetrain drive = null;
+    protected CarouselSpinner spinner = null;
     protected OpenCvCamera camera = null;
     // endregion
 
@@ -66,7 +68,7 @@ public abstract class AutonomousMode extends LinearOpMode {
         instance = this;
 
         initialPose = pos(-72 + DriveConstants.WIDTH / 2, 12, 180);
-        carouselPose = pos(-50, -60, 180);
+        carouselPose = pos(-55, -74 + DriveConstants.WIDTH / 2, 90);
         elementLeftPose = pos(-72 + DriveConstants.LENGTH / 2, 20.4, 180);
         elementMidPose = pos(-72 + DriveConstants.LENGTH / 2, 12, 180);
         elementRightPose = pos(-72 + DriveConstants.LENGTH / 2, 3.6, 180);
@@ -88,6 +90,7 @@ public abstract class AutonomousMode extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
+        // *** Initialization ***
         Thread initVisionThread = new Thread(this::initVision);
         if (USE_VISION) {
             initVisionThread.start();
@@ -96,11 +99,17 @@ public abstract class AutonomousMode extends LinearOpMode {
         drive = new Drivetrain(hardwareMap);
         drive.setPoseEstimate(initialPose);
 
+        spinner = new CarouselSpinner(hardwareMap, this::sleep);
+
         log("Robot Initialized, preparing task queue");
 
         // *** Carousel ***
         if (CAROUSEL) {
             queue(fromHere().lineToLinearHeading(carouselPose));
+            queue(() -> {
+                drive.setPoseEstimate(pos(-54, -72 + DriveConstants.WIDTH / 2, 90));
+                spinner.spin();
+            });
         }
 
         // *** Barcode & Pre-loaded cube ***
@@ -165,8 +174,8 @@ public abstract class AutonomousMode extends LinearOpMode {
             }
         }
         else {
-            dynamicTasks.put("elementSeq", elementMidSeq);
-            dynamicTasks.put("hubSeq", hubMidSeq);
+            dynamicTasks.put("elementSeq", elementLeftSeq);
+            dynamicTasks.put("hubSeq", hubLeftSeq);
         }
 
         runTasks();

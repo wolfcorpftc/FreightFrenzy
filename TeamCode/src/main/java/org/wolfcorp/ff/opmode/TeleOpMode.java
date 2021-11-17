@@ -1,7 +1,6 @@
 package org.wolfcorp.ff.opmode;
 
 import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -9,8 +8,9 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
+import org.wolfcorp.ff.robot.CarouselSpinner;
 import org.wolfcorp.ff.robot.Drivetrain;
-import org.wolfcorp.ff.robot.Scorer;
+import org.wolfcorp.ff.robot.Shovel;
 
 @TeleOp(name = "TeleOp", group = "TeleOp")
 public class TeleOpMode extends LinearOpMode {
@@ -21,7 +21,8 @@ public class TeleOpMode extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         FtcDashboard dashboard = FtcDashboard.getInstance();
         Drivetrain drive = new Drivetrain(hardwareMap);
-        Scorer scorer = new Scorer(hardwareMap);
+        Shovel shovel = new Shovel(hardwareMap);
+        CarouselSpinner spinner = new CarouselSpinner(hardwareMap, this::sleep);
         ElapsedTime timer = new ElapsedTime();
 
         // Send telemetry message to signify robot waiting;
@@ -32,16 +33,15 @@ public class TeleOpMode extends LinearOpMode {
         //Pose2d initialPose = new Pose2d(12, 36, Math.toRadians(0));
 
         drive.setPoseEstimate(PoseStorage.currentPose);
-        scorer.setShovelTargetPos(scorer.shovel.getCurrentPosition());
+        shovel.setTargetPos(shovel.getCurrentPos());
+
 
         waitForStart();
 
         timer.reset();
         while (opModeIsActive()) {
             // Drivetrain
-
             if(!drive.isBusy()) {
-
                 Vector2d input = new Vector2d(
                         //-gamepad1.right_stick_y,
                         //-gamepad1.right_stick_x
@@ -64,7 +64,6 @@ public class TeleOpMode extends LinearOpMode {
 //                        )
 //                );
 
-
                 drive.drive(
                         -gamepad1.right_stick_y - input.getY(),
                         gamepad1.right_stick_x + input.getX(),
@@ -72,9 +71,14 @@ public class TeleOpMode extends LinearOpMode {
                         1,
                         gamepad1.right_trigger > 0.8
                 );
+            }
 
+            if (gamepad1.left_bumper) {
+                spinner.on();
+            }
 
-
+            if (gamepad1.right_bumper) {
+                spinner.off();
             }
 
             if (gamepad1.b && !gamepad1.start && !click){
@@ -100,22 +104,22 @@ public class TeleOpMode extends LinearOpMode {
             }
 
             if (gamepad2.y) {
-                scorer.setShovelTargetPos(scorer.shovel.getCurrentPosition());
+                shovel.setTargetPos(shovel.getCurrentPos());
                 if (gamepad2.left_bumper) {
-                    scorer.shovel.setPower(0.4);
+                    shovel.setPower(0.4);
                 } else {
-                    scorer.shovel.setPower(0.1);
+                    shovel.setPower(0.1);
                 }
             } else if (gamepad2.a && !gamepad2.start) {
-                scorer.shovel.setPower(-0.05);
-                scorer.setShovelTargetPos(scorer.shovel.getCurrentPosition());
+                shovel.setPower(-0.05);
+                shovel.setTargetPos(shovel.getCurrentPos());
             } else {
-                scorer.checkShovelPosDrift();
-                scorer.shovel.setPower(0);
+                shovel.eliminateDrift();
+                shovel.setPower(0);
             }
 
-            telemetry.addData("shovel", scorer.shovel.getCurrentPosition());
-            telemetry.addData("shovelTarget", scorer.getShovelTargetPos());
+            telemetry.addData("shovel", shovel.getCurrentPos());
+            telemetry.addData("shovelTarget", shovel.getTargetPos());
 
             drive.update(); // odometry update
             telemetry.addData("LF Power", drive.leftFront.getPower());
@@ -129,6 +133,5 @@ public class TeleOpMode extends LinearOpMode {
             telemetry.addData("Heading", drive.getPoseEstimate().getHeading());
             telemetry.update();
         }
-
     }
 }
