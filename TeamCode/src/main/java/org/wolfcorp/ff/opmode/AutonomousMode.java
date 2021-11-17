@@ -227,7 +227,7 @@ public abstract class AutonomousMode extends LinearOpMode {
     // endregion
 
     // region Helper Methods
-    private void runTasks() {
+    protected void runTasks() {
         log("Running tasks...");
         for (Object task : tasks) {
             if (task instanceof String) {
