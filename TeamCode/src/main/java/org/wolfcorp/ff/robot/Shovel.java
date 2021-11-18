@@ -12,9 +12,10 @@ public class Shovel {
     public static final int TICKS = 150;
 
     private DcMotorEx motor;
-    private int targetPos = 0;
+    private int restPos = 0;
 
-    private ElapsedTime timer = new ElapsedTime();
+    private ElapsedTime driftTimer = new ElapsedTime();
+    private ElapsedTime moveTimer = new ElapsedTime();
 
     public Shovel(HardwareMap hwMap) {
         motor = hwMap.get(DcMotorEx.class, "shovel");
@@ -25,22 +26,27 @@ public class Shovel {
         motor.setTargetPositionTolerance(MARGIN_OF_ACCEPTANCE);
     }
 
-    public void setTargetPos(int pos) {
-        targetPos = pos;
-        timer.reset();
+    public void setRestPos(int pos) {
+        restPos = pos;
+        driftTimer.reset();
+    }
+
+    public void recordRestPos() {
+        setRestPos(getCurrentPos());
     }
 
     public int getCurrentPos() {
         return motor.getCurrentPosition();
     }
-    public int getTargetPos() {
-        return targetPos;
+
+    public int getRestPos() {
+        return restPos;
     }
 
     public void eliminateDrift() {
-        if (Math.abs(motor.getCurrentPosition() - targetPos) > MARGIN_OF_ERROR &&
-                timer.milliseconds() > DRIFT_TIME_DELAY) {
-            motor.setTargetPosition(targetPos);
+        if (Math.abs(motor.getCurrentPosition() - restPos) > MARGIN_OF_ERROR &&
+                driftTimer.milliseconds() > DRIFT_TIME_DELAY) {
+            motor.setTargetPosition(restPos);
             motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             motor.setPower(0.2);
             while (motor.isBusy());

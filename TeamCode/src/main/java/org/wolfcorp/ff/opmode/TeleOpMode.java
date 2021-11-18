@@ -27,22 +27,17 @@ public class TeleOpMode extends LinearOpMode {
         CarouselSpinner spinner = new CarouselSpinner(hardwareMap, this::sleep);
         ElapsedTime timer = new ElapsedTime();
 
-        // Send telemetry message to signify robot waiting;
-        telemetry.addData("Message", "Hello Driver");
-        telemetry.update();
-        // Wait for the game to start (driver presses PLAY)
-
-        //Pose2d initialPose = new Pose2d(12, 36, Math.toRadians(0));
-
+        log("Initializing robot");
         drive.setPoseEstimate(Match.teleOpInitialPose);
-        shovel.setTargetPos(shovel.getCurrentPos());
+        shovel.recordRestPos();
 
-
+        log("Robot initialized, waiting for start");
         waitForStart();
 
+        log("Start!");
         timer.reset();
         while (opModeIsActive()) {
-            // Drivetrain
+            // *** Drivetrain ***
             if(!drive.isBusy()) {
                 Vector2d input = new Vector2d(
                         //-gamepad1.right_stick_y,
@@ -105,8 +100,10 @@ public class TeleOpMode extends LinearOpMode {
                 click = false;
             }
 
+            // *** Shovel ***
             if (gamepad2.y) {
-                shovel.setTargetPos(shovel.getCurrentPos());
+                // shovel
+                shovel.recordRestPos();
                 if (gamepad2.left_bumper) {
                     shovel.setPower(0.4);
                 } else {
@@ -114,14 +111,14 @@ public class TeleOpMode extends LinearOpMode {
                 }
             } else if (gamepad2.a && !gamepad2.start) {
                 shovel.setPower(-0.05);
-                shovel.setTargetPos(shovel.getCurrentPos());
+                shovel.recordRestPos();
             } else {
                 shovel.eliminateDrift();
                 shovel.setPower(0);
             }
 
             telemetry.addData("shovel", shovel.getCurrentPos());
-            telemetry.addData("shovelTarget", shovel.getTargetPos());
+            telemetry.addData("shovelTarget", shovel.getRestPos());
 
             drive.update(); // odometry update
             telemetry.addData("LF Power", drive.leftFront.getPower());
@@ -135,5 +132,10 @@ public class TeleOpMode extends LinearOpMode {
             telemetry.addData("Heading", drive.getPoseEstimate().getHeading());
             telemetry.update();
         }
+    }
+
+    public void log(String s) {
+        telemetry.addLine(s);
+        telemetry.update();
     }
 }
