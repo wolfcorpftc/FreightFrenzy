@@ -47,19 +47,23 @@ public abstract class AutonomousMode extends LinearOpMode {
     // endregion
 
     // region Poses
-    // All of the following poses assume that the robot starts at blue warehouse
-    protected Pose2d initialPose;
-    protected Pose2d fakePreCarouselPose;
-    protected Pose2d preCarouselPose;
-    protected Pose2d carouselPose;
-    protected Pose2d postCarouselPose;
-    protected Pose2d fakeInitialPose;
-    protected Pose2d elementLeftPose;
-    protected Pose2d elementMidPose;
-    protected Pose2d elementRightPose;
-    protected Pose2d hubPose;
-    protected Pose2d whPose;
-    protected Pose2d parkPose;
+    // Poses are declared in order of appearance in paths.
+    // When initializing poses with pos(), assume that the robot starts at blue warehouse.
+    protected Pose2d initialPose; // where the robot starts
+
+    protected Pose2d fakePreCarouselPose; // bang against the wall for calibration of y
+    protected Pose2d preCarouselPose; // actual pose before driving toward carousel
+    protected Pose2d carouselPose; // turn the carousel
+    protected Pose2d postCarouselPose; // move away from the carousel to allow for turns
+    protected Pose2d fakeInitialPose; // bang against the other wall for calibration of x
+
+    protected Pose2d elementLeftPose; // retrieve the left shipping element
+    protected Pose2d elementMidPose; // retrieve the middle shipping element
+    protected Pose2d elementRightPose; // retrieve the right shipping element
+
+    protected Pose2d hubPose; // score freight into hub
+    protected Pose2d whPose; // load freight from warehouse
+    protected Pose2d parkPose; // where the robot parks
     // endregion
 
     // region Task Queue
@@ -76,28 +80,33 @@ public abstract class AutonomousMode extends LinearOpMode {
         telemetry.setMsTransmissionInterval(50);
 
         initialPose = pos(-72 + DriveConstants.WIDTH / 2, 12, 180);
-        fakePreCarouselPose = pos(-49, -75 + DriveConstants.WIDTH / 2, 90);
-        preCarouselPose = pos(-49, -72 + DriveConstants.WIDTH / 2, 90);
+        fakeInitialPose = initialPose.minus(pos(3, 0));
+
         carouselPose = pos(-50.5, -72 + DriveConstants.WIDTH / 2, 90);
+        preCarouselPose = carouselPose.plus(pos(1.5, 0));
+        fakePreCarouselPose = preCarouselPose.minus(pos(0, 3));
         postCarouselPose = carouselPose.plus(pos(0, 5));
-        fakeInitialPose = initialPose.plus(pos(-3, 0));
+
         elementLeftPose = pos(-72 + DriveConstants.LENGTH / 2, 20.4, 180);
-        elementMidPose = pos(-72 + DriveConstants.LENGTH / 2, 12, 180);
-        elementRightPose = pos(-72 + DriveConstants.LENGTH / 2, 3.6, 180);
+        elementMidPose = elementLeftPose.minus(pos(0, 8.4));
+        elementRightPose = elementMidPose.minus(pos(0, 8.4));
+
         hubPose = pos(-72 + DriveConstants.WIDTH / 2, -12, 180);
         whPose = pos(-72 + DriveConstants.WIDTH / 2, 46, 180);
 
-        if (WALL_RUNNER)
+        if (WALL_RUNNER) {
             parkPose = pos(-72 + DriveConstants.WIDTH / 2, 37, 180);
-        else
+        }
+        else {
             parkPose = pos(-36, 37, 180);
+        }
 
         if (CAROUSEL) {
-            initialPose = initialPose.plus(pos(0, -48));
-            fakeInitialPose = fakeInitialPose.plus(pos(0, -48));
-            elementLeftPose = elementLeftPose.plus(pos(0, -48));
-            elementMidPose = elementMidPose.plus(pos(0, -48));
-            elementRightPose = elementRightPose.plus(pos(0, -48));
+            initialPose = initialPose.minus(pos(0, 48));
+            fakeInitialPose = fakeInitialPose.minus(pos(0, 48));
+            elementLeftPose = elementLeftPose.minus(pos(0, 48));
+            elementMidPose = elementMidPose.minus(pos(0, 48));
+            elementRightPose = elementRightPose.minus(pos(0, 48));
         }
     }
 
