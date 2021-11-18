@@ -9,11 +9,20 @@ import org.wolfcorp.ff.robot.DriveConstants;
 import org.wolfcorp.ff.robot.Drivetrain;
 import org.wolfcorp.ff.robot.Shovel;
 
-public class Meet0Auto extends AutonomousMode {
+public abstract class Meet0Auto extends AutonomousMode {
     protected Shovel shovel = null;
+    protected Pose2d preWhPose;
+
+    public Meet0Auto() {
+        // shovel is short and in the back
+        hubPose = pos(-48 + DriveConstants.LENGTH / 2, -12, 90);
+        preWhPose = pos(-72 + DriveConstants.WIDTH / 2, 12, 180);
+        parkPose = whPose;
+    }
 
     @Override
     public void runOpMode() throws InterruptedException {
+        log("Meet 0 runOpMode; initializing robot");
         // *** Initialization ***
         drive = new Drivetrain(hardwareMap);
         drive.setPoseEstimate(initialPose);
@@ -46,11 +55,15 @@ public class Meet0Auto extends AutonomousMode {
         });
 
         // *** Park ***
-        queue(fromHere().lineTo(whPose.vec()).lineTo(parkPose.vec()));
+        log("Initializing: park");
+        queue(fromHere().lineToLinearHeading(preWhPose).lineTo(parkPose.vec()));
 
         // *** START ***
+        log("Task queue initialized, waiting for start");
         waitForStart();
         runTasks();
+        log("All tasks done");
+
         sleep(1000);
         Match.teleOpInitialPose = drive.getPoseEstimate();
         Match.hubPose = hubPose;

@@ -89,9 +89,9 @@ public abstract class AutonomousMode extends LinearOpMode {
         whPose = pos(-72 + DriveConstants.WIDTH / 2, 46, 180);
 
         if (WALL_RUNNER)
-            parkPose = pos(-60, 36, 180);
+            parkPose = pos(-72 + DriveConstants.WIDTH / 2, 37, 180);
         else
-            parkPose = pos(-36, 36, 180);
+            parkPose = pos(-36, 37, 180);
 
         if (CAROUSEL) {
             initialPose = initialPose.plus(pos(0, -48));
