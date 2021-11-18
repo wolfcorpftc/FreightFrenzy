@@ -1,5 +1,7 @@
 package org.wolfcorp.ff.opmode.meet0;
 
+import com.acmerobotics.roadrunner.geometry.Pose2d;
+
 import org.wolfcorp.ff.opmode.AutonomousMode;
 import org.wolfcorp.ff.opmode.Match;
 import org.wolfcorp.ff.robot.CarouselSpinner;
@@ -19,19 +21,24 @@ public class Meet0Auto extends AutonomousMode {
         shovel = new Shovel(hardwareMap);
         spinner = new CarouselSpinner(hardwareMap, this::sleep);
 
-        log("Robot Initialized, preparing task queue");
+        log("Robot initialized, preparing task queue");
 
-        // *** Carousel ***
+        // *** Spin carousel & go to hub ***
         if (CAROUSEL) {
-            queue(fromHere().lineToLinearHeading(carouselPose));
-            queue(() -> {
-                drive.setPoseEstimate(pos(-54, -72 + DriveConstants.WIDTH / 2, 90));
-                spinner.spin();
-            });
+            log("Initializing: carousel");
+            queue(fromHere().lineToLinearHeading(fakePreCarouselPose));
+            queue(() -> drive.setPoseEstimate(preCarouselPose));
+            queue(from(preCarouselPose).lineTo(carouselPose.vec()));
+            queue((Runnable) spinner::spin);
+        }
+        else {
+            // Compensation for lack of error
+            hubPose = hubPose.plus(pos(2, 0));
         }
 
         // *** Score pre-loaded cube ***
-        queue(fromHere().lineToLinearHeading(initialPose).lineTo(hubPose.vec()));
+        log("Initializing: hub & score");
+        queue(fromHere().lineToLinearHeading(hubPose));
         queue(() -> {
             shovel.down();
             sleep(500);
