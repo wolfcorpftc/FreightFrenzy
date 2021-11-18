@@ -73,6 +73,9 @@ public abstract class AutonomousMode extends LinearOpMode {
         instance = this;
         Match.isRed = this.getClass().getSimpleName().contains("Red");
 
+        // Faster telemetry
+        telemetry.setMsTransmissionInterval(50);
+
         initialPose = pos(-72 + DriveConstants.WIDTH / 2, 12, 180);
         fakePreCarouselPose = pos(-49, -75 + DriveConstants.WIDTH / 2, 90);
         preCarouselPose = pos(-49, -72 + DriveConstants.WIDTH / 2, 90);

@@ -16,6 +16,8 @@ public abstract class TeleOpMode extends LinearOpMode {
 
     public TeleOpMode() {
         Match.isRed = this.getClass().getSimpleName().contains("Red");
+        // Faster telemetry
+        telemetry.setMsTransmissionInterval(50);
     }
 
     @Override
