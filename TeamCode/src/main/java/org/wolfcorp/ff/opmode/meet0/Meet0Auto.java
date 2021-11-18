@@ -67,8 +67,5 @@ public abstract class Meet0Auto extends AutonomousMode {
         sleep(1000);
         Match.teleOpInitialPose = drive.getPoseEstimate();
         Match.hubPose = hubPose;
-
-        // allow the current object to be GC'd
-        instance = null;
     }
 }

@@ -23,8 +23,6 @@ import java.util.HashMap;
 import java.util.function.Supplier;
 
 public abstract class AutonomousMode extends LinearOpMode {
-    static protected AutonomousMode instance = null;
-
     // region Hardware
     protected Drivetrain drive = null;
     protected CarouselSpinner spinner = null;
@@ -73,7 +71,6 @@ public abstract class AutonomousMode extends LinearOpMode {
 
     // region Robot Logic
     public AutonomousMode() {
-        instance = this;
         Match.isRed = this.getClass().getSimpleName().contains("Red");
 
         // Faster telemetry
@@ -215,9 +212,6 @@ public abstract class AutonomousMode extends LinearOpMode {
         sleep(1000);
         Match.teleOpInitialPose = drive.getPoseEstimate();
         Match.hubPose = hubPose;
-
-        // allow the current object to be GC'd
-        instance = null;
     }
     // endregion
 
@@ -275,10 +269,6 @@ public abstract class AutonomousMode extends LinearOpMode {
             }
         }
         tasks.clear();
-    }
-
-    public static AutonomousMode getInstance() {
-        return instance;
     }
 
     // Rotate the coordinate plane 90 degrees clockwise (positive y-axis points at the shared hub)
