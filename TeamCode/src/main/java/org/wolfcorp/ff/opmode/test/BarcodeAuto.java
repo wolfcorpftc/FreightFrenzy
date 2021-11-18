@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import org.wolfcorp.ff.opmode.AutonomousMode;
 
 @Autonomous(name = "Barcode Vision Test", group = "test")
-public class NQBarcodeAuto extends AutonomousMode {
+public class BarcodeAuto extends AutonomousMode {
     @Override
     public void runOpMode() throws InterruptedException {
         initVision();

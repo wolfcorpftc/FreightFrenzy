@@ -32,7 +32,6 @@ public abstract class AutonomousMode extends LinearOpMode {
     // endregion
 
     // region Configuration
-    public final boolean USE_QUEUE = !this.getClass().getSimpleName().contains("NQ");
     public final boolean USE_VISION = !this.getClass().getSimpleName().contains("NV");
     public final boolean CAROUSEL = this.getClass().getSimpleName().contains("Carousel");
     public final boolean WALL_RUNNER = this.getClass().getSimpleName().contains("WR");
@@ -292,9 +291,7 @@ public abstract class AutonomousMode extends LinearOpMode {
     }
 
     protected void queue(Object o) {
-        if (USE_QUEUE) {
-            tasks.add(o);
-        }
+        tasks.add(o);
     }
 
     protected void queue(TrajectorySequenceBuilder seqBuilder) {

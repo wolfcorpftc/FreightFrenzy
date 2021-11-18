@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import org.wolfcorp.ff.opmode.AutonomousMode;
 
 @Autonomous(name = "Guide Vision Test", group = "test")
-public class NQGuideAuto extends AutonomousMode {
+public class GuideAuto extends AutonomousMode {
     @Override
     public void runOpMode() throws InterruptedException {
         initVision();
