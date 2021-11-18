@@ -10,8 +10,9 @@ import java.util.function.Consumer;
 
 // Carousel spinner
 public class CarouselSpinner {
-    public static final double SPIN_TIME = 2000; // millis
+    public static final double SPIN_TIME = 3000; // millis
     public static final Long WAIT_TIME = 1000L; // millis
+
     private CRServo servo;
     private ElapsedTime runtime = new ElapsedTime();
     private Consumer<Long> sleep;
@@ -54,7 +55,7 @@ public class CarouselSpinner {
 
     // Spin
     public void spin(int times) {
-        for (int i = times; i >= 1; i++) {
+        for (int i = times; i >= 1; i--) {
             runtime.reset();
             on();
             while (runtime.milliseconds() < SPIN_TIME);
