@@ -25,6 +25,7 @@ public abstract class TeleOpMode extends LinearOpMode {
         Shovel shovel = new Shovel(hardwareMap);
         CarouselSpinner spinner = new CarouselSpinner(hardwareMap, this::sleep);
         ElapsedTime timer = new ElapsedTime();
+        ElapsedTime spinnerDelay = new ElapsedTime();
 
         log("Initializing robot");
         drive.setPoseEstimate(Match.teleOpInitialPose);
@@ -69,12 +70,15 @@ public abstract class TeleOpMode extends LinearOpMode {
                 );
             }
 
-            if (gamepad1.left_bumper) {
-                spinner.on();
-            }
-
-            if (gamepad1.right_bumper) {
-                spinner.off();
+            // *** Carousel Spinner ***
+            if (gamepad2.left_bumper && spinnerDelay.milliseconds() > 200) {
+                spinnerDelay.reset();
+                if (spinner.isOff()) {
+                    spinner.on();
+                }
+                else {
+                    spinner.off();
+                }
             }
 
             // *** Driver Assist: Checkpoint ***

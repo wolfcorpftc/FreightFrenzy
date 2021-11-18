@@ -27,6 +27,14 @@ public class CarouselSpinner {
         }
     }
 
+    public boolean isOn() {
+        return servo.getPower() != 0;
+    }
+
+    public boolean isOff() {
+        return !isOn();
+    }
+
     public void on() {
         servo.setPower(1);
     }
