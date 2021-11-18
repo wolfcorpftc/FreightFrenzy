@@ -10,6 +10,7 @@ public class Shovel {
     public static final int MARGIN_OF_ACCEPTANCE = 3; // margin of acceptance
     public static final int DRIFT_TIME_DELAY = 1000;
     public static final int TICKS = 150;
+    public static final double TIMEOUT = 1000;
 
     private DcMotorEx motor;
     private int restPos = 0;
@@ -49,6 +50,7 @@ public class Shovel {
             motor.setTargetPosition(restPos);
             motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             motor.setPower(0.2);
+            // TODO: try to eliminate loop
             while (motor.isBusy());
             motor.setPower(0);
             motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -56,18 +58,22 @@ public class Shovel {
     }
 
     public void up() {
+        motor.setTargetPosition(motor.getCurrentPosition() + TICKS);
         motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         motor.setPower(0.4);
-        motor.setTargetPosition(motor.getCurrentPosition() + TICKS);
-        while (motor.isBusy());
+        moveTimer.reset();
+        while (motor.isBusy() && moveTimer.milliseconds() < TIMEOUT);
+        motor.setPower(0);
         motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 
     public void down() {
-        motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        motor.setPower(0.2);
         motor.setTargetPosition(motor.getCurrentPosition() - TICKS);
-        while (motor.isBusy());
+        motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        motor.setPower(0.3);
+        moveTimer.reset();
+        while (motor.isBusy() && moveTimer.milliseconds() < TIMEOUT);
+        motor.setPower(0);
         motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 
