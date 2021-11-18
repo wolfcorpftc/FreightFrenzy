@@ -11,9 +11,8 @@ import org.wolfcorp.ff.robot.CarouselSpinner;
 import org.wolfcorp.ff.robot.Drivetrain;
 import org.wolfcorp.ff.robot.Shovel;
 
-public class TeleOpMode extends LinearOpMode {
-
-    private boolean click = false;
+public abstract class TeleOpMode extends LinearOpMode {
+    private boolean blockCheckpoint = false;
 
     public TeleOpMode() {
         Match.isRed = this.getClass().getSimpleName().contains("Red");
@@ -78,8 +77,10 @@ public class TeleOpMode extends LinearOpMode {
                 spinner.off();
             }
 
-            if (gamepad1.b && !gamepad1.start && !click){
-                click = true;
+            // *** Driver Assist: Checkpoint ***
+            // Go to checkpoint / hub
+            if (gamepad1.b && !gamepad1.start && !blockCheckpoint){
+                blockCheckpoint = true;
                 System.out.println("b");
                 Trajectory toHub = drive.trajectoryBuilder(drive.getPoseEstimate())
                         .lineToLinearHeading(Match.hubPose)
@@ -87,17 +88,20 @@ public class TeleOpMode extends LinearOpMode {
                 drive.followAsync(toHub);
             }
 
-            if (gamepad1.y && !click){
-                click = true;
+            // Set current pose as checkpoint / hub
+            if (gamepad1.y && !blockCheckpoint){
+                blockCheckpoint = true;
                 drive.setPoseEstimate(Match.hubPose);
             }
 
+            // Cancel current trajectory to pose
             if (Math.abs(gamepad1.right_stick_y) + Math.abs(gamepad1.right_stick_x) + Math.abs(gamepad1.left_stick_x) > 0.1){
                 drive.abort();
             }
 
+            // Unblock checkpoint functionalities when no relevant inputs are pressed
             if ((!gamepad1.b || (gamepad1.b && gamepad1.start)) && !gamepad1.y && !gamepad1.x){
-                click = false;
+                blockCheckpoint = false;
             }
 
             // *** Shovel ***
