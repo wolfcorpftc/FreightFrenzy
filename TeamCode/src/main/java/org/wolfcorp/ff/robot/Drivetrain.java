@@ -532,4 +532,14 @@ public class Drivetrain extends MecanumDrive {
     public void sidestepLeft(double speed, double distance) {
         drive(speed, -distance, distance, distance, -distance);
     }
+
+    public void calibrateX(Pose2d calibratedX) {
+        Pose2d current = getPoseEstimate();
+        setPoseEstimate(new Pose2d(calibratedX.getX(), current.getY(), current.getHeading()));
+    }
+
+    public void calibrateY(Pose2d calibratedY) {
+        Pose2d current = getPoseEstimate();
+        setPoseEstimate(new Pose2d(calibratedY.getY(), current.getY(), current.getHeading()));
+    }
 }

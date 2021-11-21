@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.function.Supplier;
 
-public abstract class AutonomousMode extends LinearOpMode {
+public abstract class AutonomousMode extends OpMode {
     // region Hardware
     protected Drivetrain drive = null;
     protected CarouselSpinner spinner = null;
@@ -71,17 +71,12 @@ public abstract class AutonomousMode extends LinearOpMode {
 
     // region Robot Logic
     public AutonomousMode() {
-        Match.isRed = this.getClass().getSimpleName().contains("Red");
-
-        // Faster telemetry
-        telemetry.setMsTransmissionInterval(50);
-
         initialPose = pos(-72 + DriveConstants.WIDTH / 2, 12, 180);
         fakeInitialPose = initialPose.minus(pos(3, 0));
 
-        carouselPose = pos(-50.5, -72 + DriveConstants.WIDTH / 2, 90);
-        preCarouselPose = carouselPose.plus(pos(1.5, 0));
-        fakePreCarouselPose = preCarouselPose.minus(pos(0, 3));
+        carouselPose = pos(-53, -72 + DriveConstants.WIDTH / 2, 90);
+        preCarouselPose = carouselPose.plus(pos(3, 0));
+        fakePreCarouselPose = preCarouselPose.minus(pos(0, 4));
         postCarouselPose = carouselPose.plus(pos(0, 5));
 
         elementLeftPose = pos(-72 + DriveConstants.LENGTH / 2, 20.4, 180);
@@ -89,7 +84,7 @@ public abstract class AutonomousMode extends LinearOpMode {
         elementRightPose = elementMidPose.minus(pos(0, 8.4));
 
         hubPose = pos(-72 + DriveConstants.WIDTH / 2, -12, 180);
-        whPose = pos(-72 + DriveConstants.WIDTH / 2, 46, 180);
+        whPose = pos(-72 + DriveConstants.WIDTH / 2, 42, 180);
 
         if (WALL_RUNNER) {
             parkPose = pos(-72 + DriveConstants.WIDTH / 2, 37, 180);
@@ -127,11 +122,13 @@ public abstract class AutonomousMode extends LinearOpMode {
         if (CAROUSEL) {
             log("Initializing: carousel");
             queue(fromHere().lineToLinearHeading(fakePreCarouselPose));
+            // TODO: replace one axis only
             queue(() -> drive.setPoseEstimate(preCarouselPose));
             queue(from(preCarouselPose).lineTo(carouselPose.vec()));
             queue((Runnable) spinner::spin);
             queue(fromHere().lineTo(postCarouselPose.vec()));
             queue(fromHere().lineToLinearHeading(fakeInitialPose));
+            // TODO: replace one axis only
             queue(() -> drive.setPoseEstimate(initialPose));
             queue(initialPose);
         }
@@ -212,6 +209,8 @@ public abstract class AutonomousMode extends LinearOpMode {
         sleep(1000);
         Match.teleOpInitialPose = drive.getPoseEstimate();
         Match.hubPose = hubPose;
+
+        resetInstance();
     }
     // endregion
 
@@ -271,6 +270,10 @@ public abstract class AutonomousMode extends LinearOpMode {
         tasks.clear();
     }
 
+    public static double deg(double degrees) {
+        return Math.toRadians(degrees);
+    }
+
     // Rotate the coordinate plane 90 degrees clockwise (positive y-axis points at the shared hub)
     // Basically converts a point from Cartesian to Roadrunner
     public Pose2d pos(double x, double y) {
@@ -282,7 +285,7 @@ public abstract class AutonomousMode extends LinearOpMode {
     // The positive y-axis represents a heading of 0 degree
     public Pose2d pos(double x, double y, double heading) {
         if (Match.isRed) {
-            return new Pose2d(+y, +x, Math.toRadians(heading + 180));
+            return new Pose2d(+y, +x, -Math.toRadians(heading));
         }
         else {
             return new Pose2d(+y, -x, Math.toRadians(heading));
@@ -344,11 +347,6 @@ public abstract class AutonomousMode extends LinearOpMode {
         if (USE_VISION) {
             guide.stop();
         }
-    }
-
-    protected void log(String message) {
-        telemetry.addLine(message);
-        telemetry.update();
     }
     // endregion
 }

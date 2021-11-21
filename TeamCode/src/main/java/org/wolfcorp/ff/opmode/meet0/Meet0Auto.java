@@ -1,6 +1,8 @@
 package org.wolfcorp.ff.opmode.meet0;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.acmerobotics.roadrunner.path.PathBuilder;
+import com.acmerobotics.roadrunner.path.QuinticSpline;
 
 import org.wolfcorp.ff.opmode.AutonomousMode;
 import org.wolfcorp.ff.opmode.Match;
@@ -15,7 +17,7 @@ public abstract class Meet0Auto extends AutonomousMode {
 
     public Meet0Auto() {
         // shovel is short and in the back
-        hubPose = pos(-48 + DriveConstants.LENGTH / 2, -12, 90);
+        hubPose = pos(-46 + DriveConstants.LENGTH / 2, -12, 90);
         preWhPose = pos(-72 + DriveConstants.WIDTH / 2, 12, 180);
         parkPose = whPose;
     }
@@ -32,10 +34,14 @@ public abstract class Meet0Auto extends AutonomousMode {
 
         log("Robot initialized, preparing task queue");
 
+        //queue(shovel::stayStill);
+
         // *** Spin carousel & go to hub ***
         if (CAROUSEL) {
             log("Initializing: carousel");
             queue(fromHere().lineToLinearHeading(fakePreCarouselPose));
+            //queue(fromHere().lineToLinearHeading(preCarouselPose));
+            // TODO: replace one axis only
             queue(() -> drive.setPoseEstimate(preCarouselPose));
             queue(from(preCarouselPose).lineTo(carouselPose.vec()));
             queue((Runnable) spinner::spin);
@@ -49,14 +55,19 @@ public abstract class Meet0Auto extends AutonomousMode {
         log("Initializing: hub & score");
         queue(fromHere().lineToLinearHeading(hubPose));
         queue(() -> {
-            shovel.down();
-            sleep(500);
-            shovel.up();
+            try {
+                shovel.down();
+                sleep(250);
+                shovel.up();
+            } catch (InterruptedException e) {
+                // FIXME: properly handle (define custom functional interface that throws)
+                e.printStackTrace();
+            }
         });
 
         // *** Park ***
         log("Initializing: park");
-        queue(fromHere().lineToLinearHeading(preWhPose).lineTo(parkPose.vec()));
+        queue(fromHere().splineToSplineHeading(preWhPose, deg(0)).lineTo(parkPose.vec()));
 
         // *** START ***
         log("Task queue initialized, waiting for start");
@@ -67,5 +78,7 @@ public abstract class Meet0Auto extends AutonomousMode {
         sleep(1000);
         Match.teleOpInitialPose = drive.getPoseEstimate();
         Match.hubPose = hubPose;
+
+        resetInstance();
     }
 }

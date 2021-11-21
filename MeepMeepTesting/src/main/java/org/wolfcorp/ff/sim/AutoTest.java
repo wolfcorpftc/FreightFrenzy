@@ -21,8 +21,8 @@ public class AutoTest {
     protected Pose2d whPose; // load freight from warehouse
     protected Pose2d parkPose; // where the robot parks
 
-    protected double length = 13.55;
-    protected double width = 12;
+    protected double length = 15;
+    protected double width = 13;
 
     protected boolean isRed = true;
     protected boolean isWallRunner = true;
@@ -42,7 +42,7 @@ public class AutoTest {
         elementRightPose = elementMidPose.minus(pos(0, 8.4));
 
         hubPose = pos(-72 + width / 2, -12, 180);
-        whPose = pos(-72 + width / 2, 46, 180);
+        whPose = pos(-72 + width / 2, 42, 180);
 
         if (isWallRunner) {
             parkPose = pos(-72 + width / 2, 37, 180);

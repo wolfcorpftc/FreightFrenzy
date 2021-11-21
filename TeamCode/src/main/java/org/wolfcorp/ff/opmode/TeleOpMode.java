@@ -1,5 +1,7 @@
 package org.wolfcorp.ff.opmode;
 
+import static org.wolfcorp.ff.opmode.AutonomousMode.deg;
+
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -11,8 +13,9 @@ import org.wolfcorp.ff.robot.CarouselSpinner;
 import org.wolfcorp.ff.robot.Drivetrain;
 import org.wolfcorp.ff.robot.Shovel;
 
-public abstract class TeleOpMode extends LinearOpMode {
+public abstract class TeleOpMode extends OpMode {
     private boolean blockCheckpoint = false;
+    private boolean intakeCheckpoint = false;
 
     public TeleOpMode() {
         Match.isRed = this.getClass().getSimpleName().contains("Red");
@@ -40,13 +43,15 @@ public abstract class TeleOpMode extends LinearOpMode {
         timer.reset();
         while (opModeIsActive()) {
             // *** Drivetrain ***
+            telemetry.addLine("TeleOp: Pre-drive");
             if(!drive.isBusy()) {
+                telemetry.addLine("TeleOp: Drive");
                 Vector2d input = new Vector2d(
                         //-gamepad1.right_stick_y,
                         //-gamepad1.right_stick_x
                         (gamepad1.dpad_left?0.5:0) - (gamepad1.dpad_right?0.5:0),
                         (gamepad1.dpad_up?0.5:0) - (gamepad1.dpad_down?0.5:0)
-                ).rotated(-drive.getPoseEstimate().getHeading()-90);
+                ).rotated(-drive.getPoseEstimate().getHeading() - deg(90));
 
 //                drive.drive(
 //                        -input.getX(),
@@ -57,15 +62,15 @@ public abstract class TeleOpMode extends LinearOpMode {
 //                );
 //                drive.setWeightedDrivePower(
 //                        new Pose2d(
-//                                input.getY(),
-//                                input.getX(),
+//                                input.getY() - gamepad1.right_stick_y,
+//                                input.getX() + gamepad1.right_stick_x,
 //                                -gamepad1.left_stick_x
 //                        )
 //                );
 
                 drive.drive(
-                        -gamepad1.right_stick_y - input.getY(),
-                        gamepad1.right_stick_x + input.getX(),
+                        gamepad1.right_stick_y + input.getY(),
+                        -gamepad1.right_stick_x - input.getX(),
                         gamepad1.left_stick_x,
                         1,
                         gamepad1.right_trigger > 0.8
@@ -111,20 +116,30 @@ public abstract class TeleOpMode extends LinearOpMode {
             }
 
             // *** Shovel ***
-            if (gamepad2.y) {
-                // shovel
+            if (gamepad2.y && !intakeCheckpoint) {
+                intakeCheckpoint = true;
+                // Go up
                 shovel.recordRestPos();
-                if (gamepad2.left_bumper) {
-                    shovel.setPower(0.4);
+                //shovel.setFree();
+                if (gamepad2.right_bumper) {
+                    //shovel.setPower(-0.4);
                 } else {
-                    shovel.setPower(0.1);
+                    shovel.up();
+                    //shovel.setPower(-0.025);
                 }
-            } else if (gamepad2.a && !gamepad2.start) {
-                shovel.setPower(-0.05);
+            } else if (gamepad2.a && !gamepad2.start && !intakeCheckpoint) {
+                intakeCheckpoint = true;
+                // Go down
                 shovel.recordRestPos();
+                //shovel.setFree();
+                shovel.down();
+                //shovel.setPower(0.025);
             } else {
-                shovel.eliminateDrift();
                 shovel.setPower(0);
+            }
+
+            if (!gamepad2.a && !gamepad2.y) {
+                intakeCheckpoint = false;
             }
 
             telemetry.addData("shovel", shovel.getCurrentPos());
@@ -133,19 +148,22 @@ public abstract class TeleOpMode extends LinearOpMode {
             drive.update(); // odometry update
             telemetry.addData("LF Power", drive.leftFront.getPower());
             telemetry.addData("LF Current", drive.leftFront.getCurrent(CurrentUnit.MILLIAMPS));
+            telemetry.addData("LF Position", drive.leftFront.getCurrentPosition());
+
             telemetry.addData("LB Power", drive.leftBack.getPower());
             telemetry.addData("LB Current", drive.leftBack.getCurrent(CurrentUnit.MILLIAMPS));
+            telemetry.addData("LB Position", drive.leftBack.getCurrentPosition());
+
             telemetry.addData("RF Power", drive.rightFront.getPower());
             telemetry.addData("RF Current", drive.rightFront.getCurrent(CurrentUnit.MILLIAMPS));
+            telemetry.addData("RF Position", drive.rightFront.getCurrentPosition());
+
             telemetry.addData("RB Power", drive.rightBack.getPower());
             telemetry.addData("RB Current", drive.rightBack.getCurrent(CurrentUnit.MILLIAMPS));
+            telemetry.addData("RB Position", drive.rightBack.getCurrentPosition());
+
             telemetry.addData("Heading", drive.getPoseEstimate().getHeading());
             telemetry.update();
         }
-    }
-
-    public void log(String s) {
-        telemetry.addLine(s);
-        telemetry.update();
     }
 }
