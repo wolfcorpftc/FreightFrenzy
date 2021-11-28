@@ -9,10 +9,13 @@ import com.acmerobotics.roadrunner.trajectory.Trajectory;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.wolfcorp.ff.robot.Drivetrain;
+import org.wolfcorp.ff.robot.Intake;
+import org.wolfcorp.ff.robot.Outtake;
 
 public abstract class TeleOpMode extends OpMode {
     private boolean maskCheckpoint = false;
-    private boolean intakeCheckpoint = false;
+    private boolean maskIntake = false;
+    private boolean intakeClick = true;
 
     public TeleOpMode() {
         Match.isRed = this.getClass().getSimpleName().contains("Red");
@@ -24,6 +27,8 @@ public abstract class TeleOpMode extends OpMode {
     public void runOpMode() throws InterruptedException {
         FtcDashboard dashboard = FtcDashboard.getInstance();
         Drivetrain drive = new Drivetrain(hardwareMap);
+        Intake intake = new Intake(hardwareMap);
+        Outtake outtake = new Outtake(hardwareMap);
         // TODO: uncomment after spinner connected
         //CarouselSpinner spinner = new CarouselSpinner(hardwareMap, this::sleep);
         ElapsedTime timer = new ElapsedTime();
@@ -112,7 +117,30 @@ public abstract class TeleOpMode extends OpMode {
                 maskCheckpoint = false;
             }
 
+            if (gamepad2.b && !gamepad2.start && !maskIntake) {
+                maskIntake = true;
+                intake.in();
+            } else if (gamepad2.x && !maskIntake) {
+                maskIntake = true;
+                intake.out();
+            }
+
+            if (!gamepad2.b && !gamepad2.x){
+                maskIntake = false;
+            }
+
+            if (gamepad2.y) {
+                outtake.extend();
+            } else if (gamepad2.a) {
+                outtake.retract();
+            } else {
+                outtake.setPower(0);
+                //outtake.eliminateDrift();
+            }
+
             drive.update(); // odometry update
+            telemetry.addData("Intake Pos", intake.getPos());
+            telemetry.addData("Outtake Pos", outtake.getPos());
             telemetry.addData("LF Power", drive.leftFront.getPower());
             telemetry.addData("LF Current", drive.leftFront.getCurrent(CurrentUnit.MILLIAMPS));
             telemetry.addData("LF Position", drive.leftFront.getCurrentPosition());
