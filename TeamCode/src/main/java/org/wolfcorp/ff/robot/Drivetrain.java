@@ -282,11 +282,11 @@ public class Drivetrain extends MecanumDrive {
     }
 
     @Override
-    public void setMotorPowers(double v, double v1, double v2, double v3) {
-        leftFront.setPower(v);
-        leftBack.setPower(v1);
-        rightBack.setPower(v2);
-        rightFront.setPower(v3);
+    public void setMotorPowers(double lf, double lb, double rb, double rf) {
+        leftFront.setPower(lf);
+        leftBack.setPower(lb);
+        rightBack.setPower(rb);
+        rightFront.setPower(rf);
     }
 
     @Override

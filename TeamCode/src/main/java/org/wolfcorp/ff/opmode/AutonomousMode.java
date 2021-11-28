@@ -71,7 +71,12 @@ public abstract class AutonomousMode extends OpMode {
 
     // region Robot Logic
     public AutonomousMode() {
-        initialPose = pos(-72 + DriveConstants.WIDTH / 2, 12, 180);
+        if (Match.isRed) {
+            initialPose = pos(-72 + DriveConstants.WIDTH / 2, 12, 180);
+        }
+        else {
+            initialPose = pos(-72 + DriveConstants.WIDTH / 2, 12, 0);
+        }
         fakeInitialPose = initialPose.minus(pos(3, 0));
 
         carouselPose = pos(-53, -72 + DriveConstants.WIDTH / 2, 90);
@@ -263,7 +268,7 @@ public abstract class AutonomousMode extends OpMode {
             if (task instanceof TrajectorySequence) {
                 drive.follow((TrajectorySequence) task);
             }
-            else if (task instanceof Runnable){
+            else if (task instanceof Runnable) {
                 ((Runnable) task).run();
             }
         }

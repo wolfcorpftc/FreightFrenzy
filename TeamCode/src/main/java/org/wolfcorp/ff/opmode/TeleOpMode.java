@@ -4,17 +4,14 @@ import static org.wolfcorp.ff.opmode.AutonomousMode.deg;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
-import org.wolfcorp.ff.robot.CarouselSpinner;
 import org.wolfcorp.ff.robot.Drivetrain;
-import org.wolfcorp.ff.robot.Shovel;
 
 public abstract class TeleOpMode extends OpMode {
-    private boolean blockCheckpoint = false;
+    private boolean maskCheckpoint = false;
     private boolean intakeCheckpoint = false;
 
     public TeleOpMode() {
@@ -27,14 +24,13 @@ public abstract class TeleOpMode extends OpMode {
     public void runOpMode() throws InterruptedException {
         FtcDashboard dashboard = FtcDashboard.getInstance();
         Drivetrain drive = new Drivetrain(hardwareMap);
-        Shovel shovel = new Shovel(hardwareMap);
-        CarouselSpinner spinner = new CarouselSpinner(hardwareMap, this::sleep);
+        // TODO: uncomment after spinner connected
+        //CarouselSpinner spinner = new CarouselSpinner(hardwareMap, this::sleep);
         ElapsedTime timer = new ElapsedTime();
         ElapsedTime spinnerDelay = new ElapsedTime();
 
         log("Initializing robot");
         drive.setPoseEstimate(Match.teleOpInitialPose);
-        shovel.recordRestPos();
 
         log("Robot initialized, waiting for start");
         waitForStart();
@@ -78,20 +74,21 @@ public abstract class TeleOpMode extends OpMode {
             }
 
             // *** Carousel Spinner ***
-            if (gamepad2.left_bumper && spinnerDelay.milliseconds() > 200) {
-                spinnerDelay.reset();
-                if (spinner.isOff()) {
-                    spinner.on();
-                }
-                else {
-                    spinner.off();
-                }
-            }
+            // TODO: uncomment after spinner is connected
+//            if (gamepad2.left_bumper && spinnerDelay.milliseconds() > 200) {
+//                spinnerDelay.reset();
+//                if (spinner.isOff()) {
+//                    spinner.on();
+//                }
+//                else {
+//                    spinner.off();
+//                }
+//            }
 
             // *** Driver Assist: Checkpoint ***
             // Go to checkpoint / hub
-            if (gamepad1.b && !gamepad1.start && !blockCheckpoint){
-                blockCheckpoint = true;
+            if (gamepad1.b && !gamepad1.start && !maskCheckpoint){
+                maskCheckpoint = true;
                 System.out.println("b");
                 Trajectory toHub = drive.trajectoryBuilder(drive.getPoseEstimate())
                         .lineToLinearHeading(Match.hubPose)
@@ -100,8 +97,8 @@ public abstract class TeleOpMode extends OpMode {
             }
 
             // Set current pose as checkpoint / hub
-            if (gamepad1.y && !blockCheckpoint){
-                blockCheckpoint = true;
+            if (gamepad1.y && !maskCheckpoint){
+                maskCheckpoint = true;
                 drive.setPoseEstimate(Match.hubPose);
             }
 
@@ -112,38 +109,8 @@ public abstract class TeleOpMode extends OpMode {
 
             // Unblock checkpoint functionalities when no relevant inputs are pressed
             if ((!gamepad1.b || (gamepad1.b && gamepad1.start)) && !gamepad1.y && !gamepad1.x){
-                blockCheckpoint = false;
+                maskCheckpoint = false;
             }
-
-            // *** Shovel ***
-            if (gamepad2.y && !intakeCheckpoint) {
-                intakeCheckpoint = true;
-                // Go up
-                shovel.recordRestPos();
-                //shovel.setFree();
-                if (gamepad2.right_bumper) {
-                    //shovel.setPower(-0.4);
-                } else {
-                    shovel.up();
-                    //shovel.setPower(-0.025);
-                }
-            } else if (gamepad2.a && !gamepad2.start && !intakeCheckpoint) {
-                intakeCheckpoint = true;
-                // Go down
-                shovel.recordRestPos();
-                //shovel.setFree();
-                shovel.down();
-                //shovel.setPower(0.025);
-            } else {
-                shovel.setPower(0);
-            }
-
-            if (!gamepad2.a && !gamepad2.y) {
-                intakeCheckpoint = false;
-            }
-
-            telemetry.addData("shovel", shovel.getCurrentPos());
-            telemetry.addData("shovelTarget", shovel.getRestPos());
 
             drive.update(); // odometry update
             telemetry.addData("LF Power", drive.leftFront.getPower());
