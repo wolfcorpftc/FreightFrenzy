@@ -9,10 +9,10 @@ public abstract class Detector extends OpenCvPipeline {
 
     public Detector(OpenCvCamera cam) {
         camera = cam;
-        camera.setPipeline(this);
     }
 
     public void start() {
+        camera.setPipeline(this);
         camera.startStreaming(320, 240, OpenCvCameraRotation.UPRIGHT);
     }
 

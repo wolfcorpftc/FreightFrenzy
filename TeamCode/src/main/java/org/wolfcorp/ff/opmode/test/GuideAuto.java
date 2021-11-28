@@ -10,6 +10,7 @@ public class GuideAuto extends AutonomousMode {
     public void runOpMode() throws InterruptedException {
         initVision();
         guide.start();
+        waitForStart();
         while (opModeIsActive()) {
             // Guide annotates the stream
             idle();

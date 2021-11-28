@@ -10,12 +10,13 @@ public class BarcodeAuto extends AutonomousMode {
     public void runOpMode() throws InterruptedException {
         initVision();
         scanner.start();
+        waitForStart();
         while (opModeIsActive()) {
             // Scanner already does the logging
             idle();
             if (Thread.interrupted()) {
                 scanner.stop();
-                throw new InterruptedException();
+                break;
             }
         }
     }

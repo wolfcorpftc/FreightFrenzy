@@ -221,7 +221,7 @@ public abstract class AutonomousMode extends OpMode {
 
     // region Vision Initialization
     protected void initVision() {
-        initVisionPassthru();
+        initVisionWebcam();
         scanner = new BarcodeScanner(camera, telemetry);
         // TODO: compare TFWarehouseGuide and WarehouseGuide performance
         guide = new WarehouseGuide(camera);

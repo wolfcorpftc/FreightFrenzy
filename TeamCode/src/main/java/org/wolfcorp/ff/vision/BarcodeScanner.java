@@ -13,7 +13,7 @@ import org.openftc.easyopencv.OpenCvWebcam;
 import java.util.concurrent.CountDownLatch;
 
 public class BarcodeScanner extends Detector {
-    private Mat mat;
+    private Mat mat = new Mat();
     private Rect leftROI, midROI, rightROI;
     private Mat leftMat, midMat, rightMat;
     private Telemetry telemetry;
@@ -33,8 +33,8 @@ public class BarcodeScanner extends Detector {
         Imgproc.cvtColor(mat, mat, Imgproc.COLOR_RGB2HSV);
 
         // TODO: figure out lower and upper bounds for shipping element
-        Scalar lowerBound = new Scalar(0,0,0);
-        Scalar upperBound = new Scalar(0,0,0);
+        Scalar lowerBound = new Scalar(30,100,100);
+        Scalar upperBound = new Scalar(80,255,255);
         Core.inRange(mat, lowerBound, upperBound, mat);
 
         // TODO: switch to exact ROIs once we have actual camera placement
@@ -58,9 +58,9 @@ public class BarcodeScanner extends Detector {
         midMat = mat.submat(midROI);
         rightMat = mat.submat(rightROI);
 
-        double leftValue = Core.mean(leftMat).val[2];
-        double midValue = Core.mean(midMat).val[2];
-        double rightValue = Core.mean(rightMat).val[2];
+        double leftValue = Core.sumElems(leftMat).val[0];
+        double midValue = Core.sumElems(midMat).val[0];
+        double rightValue = Core.sumElems(rightMat).val[0];
         telemetry.addData("Left", leftValue);
         telemetry.addData("Middle", midValue);
         telemetry.addData("Right", rightValue);
