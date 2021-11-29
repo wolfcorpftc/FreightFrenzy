@@ -34,7 +34,7 @@ public abstract class Meet0Auto extends AutonomousMode {
 
         log("Robot initialized, preparing task queue");
 
-        //queue(shovel::stayStill);
+//        queue(shovel::stayStill);
 
         // *** Spin carousel & go to hub ***
         if (CAROUSEL) {

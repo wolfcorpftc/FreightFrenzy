@@ -15,6 +15,7 @@ import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequence;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequenceBuilder;
 import org.wolfcorp.ff.vision.Barcode;
 import org.wolfcorp.ff.vision.BarcodeScanner;
+import org.wolfcorp.ff.vision.Guide;
 import org.wolfcorp.ff.vision.VuforiaNavigator;
 import org.wolfcorp.ff.vision.WarehouseGuide;
 
@@ -39,7 +40,7 @@ public abstract class AutonomousMode extends OpMode {
 
     // region Vision Fields
     protected BarcodeScanner scanner;
-    protected WarehouseGuide guide;
+    protected Guide guide;
     protected VuforiaNavigator navigator;
     protected Barcode barcode;
     // endregion

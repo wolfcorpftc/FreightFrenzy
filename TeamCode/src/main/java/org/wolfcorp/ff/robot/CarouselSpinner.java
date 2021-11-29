@@ -19,7 +19,7 @@ public class CarouselSpinner {
     private Consumer<Long> sleep;
 
     public CarouselSpinner(HardwareMap hwMap, Consumer<Long> s) {
-        servo = hwMap.get(CRServo.class, "carouselSpinner");
+        servo = hwMap.get(CRServo.class, "spinner");
         sleep = s;
         if (Match.isRed) {
             servo.setDirection(CRServo.Direction.REVERSE);

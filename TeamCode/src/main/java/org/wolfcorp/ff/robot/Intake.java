@@ -5,12 +5,13 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.wolfcorp.ff.opmode.OpMode;
 
 public class Intake {
-    public static double  TICKS_PER_REV = 103.8;
-    public static int INTAKE_MAX_SPEED = 1620;
-    public static int INTAKE_OPTIMAL_SPEED = (int) (800 * 0.8);
+    public static double TICKS_PER_REV = 103.8;
+    public static double INTAKE_MAX_SPEED = 1620;
+    public static double INTAKE_OPTIMAL_SPEED = 640 / 60.0 * TICKS_PER_REV;
 
     private DcMotorEx motor;
 
@@ -22,24 +23,33 @@ public class Intake {
         motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 
+    /**
+     * Toggle the intake to take in game elements. Intended for TeleOp.
+     */
     public void in() {
         if (isOn()) {
             off();
         }
         else {
-            motor.setVelocity(INTAKE_OPTIMAL_SPEED / 60.0 * TICKS_PER_REV);
+            motor.setVelocity(INTAKE_OPTIMAL_SPEED);
         }
     }
 
+    /**
+     * Toggle the intake to repel game elements. Intended for TeleOp.
+     */
     public void out() {
         if (isOn()) {
             off();
         }
         else {
-            motor.setVelocity(-INTAKE_OPTIMAL_SPEED / 60.0 * TICKS_PER_REV);
+            motor.setVelocity(-INTAKE_OPTIMAL_SPEED);
         }
     }
 
+    /**
+     * Turn intake off
+     */
     public void off() {
         motor.setVelocity(0);
     }
@@ -48,8 +58,11 @@ public class Intake {
         return Math.abs(motor.getVelocity()) > 10;
     }
 
-    // IN RPM
-    public void setVelocity(double vel) {
+    /**
+     * Set motor velocity in RPM
+     * @param vel velocity in RPM
+     */
+    public void setVelocityRPM(double vel) {
         motor.setVelocity(vel / 60.0 * TICKS_PER_REV);
     }
 
@@ -67,5 +80,9 @@ public class Intake {
 
     public int getPos() {
         return motor.getCurrentPosition();
+    }
+
+    public DcMotor getMotor() {
+        return motor;
     }
 }

@@ -1,5 +1,7 @@
 package org.wolfcorp.ff.vision;
 
+import androidx.annotation.Nullable;
+
 public class PolarPoint {
     public final double r;
     public final double theta;
@@ -19,5 +21,14 @@ public class PolarPoint {
 
     public double getAngle() {
         return theta;
+    }
+
+    @Override
+    public boolean equals(@Nullable Object obj) {
+        if (!(obj instanceof PolarPoint)) {
+            return false;
+        }
+        PolarPoint pp = (PolarPoint) obj;
+        return r == pp.r && theta == pp.theta;
     }
 }

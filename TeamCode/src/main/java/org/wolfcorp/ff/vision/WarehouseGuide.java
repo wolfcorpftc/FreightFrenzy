@@ -12,7 +12,7 @@ import org.openftc.easyopencv.OpenCvCamera;
 
 import java.util.ArrayList;
 
-public class WarehouseGuide extends Detector {
+public class WarehouseGuide extends Detector implements Guide {
     public static final PolarPoint INVALID_RESULT = new PolarPoint(Double.MIN_VALUE, Double.MIN_VALUE);
     // TODO: Find an empirical value
     public static final double DIST_FACTOR = 1;
@@ -114,18 +114,19 @@ public class WarehouseGuide extends Detector {
         return input;
     }
 
-    public PolarPoint getTargetPoint() throws InterruptedException {
+    public PolarPoint navigate() throws InterruptedException {
+        // no need to use .equals() actually
         if (targetPoint == INVALID_RESULT) {
             latch.await();
         }
         return targetPoint;
     }
 
-    public Freight getTargetType() {
+    public Freight getTarget() {
         return target;
     }
 
-    public void setTargetType(Freight f) {
+    public void setTarget(Freight f) {
         synchronized (updateLock) {
             latch.reset();
             target = f;
