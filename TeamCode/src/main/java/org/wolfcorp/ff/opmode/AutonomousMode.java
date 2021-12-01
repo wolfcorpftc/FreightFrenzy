@@ -11,6 +11,8 @@ import org.wolfcorp.ff.BuildConfig;
 import org.wolfcorp.ff.robot.CarouselSpinner;
 import org.wolfcorp.ff.robot.DriveConstants;
 import org.wolfcorp.ff.robot.Drivetrain;
+import org.wolfcorp.ff.robot.Intake;
+import org.wolfcorp.ff.robot.Outtake;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequence;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequenceBuilder;
 import org.wolfcorp.ff.vision.Barcode;
@@ -28,6 +30,8 @@ public abstract class AutonomousMode extends OpMode {
     protected Drivetrain drive = null;
     protected CarouselSpinner spinner = null;
     protected OpenCvCamera camera = null;
+    protected Intake intake = null;
+    protected Outtake outtake = null;
     // endregion
 
     // region Configuration
@@ -73,10 +77,10 @@ public abstract class AutonomousMode extends OpMode {
     // region Robot Logic
     public AutonomousMode() {
         if (Match.isRed) {
-            initialPose = pos(-72 + DriveConstants.WIDTH / 2, 12, 180);
+            initialPose = pos(-72 + DriveConstants.WIDTH / 2, DriveConstants.LENGTH / 2, 0);
         }
         else {
-            initialPose = pos(-72 + DriveConstants.WIDTH / 2, 12, 0);
+            initialPose = pos(-72 + DriveConstants.WIDTH / 2, DriveConstants.LENGTH / 2, 180);
         }
         fakeInitialPose = initialPose.minus(pos(3, 0));
 
@@ -119,7 +123,8 @@ public abstract class AutonomousMode extends OpMode {
 
         drive = new Drivetrain(hardwareMap);
         drive.setPoseEstimate(initialPose);
-
+        intake = new Intake(hardwareMap);
+        outtake = new Outtake(hardwareMap);
         spinner = new CarouselSpinner(hardwareMap, this::sleep);
 
         log("Robot Initialized, preparing task queue");
@@ -145,7 +150,6 @@ public abstract class AutonomousMode extends OpMode {
         TrajectorySequence elementMidSeq = fromHere().lineToLinearHeading(elementMidPose).build();
         TrajectorySequence elementRightSeq = fromHere().lineToLinearHeading(elementRightPose).build();
         queue(() -> {
-            // TODO: pick up shipping element
         });
 
         queue("hubSeq");

@@ -12,7 +12,7 @@ import java.util.function.Consumer;
 public class CarouselSpinner {
     public static final double SPIN_TIME = 3500; // millis
     public static final Long WAIT_TIME = 1000L; // millis
-    public static final double TURN_SPEED = 0.7;
+    public static final double TURN_SPEED = 1;
 
     private CRServo servo;
     private ElapsedTime runtime = new ElapsedTime();
