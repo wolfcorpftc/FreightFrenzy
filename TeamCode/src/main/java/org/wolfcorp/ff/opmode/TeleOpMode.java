@@ -41,6 +41,7 @@ public abstract class TeleOpMode extends OpMode {
         drive.setPoseEstimate(Match.teleOpInitialPose);
 
         log("Robot initialized, waiting for start");
+        outtake.getServo().setPosition(outtake.DUMP_IN_POSITION);
         waitForStart();
 
         log("Start!");
@@ -171,6 +172,8 @@ public abstract class TeleOpMode extends OpMode {
             }
 
             drive.update(); // odometry update
+            telemetry.addData("Dump Pos", outtake.getServo().getPosition());
+
             telemetry.addData("Intake Current Pos", intake.getPos());
             telemetry.addData("Intake Target Pos", intake.getMotor().getTargetPosition());
 

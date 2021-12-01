@@ -4,6 +4,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.wolfcorp.ff.opmode.OpMode;
@@ -14,17 +15,17 @@ import java.util.concurrent.atomic.AtomicReference;
 public class Outtake {
     public static double TICKS_PER_REV = 1425.1;
     public static int OUTTAKE_MAX_SPEED = 117;
-    public static double OUTTAKE_UP_SPEED = 80 / 60.0 * TICKS_PER_REV;
-    public static double OUTTAKE_DOWN_SPEED = -80 / 60.0 * TICKS_PER_REV;
+    public static double OUTTAKE_UP_SPEED = 100 / 60.0 * TICKS_PER_REV;
+    public static double OUTTAKE_DOWN_SPEED = -100 / 60.0 * TICKS_PER_REV;
 
     public static int TOP_POSITION = 2000;
     public static int MID_POSITION = 1100;
-    public static int BOT_POSITION = 20;
+    public static int BOT_POSITION = 250;
 
     public static int MIN_POSITION = -100;
     public static int MAX_POSITION = 2100;
 
-    public static double DUMP_IN_POSITION = 1.0;
+    public static double DUMP_IN_POSITION = 0.9;
     public static double DUMP_OUT_POSITION = 0.6;
 
     public static final int MARGIN_OF_ERROR = 10; // margin of error
