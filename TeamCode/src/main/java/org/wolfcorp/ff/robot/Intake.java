@@ -3,10 +3,6 @@ package org.wolfcorp.ff.robot;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.util.ElapsedTime;
-
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.wolfcorp.ff.opmode.OpMode;
 
 public class Intake {
     public static double TICKS_PER_REV = 103.8;
@@ -24,7 +20,7 @@ public class Intake {
     }
 
     /**
-     * Toggle the intake to take in game elements. Intended for TeleOp.
+     * Toggles the intake to take in game elements. Intended for TeleOp.
      */
     public void in() {
         if (isOn()) {
@@ -36,7 +32,7 @@ public class Intake {
     }
 
     /**
-     * Toggle the intake to repel game elements. Intended for TeleOp.
+     * Toggles the intake to repel game elements. Intended for TeleOp.
      */
     public void out() {
         if (isOn()) {
@@ -48,12 +44,15 @@ public class Intake {
     }
 
     /**
-     * Turn intake off
+     * Turns intake off
      */
     public void off() {
         motor.setVelocity(0);
     }
 
+    /**
+     * @return whether the intake motor is on
+     */
     public boolean isOn() {
         return Math.abs(motor.getVelocity()) > 10;
     }
@@ -64,22 +63,6 @@ public class Intake {
      */
     public void setVelocityRPM(double vel) {
         motor.setVelocity(vel / 60.0 * TICKS_PER_REV);
-    }
-
-    public double getVelocity() {
-        return motor.getVelocity();
-    }
-
-    public void setPower(double p) {
-        motor.setPower(p);
-    }
-
-    public double getPower() {
-        return motor.getPower();
-    }
-
-    public int getPos() {
-        return motor.getCurrentPosition();
     }
 
     public DcMotor getMotor() {

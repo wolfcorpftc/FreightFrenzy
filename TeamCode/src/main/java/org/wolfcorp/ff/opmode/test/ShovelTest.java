@@ -3,7 +3,7 @@ package org.wolfcorp.ff.opmode.test;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.wolfcorp.ff.opmode.AutonomousMode;
+import org.wolfcorp.ff.opmode.Match;
 import org.wolfcorp.ff.opmode.meet0.Meet0Auto;
 import org.wolfcorp.ff.robot.Shovel;
 
@@ -11,28 +11,29 @@ import org.wolfcorp.ff.robot.Shovel;
 public class ShovelTest extends Meet0Auto {
     @Override
     public void runOpMode() throws InterruptedException {
-        log("Initializing robot");
+        Match.setupTelemetry();
+        Match.status("Initializing robot");
         shovel = new Shovel(hardwareMap);
 
-        log("Robot initialized, waiting for start");
+        Match.status("Robot initialized, waiting for start");
         waitForStart();
 
-        log("Request shovel to stay still");
+        Match.status("Request shovel to stay still");
         shovel.setPower(0);
 
-        log("Wait 5 seconds");
+        Match.status("Wait 5 seconds");
         waitFor(5);
 
-        log("Shovel down");
+        Match.status("Shovel down");
         shovel.down();
 
-        log("Wait 5 seconds");
+        Match.status("Wait 5 seconds");
         waitFor(5);
 
-        log("Shovel up");
+        Match.status("Shovel up");
         shovel.up();
 
-        log("Done");
+        Match.status("Done");
     }
 
     public void waitFor(double seconds) {

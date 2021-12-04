@@ -6,12 +6,14 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Hardware;
 
+import org.wolfcorp.ff.opmode.Match;
 import org.wolfcorp.ff.robot.Outtake;
 
 @Autonomous(name = "Dump Test", group = "test")
 public class DumpTest extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
+        Match.setupTelemetry();
         Servo servo = hardwareMap.get(Servo.class, "dump");
 
         waitForStart();

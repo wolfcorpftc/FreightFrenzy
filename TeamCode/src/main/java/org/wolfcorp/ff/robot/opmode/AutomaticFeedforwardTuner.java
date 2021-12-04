@@ -1,5 +1,9 @@
 package org.wolfcorp.ff.robot.opmode;
 
+import static org.wolfcorp.ff.robot.DriveConstants.MAX_RPM;
+import static org.wolfcorp.ff.robot.DriveConstants.RUN_USING_ENCODER;
+import static org.wolfcorp.ff.robot.DriveConstants.rpmToVelocity;
+
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
@@ -16,10 +20,6 @@ import org.wolfcorp.ff.robot.util.RegressionUtil;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.wolfcorp.ff.robot.DriveConstants.MAX_RPM;
-import static org.wolfcorp.ff.robot.DriveConstants.RUN_USING_ENCODER;
-import static org.wolfcorp.ff.robot.DriveConstants.rpmToVelocity;
 
 /*
  * Op mode for computing kV, kStatic, and kA from various drive routines. For the curious, here's an

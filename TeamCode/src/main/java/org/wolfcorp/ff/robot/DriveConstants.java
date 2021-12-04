@@ -48,8 +48,8 @@ public class DriveConstants {
     public static double WHEEL_RADIUS = 1.88976; // in
     public static double TICKS_PER_INCH = TICKS_PER_REV / (2 * Math.PI * WHEEL_RADIUS);;
     public static double GEAR_RATIO = 1; // output (wheel) speed / input (motor) speed
-    public static double TRACK_WIDTH = 12; // in
-    public static double WIDTH = 13.75;
+    public static double TRACK_WIDTH = 11.25; // in
+    public static double WIDTH = 13.5;
     public static double LENGTH = 15;
 
     /*
@@ -91,10 +91,10 @@ public class DriveConstants {
 
      */
     // TODO: tune constants
-    public static double MAX_VEL = 35.9;
-    public static double MAX_ACCEL = 35.9;
-    public static double MAX_ANG_VEL = 4.0956;
-    public static double MAX_ANG_ACCEL = 4.0956;
+    public static double MAX_VEL = 56.2;
+    public static double MAX_ACCEL = 56.2;
+    public static double MAX_ANG_VEL = 5.5;
+    public static double MAX_ANG_ACCEL = 5.5;
 
     public static double encoderTicksToInches(double ticks) {
         return WHEEL_RADIUS * 2 * Math.PI * GEAR_RATIO * ticks / TICKS_PER_REV;

@@ -4,5 +4,5 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
 import org.wolfcorp.ff.opmode.AutonomousMode;
 
-@Autonomous(name = "Red Carousel Wall-runner")
+@Autonomous(name = "Red Carousel Wall-runner", group = "!main")
 public class RedCarouselWRAuto extends AutonomousMode {}

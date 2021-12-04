@@ -1,27 +1,17 @@
 package org.wolfcorp.ff.vision;
 
-import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.hardwareMap;
-
-import android.annotation.SuppressLint;
-
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
-import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
 import org.opencv.core.Point;
-import org.opencv.core.Scalar;
-import org.opencv.imgproc.Imgproc;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
-public class TFWarehouseGuide {
-
+public class TFWarehouseGuide implements Guide {
     /* Note: This sample uses the all-objects Tensor Flow model (FreightFrenzy_BCDM.tflite), which contains
      * the following 4 detectable objects
      *  0: Ball,
@@ -40,17 +30,14 @@ public class TFWarehouseGuide {
             "Duck",
             "Marker"
     };
-    public static final PolarPoint INVALID_RESULT = new PolarPoint(Double.MIN_VALUE, Double.MIN_VALUE);
 
-    private VuforiaLocalizer vuforia;
+    public static final PolarPoint FALLBACK = new PolarPoint(3, 0);
+
     private TFObjectDetector tfod;
-    private Telemetry telemetry;
-    private String targetLabel = "Cube";
+    private String targetLabel = "Ball";
+    private PolarPoint lastNavigation = FALLBACK;
 
-    @SuppressLint("DefaultLocale")
-    public TFWarehouseGuide(VuforiaLocalizer localizer, HardwareMap hardwareMap, Telemetry tl) {
-        vuforia = localizer;
-        telemetry = tl;
+    public TFWarehouseGuide(VuforiaLocalizer localizer, HardwareMap hardwareMap) {
         // The TFObjectDetector uses the camera frames from the VuforiaLocalizer, so we create that
         // first.
         int tfodMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
@@ -59,7 +46,7 @@ public class TFWarehouseGuide {
         tfodParameters.minResultConfidence = 0.8f;
         tfodParameters.isModelTensorFlow2 = true;
         tfodParameters.inputSize = 320;
-        tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
+        tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, localizer);
         tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABELS);
 
         // The TensorFlow software will scale the input images from the camera to a lower resolution.
@@ -71,12 +58,16 @@ public class TFWarehouseGuide {
         tfod.setZoom(2.5, 16.0/9.0);
     }
 
-    public TFWarehouseGuide(Freight f,VuforiaLocalizer localizer, HardwareMap hardwareMap, Telemetry tl) {
-        this(localizer, hardwareMap, tl);
-        setTargetType(f);
+    public TFWarehouseGuide(VuforiaLocalizer localizer, HardwareMap hardwareMap, Freight f) {
+        this(localizer, hardwareMap);
+        setTarget(f);
     }
 
-    public void setTargetType(Freight f) {
+    /**
+     * Sets the desired target freight type.
+     * @param f desired target freight type
+     */
+    public void setTarget(Freight f) {
         if (f == Freight.SILVER) {
             targetLabel = "Ball";
         }
@@ -85,39 +76,57 @@ public class TFWarehouseGuide {
         }
     }
 
-    public PolarPoint getTargetPoint(double msTimeout) {
-        tfod.activate();
-        // getUpdatedRecognitions() will return null if no new information is available since
-        // the last time that call was made.
-        List<Recognition> lastRecognitions = null;
-        List<Recognition> updatedRecognitions;
-        ElapsedTime timer = new ElapsedTime();
-        do {
-            if ((updatedRecognitions = tfod.getUpdatedRecognitions()) != null) {
-                telemetry.addData("# Object Detected", updatedRecognitions.size());
-                // step through the list of recognitions and display boundary info.
-                int i = 0;
-                for (Recognition recognition : updatedRecognitions) {
-                    telemetry.addData(String.format("label (%d)", i), recognition.getLabel());
-                    telemetry.addData(String.format("  left,top (%d)", i), "%.03f , %.03f",
-                            recognition.getLeft(), recognition.getTop());
-                    telemetry.addData(String.format("  right,bottom (%d)", i), "%.03f , %.03f",
-                            recognition.getRight(), recognition.getBottom());
-                    i++;
-                }
-                lastRecognitions = updatedRecognitions;
-                telemetry.update();
-            }
-        } while (timer.milliseconds() < msTimeout && lastRecognitions == null);
-        tfod.deactivate();
+    /**
+     * @return current target freight type
+     */
+    public Freight getTarget() {
+        switch (targetLabel) {
+            default:
+            case "Ball":
+                return Freight.SILVER;
+            case "Cube":
+                return Freight.GOLD;
+        }
+    }
 
-        if (lastRecognitions == null) {
-            return INVALID_RESULT;
+    /**
+     * @return last navigation result accessed through {@link TFWarehouseGuide#navigate()}
+     */
+    @Override
+    public PolarPoint getLastNavigation() {
+        return lastNavigation;
+    }
+
+    /**
+     * Activates the TFOD to start scanning for freight.
+     */
+    public void start() {
+        tfod.activate();
+    }
+
+    /**
+     * Deactivates and shuts down the object detector.
+     */
+    public void stop() {
+        tfod.deactivate();
+        tfod.shutdown();
+    }
+
+    /**
+     * Calculates the relative position of the nearest target freight.
+     * @return a {@link PolarPoint} that indicates the nearest desired target object (also see
+     * {@link TFWarehouseGuide#setTarget(Freight)})
+     */
+    public PolarPoint navigate() {
+        List<Recognition> recognitions = tfod.getRecognitions();
+        if (recognitions.isEmpty()) {
+            lastNavigation = FALLBACK;
+            return FALLBACK;
         }
 
         // *** Find centers of recognitions ***
         ArrayList<Point> centers = new ArrayList<>();
-        for (Recognition r : lastRecognitions) {
+        for (Recognition r : recognitions) {
             if (r.getLabel().equals(targetLabel)) {
                 centers.add(new Point(
                         r.getLeft() + r.getWidth() / 2,
@@ -126,10 +135,14 @@ public class TFWarehouseGuide {
                 ));
             }
         }
+        if (centers.isEmpty()) {
+            lastNavigation = FALLBACK;
+            return FALLBACK;
+        }
 
         // *** Find coordinates closest to robot ***
-        double width = lastRecognitions.get(0).getImageWidth();
-        double height = lastRecognitions.get(0).getImageHeight();
+        double width = recognitions.get(0).getImageWidth();
+        double height = recognitions.get(0).getImageHeight();
         Point minPoint = new Point();
         double minDist = Double.MAX_VALUE;
         // TODO: change the point depending on camera placement
@@ -144,10 +157,8 @@ public class TFWarehouseGuide {
         }
 
         // assume a 60 deg field of view (value sourced from cam spec)
-        return new PolarPoint(WarehouseGuide.DIST_FACTOR * minDist, 60 * minPoint.x /  - 30.0);
-    }
-
-    public PolarPoint getTargetPoint() {
-        return getTargetPoint(0);
+        PolarPoint navigation = new PolarPoint(WarehouseGuide.DIST_FACTOR * minDist, 60 * minPoint.x /  - 30.0);
+        lastNavigation = navigation;
+        return navigation;
     }
 }

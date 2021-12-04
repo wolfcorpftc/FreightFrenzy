@@ -4,45 +4,28 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.hardware.ServoImplEx;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.wolfcorp.ff.opmode.OpMode;
+import org.wolfcorp.ff.opmode.Match;
 import org.wolfcorp.ff.vision.Barcode;
-
-import java.util.concurrent.atomic.AtomicReference;
 
 public class Outtake {
     public static double TICKS_PER_REV = 1425.1;
-    public static int OUTTAKE_MAX_SPEED = 117;
+    public static double OUTTAKE_MAX_SPEED = 117;
     public static double OUTTAKE_UP_SPEED = 100 / 60.0 * TICKS_PER_REV;
     public static double OUTTAKE_DOWN_SPEED = -100 / 60.0 * TICKS_PER_REV;
 
     public static int TOP_POSITION = 2000;
-    public static int MID_POSITION = 1100;
-    public static int BOT_POSITION = 250;
+    public static int MID_POSITION = 1000;
+    public static int BOT_POSITION = 400;
 
     public static int MIN_POSITION = -100;
     public static int MAX_POSITION = 2100;
 
-    public static double DUMP_IN_POSITION = 0.82;
-    public static double DUMP_OUT_POSITION = 0.4;
-
-    public static final int MARGIN_OF_ERROR = 10; // margin of error
-    public static final int MARGIN_OF_ACCEPTANCE = 10; // margin of acceptance
-    public static final int DRIFT_TIME_DELAY = 1000;
-    public static final int TICKS = 100;
-    public static final double DRIFT_TIMEOUT = 2000;
+    public static double DUMP_IN_POSITION = 0.88;
+    public static double DUMP_OUT_POSITION = 0.45;
 
     private DcMotorEx motor;
     private Servo servo;
-
-    private int restPos = 0;
-    private AtomicReference<Boolean> stayStill = new AtomicReference<>(false);
-    private Thread stayStillThread = null;
-
-    private ElapsedTime driftDelayTimer = new ElapsedTime(); // between calls to eliminateDrift()
-    private ElapsedTime driftTimer = new ElapsedTime(); // duration of eliminateDrift() loop
 
     private boolean isDumpOut = false;
 
@@ -56,135 +39,83 @@ public class Outtake {
         motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 
-    public void setRestPos(int pos) {
-        restPos = pos;
-        driftDelayTimer.reset();
-    }
-
-    public void recordRestPos() {
-        setRestPos(getCurrentPos());
-    }
-
-    public int getCurrentPos() {
-        return motor.getCurrentPosition();
-    }
-
-    public int getRestPos() {
-        return restPos;
-    }
-
     /**
-     * Make the slide stay still (at restPos) and wait until
-     * the motor reaches the position. Intended to be run within TeleOp or a separate thread.
-     */
-    public void eliminateDrift() {
-        if (stayStill.get()
-                && Math.abs(motor.getCurrentPosition() - restPos) > MARGIN_OF_ERROR
-                && driftDelayTimer.milliseconds() > DRIFT_TIME_DELAY) {
-            motor.setTargetPosition(restPos);
-            motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            motor.setVelocity(OUTTAKE_UP_SPEED);
-            // TODO: try to eliminate loop
-            driftTimer.reset();
-            while (motor.isBusy()
-                    && stayStill.get()
-                    && Math.abs(motor.getCurrentPosition() - restPos) > MARGIN_OF_ACCEPTANCE
-                    && !Thread.currentThread().isInterrupted()
-                    && driftTimer.milliseconds() < DRIFT_TIMEOUT);
-            motor.setVelocity(0);
-            motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            driftDelayTimer.reset();
-        }
-        else {
-            motor.setVelocity(0);
-        }
-    }
-
-    /**
-     * Make the shovel stay still (at restPos).
-     * Intended for one-time use (call and forget about it).
-     */
-    public void stayStill() {
-        // return if thread is already running
-        stayStill.set(true);
-        if (stayStillThread != null && stayStillThread.isAlive()) {
-            return;
-        }
-        stayStillThread = new Thread(() -> {
-            driftDelayTimer.reset();
-            while (!Thread.currentThread().isInterrupted()) {
-                eliminateDrift();
-            }
-        });
-        stayStillThread.start();
-    }
-    /**
-     * Release the motor from the effect of stayStill()
-     * and RUN_TO_POSITION
-     */
-    public void setFree() throws InterruptedException {
-        stayStill.set(false);
-        if (stayStillThread != null && stayStillThread.isAlive()) {
-            stayStillThread.interrupt();
-            OpMode.log("Waiting for stayStillThread to die...");
-            stayStillThread.join();
-            OpMode.log("Waiting for stayStillThread to die... Done");
-        }
-        motor.setPower(0);
-        motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-    }
-
-    /**
-     * Set the slide to move. Intended for TeleOp.
+     * Sets the slide to move. Intended for TeleOp.
      * @param extend whether to extend or retract the slide
      */
-    public void slide(boolean extend) {
+    public void slide(boolean extend, boolean ignoreOverextension) {
         boolean isOverextension = (extend && motor.getCurrentPosition() >= MAX_POSITION)
                 || (!extend && motor.getCurrentPosition() <= MIN_POSITION);
-        if (!isOverextension) {
+        if (!isOverextension || ignoreOverextension) {
             motor.setVelocity(extend ? OUTTAKE_UP_SPEED : OUTTAKE_DOWN_SPEED);
         }
         else {
-            OpMode.log("Overextension");
+            Match.status("Overextension");
             motor.setPower(0);
         }
     }
 
     /**
-     * Move the slide outward. Intended for TeleOp.
+     * Moves the slide outward. Intended for TeleOp.
      */
-    public void extend() {
-        slide(true);
+    public void extend(boolean ignoreOverextension) {
+        slide(true, ignoreOverextension);
     }
 
     /**
-     * Move the slide inward. Intended for TeleOp.
+     * Moves the slide inward. Intended for TeleOp.
      */
-    public void retract() {
-        slide(false);
+    public void retract(boolean ignoreOverextension) {
+        slide(false, ignoreOverextension);
     }
 
     /**
-     * Move the slide to a hub level / tier
-     * @param barcode destination hub level / tier
+     * Sets the run mode to {@code RUN_USING_ENCODER} and stop the motor.
+     * This method is {@code RUN_TO_POSITION}-aware.
      */
-    public void slideTo(Barcode barcode) {
+    public void resetSlide() {
+        motor.setVelocity(0);
+        motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+    }
+
+    /**
+     * Sets the slide to run to a position asynchronously. <b>Warning: </b> This does not reset the
+     * run mode to {@code RUN_USING_ENCODER}. To interrupt or get out of {@code RUN_TO_POSITION}, use
+     * {@link Outtake#resetSlide()}.
+     * @param barcode target level to slide to / barcode scan result
+     */
+    public void slideToAsync(Barcode barcode) {
+        resetSlide();
         switch (barcode) {
             case TOP:
-                runToPosition(TOP_POSITION);
+                runToPositionAsync(TOP_POSITION);
                 break;
             case MID:
-                runToPosition(MID_POSITION);
+                runToPositionAsync(MID_POSITION);
                 break;
-            case BOT:
-                runToPosition(BOT_POSITION);
             default:
+            case BOT:
+                runToPositionAsync(BOT_POSITION);
+                break;
+            case ZERO:
+                runToPositionAsync(0);
                 break;
         }
     }
 
     /**
-     * Treat current encoder position as zero
+     * Moves the slide to a hub level / tier synchronously
+     * @param barcode destination hub level / tier
+     */
+    public void slideTo(Barcode barcode) {
+        slideToAsync(barcode);
+        while (motor.isBusy() && !Thread.interrupted());
+        resetSlide();
+    }
+
+    /**
+     * Treats current encoder position as zero
      */
     public void setInitialPos() {
         motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -195,7 +126,7 @@ public class Outtake {
      * Synchronously move the slide to an encoder position. Interrupt-aware.
      * @param position destination encoder position
      */
-    public void runToPosition(int position) {
+    public void runToPositionAsync(int position) {
         motor.setTargetPosition(position);
         motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         if (motor.getCurrentPosition() < position) {
@@ -203,27 +134,27 @@ public class Outtake {
         } else {
             motor.setVelocity(OUTTAKE_DOWN_SPEED);
         }
-        while (motor.isBusy() && !Thread.interrupted());
-        motor.setVelocity(0);
-        motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 
-    public void setPower(double p) {
-        motor.setPower(p);
-    }
-
-    public double getPower() {
-        return motor.getPower();
-    }
-
-    public int getPos() {
-        return motor.getCurrentPosition();
-    }
-
+    /**
+     * @return the {@link DcMotorEx} object that corresponds to the slide motor.
+     */
     public DcMotorEx getMotor() {
         return motor;
     }
 
+    /**
+     * @return the {@link Servo} object that corresponds to the servo motor.
+     */
+    public Servo getServo() {
+        return servo;
+    }
+
+    /**
+     * Asynchronously toggles the position of the dump (in/out). This method is oblivious to the actual current
+     * position of the robot and decides which position to turn to based on an assumed internal
+     * state (defaults to closed at initialization.
+     */
     public void toggleDump() {
         if (isDumpOut) {
             dumpIn();
@@ -233,21 +164,19 @@ public class Outtake {
         }
     }
 
+    /**
+     * Asynchronously turn the dump inward.
+     */
     public void dumpIn() {
         isDumpOut = false;
         servo.setPosition(DUMP_IN_POSITION);
     }
 
+    /**
+     * Asynchronously turn the dump outward.
+     */
     public void dumpOut() {
         isDumpOut = true;
         servo.setPosition(DUMP_OUT_POSITION);
-    }
-
-    public boolean isDumpOut() {
-        return isDumpOut;
-    }
-
-    public Servo getServo() {
-        return servo;
     }
 }
