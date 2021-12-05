@@ -10,4 +10,7 @@ public abstract class OpMode extends LinearOpMode {
         Match.telemetry = telemetry;
         Match.isRed = this.getClass().getSimpleName().contains("Red");
     }
+    public boolean modeNameContains(String searchTerm) {
+        return this.getClass().getSimpleName().contains(searchTerm);
+    }
 }

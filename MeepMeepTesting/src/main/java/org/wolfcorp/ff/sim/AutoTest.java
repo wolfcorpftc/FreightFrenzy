@@ -101,12 +101,9 @@ public class AutoTest {
         return isRed ? new Pose2d(+y, +x) : new Pose2d(+y, -x);
     }
 
-    // Rotate the coordinate plane 90 degrees clockwise (positive y-axis points at the shared hub)
-    // Basically converts a point from Cartesian to Roadrunner
-    // The positive y-axis represents a heading of 0 degree
     public Pose2d pos(double x, double y, double heading) {
         if (isRed)
-            return new Pose2d(+y, +x, Math.toRadians(180+heading));
+            return new Pose2d(+y, +x, -Math.toRadians(heading));
         else
             return new Pose2d(+y, -x, Math.toRadians(heading));
     }

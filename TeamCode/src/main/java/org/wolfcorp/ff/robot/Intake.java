@@ -8,6 +8,8 @@ public class Intake {
     public static double TICKS_PER_REV = 103.8;
     public static double INTAKE_MAX_SPEED = 1620;
     public static double INTAKE_OPTIMAL_SPEED = 640 / 60.0 * TICKS_PER_REV;
+    public static double INTAKE_IN_SPEED = INTAKE_OPTIMAL_SPEED;
+    public static double INTAKE_OUT_SPEED = -0.3 * INTAKE_OPTIMAL_SPEED; // TODO: tune
 
     private DcMotorEx motor;
 
@@ -27,7 +29,7 @@ public class Intake {
             off();
         }
         else {
-            motor.setVelocity(INTAKE_OPTIMAL_SPEED);
+            motor.setVelocity(INTAKE_IN_SPEED);
         }
     }
 
@@ -39,7 +41,7 @@ public class Intake {
             off();
         }
         else {
-            motor.setVelocity(-INTAKE_OPTIMAL_SPEED);
+            motor.setVelocity(INTAKE_OUT_SPEED);
         }
     }
 

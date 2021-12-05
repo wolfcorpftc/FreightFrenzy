@@ -51,9 +51,9 @@ public abstract class AutonomousMode extends OpMode {
     // endregion
 
     // region Configuration
-    public final boolean VISION = !this.getClass().getSimpleName().contains("NV");
-    public final boolean CAROUSEL = this.getClass().getSimpleName().contains("Carousel");
-    public final boolean WALL_RUNNER = this.getClass().getSimpleName().contains("WR");
+    public final boolean VISION = !modeNameContains("NV");
+   public final boolean CAROUSEL = modeNameContains("Carousel");
+    public final boolean WALL_RUNNER = modeNameContains("WR");
 
     public static final int SCORING_CYCLES = 0;
     // endregion
@@ -134,6 +134,7 @@ public abstract class AutonomousMode extends OpMode {
         elementRightPose = elementMidPose.minus(pos(0, 8.4));
 
         if (Match.isRed) {
+            // FIXME: avoid touching the hub
             hubPose = pos(-51 + DriveConstants.WIDTH / 2, -12 + (CAROUSEL ? 0 : -3), 90);
         } else {
             hubPose = pos(-47 + DriveConstants.WIDTH / 2, -12 + (CAROUSEL ? 0 : -3), 90);
