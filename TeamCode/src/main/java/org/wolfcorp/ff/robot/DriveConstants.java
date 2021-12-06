@@ -18,22 +18,21 @@ import com.qualcomm.robotcore.hardware.PIDFCoefficients;
  */
 @Config
 public class DriveConstants {
+    /** Motor spec: ticks per revolution */
+    public static final double TICKS_PER_REV = 537.7; // TODO: check
+    /** Motor spec: maximum RPM */
+    public static final double MAX_RPM = 312; // TODO: check
 
-    /*
-     * These are motor constants that should be listed online for your motors.
-     */
-    public static final double TICKS_PER_REV = 537.7;
-    public static final double MAX_RPM = 312;
-
-    /*
-     * Set RUN_USING_ENCODER to true to enable built-in hub velocity control using drive encoders.
-     * Set this flag to false if drive encoders are not present and an alternative localization
+    /**
+     * Set to true to enable built-in hub velocity control using drive encoders.
+     * Set to false if drive encoders are not present and an alternative localization
      * method is in use (e.g., tracking wheels).
-     *
-     * If using the built-in motor velocity PID, update MOTOR_VELO_PID with the tuned coefficients
-     * from DriveVelocityPIDTuner.
      */
     public static final boolean RUN_USING_ENCODER = true;
+    /**
+     * If using the built-in motor velocity PID, update MOTOR_VELO_PID with the tuned coefficients
+     * from {@link org.wolfcorp.ff.robot.opmode.DriveVelocityPIDTuner}.
+     */
     public static PIDFCoefficients MOTOR_VELO_PID = new PIDFCoefficients(23, 3.5, 10,
             getMotorVelocityF(MAX_RPM / 60 * TICKS_PER_REV));
 
@@ -45,11 +44,17 @@ public class DriveConstants {
      * angular distances although most angular parameters are wrapped in Math.toRadians() for
      * convenience. Make sure to exclude any gear ratio included in MOTOR_CONFIG from GEAR_RATIO.
      */
+    /** Radius of the drive wheels in inches. */
     public static double WHEEL_RADIUS = 1.88976; // in
+    /** Ticks per inch of wheel movement on the ground. */
     public static double TICKS_PER_INCH = TICKS_PER_REV / (2 * Math.PI * WHEEL_RADIUS);;
-    public static double GEAR_RATIO = 1; // output (wheel) speed / input (motor) speed
+    /** output (wheel) speed / input (motor) speed */
+    public static double GEAR_RATIO = 1;
+    /** Width of the robot from the center of wheel to wheel */
     public static double TRACK_WIDTH = 11.25; // in
+    /** Total width of the robot. The distance between the points that collides with the wall. */
     public static double WIDTH = 13.5;
+    /** Total length of the robot. The distance between the points that collides with the wall. */
     public static double LENGTH = 15;
 
     /*
@@ -90,10 +95,13 @@ public class DriveConstants {
      * You are free to raise this on your own if you would like. It is best determined through experimentation.
 
      */
-    // TODO: tune constants
+    /** Maximum velocity */
     public static double MAX_VEL = 56.2;
+    /** Maximum acceleration */
     public static double MAX_ACCEL = 56.2;
+    /** Maximum angular velocity */
     public static double MAX_ANG_VEL = 5.5;
+    /** Maximum angular acceleration */
     public static double MAX_ANG_ACCEL = 5.5;
 
     public static double encoderTicksToInches(double ticks) {

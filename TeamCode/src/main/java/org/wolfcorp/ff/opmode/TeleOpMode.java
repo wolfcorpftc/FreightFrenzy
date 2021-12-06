@@ -7,7 +7,6 @@ import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.wolfcorp.ff.robot.CarouselSpinner;
@@ -21,12 +20,7 @@ public abstract class TeleOpMode extends OpMode {
     private boolean maskIntake = false;
     private boolean maskSlide = false;
     private boolean maskDump = false;
-
-    public TeleOpMode() {
-        Match.isRed = this.getClass().getSimpleName().contains("Red");
-        // Faster telemetry
-        telemetry.setMsTransmissionInterval(50);
-    }
+    private boolean maskSpinner = false;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -36,10 +30,7 @@ public abstract class TeleOpMode extends OpMode {
         Drivetrain drive = new Drivetrain(hardwareMap);
         Intake intake = new Intake(hardwareMap);
         Outtake outtake = new Outtake(hardwareMap);
-        // TODO: uncomment after spinner connected
         CarouselSpinner spinner = new CarouselSpinner(hardwareMap, this::sleep);
-        ElapsedTime timer = new ElapsedTime();
-        ElapsedTime spinnerDelay = new ElapsedTime();
 
         Match.status("Initializing robot");
         drive.setPoseEstimate(Match.teleOpInitialPose);
@@ -49,11 +40,9 @@ public abstract class TeleOpMode extends OpMode {
         waitForStart();
 
         Match.status("Start!");
-        timer.reset();
         while (opModeIsActive()) {
             telemetry.clear();
             // *** Drivetrain ***
-            telemetry.addLine("TeleOp: Pre-drive");
             if (!drive.isBusy()) {
                 telemetry.addLine("TeleOp: Drive");
                 Vector2d input = new Vector2d(
@@ -70,7 +59,7 @@ public abstract class TeleOpMode extends OpMode {
 //                        1,
 //                        gamepad1.right_trigger > 0.8
 //                );
-                if(input.getX() * input.getY() != 0) {
+                if (input.getX() * input.getY() != 0) {
                     drive.setWeightedDrivePower(
                             new Pose2d(
                                     input.getY(),
@@ -78,8 +67,7 @@ public abstract class TeleOpMode extends OpMode {
                                     -gamepad1.left_stick_x
                             )
                     );
-                }
-                else {
+                } else {
                     drive.drive(
                             gamepad1.right_stick_y,
                             -gamepad1.right_stick_x,
@@ -91,15 +79,18 @@ public abstract class TeleOpMode extends OpMode {
             }
 
             // *** Carousel Spinner ***
-            if (gamepad2.left_bumper && spinnerDelay.milliseconds() > 200) {
-                spinnerDelay.reset();
-                if (spinner.isOff()) {
-                    spinner.on();
-                } else {
+            if (gamepad2.left_bumper && !maskSpinner) {
+                maskSpinner = true;
+                if (spinner.isOn()) {
                     spinner.off();
+                } else {
+                    spinner.on();
                 }
             }
 
+            if (!gamepad2.left_bumper) {
+                maskSpinner = false;
+            }
 
             // *** Driver Assist: Checkpoint ***
             // Go to checkpoint / hub
@@ -122,13 +113,15 @@ public abstract class TeleOpMode extends OpMode {
                 drive.abort();
             }
 
-            // Unblock checkpoint functionalities when no relevant inputs are pressed
+            // Unblock checkpoint functionalities when button presses are released
             if ((!gamepad1.b || (gamepad1.b && gamepad1.start)) && !gamepad1.y && !gamepad1.x) {
                 maskCheckpoint = false;
             }
 
+            // *** Intake ***
             if (gamepad2.b && !gamepad2.start && !maskIntake) {
                 maskIntake = true;
+                // the dump must be at the bottom-most position when intake is on
                 outtake.slideToAsync(Barcode.ZERO);
                 intake.in();
             } else if (gamepad2.x && !maskIntake) {
@@ -140,7 +133,7 @@ public abstract class TeleOpMode extends OpMode {
                 maskIntake = false;
             }
 
-            // *** Outtake: slide ***
+            // *** Outtake: slide - manual ***
             if (gamepad2.y && !maskSlide) {
                 if (outtake.getMotor().getMode() == DcMotor.RunMode.RUN_TO_POSITION) {
                     outtake.resetSlide();
@@ -155,6 +148,7 @@ public abstract class TeleOpMode extends OpMode {
                 outtake.getMotor().setVelocity(0);
             }
 
+            // *** Outtake: slide - snap ***
             if (gamepad2.dpad_up && !maskSlide) {
                 maskSlide = true;
                 outtake.slideToAsync(Barcode.TOP);
@@ -165,9 +159,7 @@ public abstract class TeleOpMode extends OpMode {
                 maskSlide = true;
                 outtake.slideToAsync(Barcode.BOT);
             } else if (outtake.getMotor().getMode() == DcMotor.RunMode.RUN_TO_POSITION
-                    && Math.abs(outtake.getMotor().getCurrentPosition() - outtake.getMotor().getTargetPosition())
-                        < outtake.getMotor().getTargetPositionTolerance()
-                    && !maskSlide) {
+                    && outtake.reachedTargetPosition()) {
                 outtake.resetSlide();
             }
 
@@ -175,6 +167,7 @@ public abstract class TeleOpMode extends OpMode {
                 maskSlide = false;
             }
 
+            // *** Outtake: dump ***
             if (gamepad2.right_bumper && !maskDump) {
                 maskDump = true;
                 outtake.toggleDump();
@@ -184,15 +177,18 @@ public abstract class TeleOpMode extends OpMode {
                 maskDump = false;
             }
 
-            drive.update(); // odometry update
-            telemetry.addData("Dump Pos", outtake.getServo().getPosition());
+            // *** Odometry update ***
+            drive.update();
+
+            // *** Telemetry ***
+            telemetry.addData("Robot Pose", drive.getPoseEstimate().toString());
 
             telemetry.addData("Intake Current Pos", intake.getMotor().getCurrentPosition());
             telemetry.addData("Intake Target Pos", intake.getMotor().getTargetPosition());
 
             telemetry.addData("Outtake Current Pos", outtake.getMotor().getCurrentPosition());
             telemetry.addData("Outtake Target Pos", outtake.getMotor().getTargetPosition());
-            telemetry.addData("Outtake Servo Pos", outtake.getServo().getPosition());
+            telemetry.addData("Outtake Dump Pos", outtake.getServo().getPosition());
 
             telemetry.addData("LF Power", drive.leftFront.getPower());
             telemetry.addData("LF Current", drive.leftFront.getCurrent(CurrentUnit.MILLIAMPS));
@@ -210,7 +206,6 @@ public abstract class TeleOpMode extends OpMode {
             telemetry.addData("RB Current", drive.rightBack.getCurrent(CurrentUnit.MILLIAMPS));
             telemetry.addData("RB Position", drive.rightBack.getCurrentPosition());
 
-            telemetry.addData("Heading", drive.getPoseEstimate().getHeading());
             telemetry.update();
         }
     }

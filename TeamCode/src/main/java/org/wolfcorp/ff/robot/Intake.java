@@ -5,13 +5,12 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 public class Intake {
-    public static double TICKS_PER_REV = 103.8;
-    public static double INTAKE_MAX_SPEED = 1620;
-    public static double INTAKE_OPTIMAL_SPEED = 640 / 60.0 * TICKS_PER_REV;
-    public static double INTAKE_IN_SPEED = INTAKE_OPTIMAL_SPEED;
-    public static double INTAKE_OUT_SPEED = -0.3 * INTAKE_OPTIMAL_SPEED; // TODO: tune
+    public static final double TICKS_PER_REV = 103.8;
+    public static final double MAX_SPEED = 1620 / 60.0 * TICKS_PER_REV; // ticks/sec
+    public static final double IN_SPEED = 0.4 * MAX_SPEED; // ticks/sec
+    public static final double OUT_SPEED = -0.1 * MAX_SPEED; // ticks/sec; TODO: tune
 
-    private DcMotorEx motor;
+    private final DcMotorEx motor;
 
     public Intake(HardwareMap hwMap) {
         motor = hwMap.get(DcMotorEx.class, "intake");
@@ -27,9 +26,8 @@ public class Intake {
     public void in() {
         if (isOn()) {
             off();
-        }
-        else {
-            motor.setVelocity(INTAKE_IN_SPEED);
+        } else {
+            motor.setVelocity(IN_SPEED);
         }
     }
 
@@ -39,14 +37,13 @@ public class Intake {
     public void out() {
         if (isOn()) {
             off();
-        }
-        else {
-            motor.setVelocity(INTAKE_OUT_SPEED);
+        } else {
+            motor.setVelocity(OUT_SPEED);
         }
     }
 
     /**
-     * Turns intake off
+     * Turns intake off by setting velocity to zero.
      */
     public void off() {
         motor.setVelocity(0);
@@ -61,12 +58,16 @@ public class Intake {
 
     /**
      * Set motor velocity in RPM
-     * @param vel velocity in RPM
+     *
+     * @param rpm velocity in RPM
      */
-    public void setVelocityRPM(double vel) {
-        motor.setVelocity(vel / 60.0 * TICKS_PER_REV);
+    public void setVelocityRPM(double rpm) {
+        motor.setVelocity(rpm / 60.0 * TICKS_PER_REV);
     }
 
+    /**
+     * @return the intake motor object
+     */
     public DcMotor getMotor() {
         return motor;
     }

@@ -1,21 +1,10 @@
 package org.wolfcorp.ff.opmode;
 
-import static org.wolfcorp.ff.robot.DriveConstants.MAX_ACCEL;
-import static org.wolfcorp.ff.robot.DriveConstants.MAX_ANG_VEL;
-import static org.wolfcorp.ff.robot.DriveConstants.MAX_VEL;
 import static org.wolfcorp.ff.robot.DriveConstants.TRACK_WIDTH;
 import static org.wolfcorp.ff.robot.Drivetrain.getAccelerationConstraint;
 import static org.wolfcorp.ff.robot.Drivetrain.getVelocityConstraint;
 
-import androidx.annotation.NonNull;
-
 import com.acmerobotics.roadrunner.geometry.Pose2d;
-import com.acmerobotics.roadrunner.trajectory.constraints.AngularVelocityConstraint;
-import com.acmerobotics.roadrunner.trajectory.constraints.MecanumVelocityConstraint;
-import com.acmerobotics.roadrunner.trajectory.constraints.MinVelocityConstraint;
-import com.acmerobotics.roadrunner.trajectory.constraints.ProfileAccelerationConstraint;
-import com.acmerobotics.roadrunner.trajectory.constraints.TrajectoryAccelerationConstraint;
-import com.acmerobotics.roadrunner.trajectory.constraints.TrajectoryVelocityConstraint;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.openftc.easyopencv.OpenCvCamera;
@@ -37,9 +26,7 @@ import org.wolfcorp.ff.vision.VuforiaNavigator;
 import org.wolfcorp.ff.vision.WarehouseGuide;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.function.Supplier;
 
 public abstract class AutonomousMode extends OpMode {
     // region Hardware
@@ -52,7 +39,7 @@ public abstract class AutonomousMode extends OpMode {
 
     // region Configuration
     public final boolean VISION = !modeNameContains("NV");
-   public final boolean CAROUSEL = modeNameContains("Carousel");
+    public final boolean CAROUSEL = modeNameContains("Carousel");
     public final boolean WALL_RUNNER = modeNameContains("WR");
 
     public static final int SCORING_CYCLES = 0;
@@ -71,48 +58,64 @@ public abstract class AutonomousMode extends OpMode {
      * Poses are declared in order of appearance in paths.
      * When initializing poses with pos(), assume that the robot starts at blue warehouse.
      * The front of robot is the carousel spinner (0 degree).
-    */
-    /** where the robot starts */
+     */
+
+    /** Where the robot starts on the field. */
     protected Pose2d initialPose;
 
-    /** y-coordinate calibration (beyond the wall) */
+    /** For y-coordinate calibration while scoring carousel (beyond the wall). */
     protected Pose2d calibratePreCarouselPose;
-    /** y-coordinate calibration (real pose) */
+    /** For y-coordinate calibration while scoring carousel (real pose). */
     protected Pose2d preCarouselPose;
-    /** turn the carousel */
+    /** Where the robot turns the carousel. */
     protected Pose2d carouselPose;
 
-    /** retrieve the left shipping element */
+    /** Where the robot retrieves the left shipping element. */
     protected Pose2d elementLeftPose;
-    /** retrieve the middle shipping element */
+    /** Where the robot retrieves the middle shipping element. */
     protected Pose2d elementMidPose;
-    /** retrieve the right shipping element */
+    /** Where the robot retrieves the right shipping element. */
     protected Pose2d elementRightPose;
 
-    /** between hub and wall; used for heading adjustment coming from carousel w/o hitting SE */
+    /**
+     * Robot's pose between hub and wall; for heading adjustment w/o hitting SE or the wall
+     * (depending on where the robot came from).
+     */
     protected Pose2d preHubPose;
-    /** score freight into hub */
+    /** Where the robot scores freight into hub. */
     protected Pose2d hubPose;
-    /** x-coordinate calibration while cycling (beyond the wall) */
+    /** For x-coordinate calibration while cycling (beyond the wall). */
     protected Pose2d calibrateHubWallPose;
-    /** x-coordinate calibration while cycling (real pose) */
+    /** For x-coordinate calibration while cycling (real pose). */
     protected Pose2d hubWallPose;
-    /** change heading after scoring */
-    protected Pose2d postHubPose;
-    /** used to avoid driving on the barrier / triangles & to start vision */
+    /** Used to avoid driving on the barrier / triangles & to start vision. */
     protected Pose2d preWhPose;
-    /** load freight from warehouse */
+    /** Where the robot loads freight from warehouses. */
     protected Pose2d whPose;
-    /** where the robot parks */
+    /** Where the robot parks. */
     protected Pose2d parkPose;
     // endregion
 
     // region Task Queue
+    /** The task queue. */
     private final ArrayList<Object> tasks = new ArrayList<>();
+    /**
+     * Where the contents of named tasks are stored (only necessary if the task content is random,
+     * like picking up the shipping element whose position is determined randomly pre-match).
+     * <p>
+     * Named tasks can be added by first calling {@link #queue(Object)} with the name of the task to
+     * define its position in the queue, then inserting the name-task pair into this HashMap using
+     * {@link HashMap#put(Object, Object)} before {@link #runTasks()} is called.
+     */
     private final HashMap<String, Object> dynamicTasks = new HashMap<>();
     // endregion
 
     // region Robot Logic
+
+    /**
+     * Initializes waypoints during autonomous paths based on the OpMode's name (which may be
+     * changed by inheritance).
+     */
     public AutonomousMode() {
         if (Match.isRed) {
             // NOTE: Assuming we are by the blue warehouse!
@@ -145,12 +148,19 @@ public abstract class AutonomousMode extends OpMode {
         preWhPose = pos(-72 + DriveConstants.WIDTH / 2, 12, 0);
         whPose = pos(-72 + DriveConstants.WIDTH / 2, 42, 0);
 
-        if (WALL_RUNNER) {
-            parkPose = pos(-72 + DriveConstants.WIDTH / 2, 38 + DriveConstants.LENGTH / 2, 0);
-        } else {
-            parkPose = pos(-36, 38 + DriveConstants.LENGTH / 2, 0);
+        final double HUB_X_ERROR = CAROUSEL ? (Match.isRed ? 3 : -2) : 5;
+        final double HUB_Y_ERROR = Match.isRed ? 5 : 0;
+        hubPose = hubPose.plus(pos(HUB_X_ERROR, HUB_Y_ERROR));
+        preHubPose = preHubPose.plus(pos(HUB_X_ERROR, HUB_Y_ERROR));
+        hubWallPose = hubWallPose.plus(pos(HUB_X_ERROR, HUB_Y_ERROR));
+
+        parkPose = pos(-72 + DriveConstants.WIDTH / 2, 38 + DriveConstants.LENGTH / 2, 0);
+        if (!WALL_RUNNER) {
+            // Park in the tile to the right
+            parkPose = parkPose.plus(pos(24, 0));
         }
 
+        // Carousel path's initial pose is two tiles over from warehouse.
         if (CAROUSEL) {
             initialPose = initialPose.minus(pos(0, 48));
 
@@ -158,17 +168,14 @@ public abstract class AutonomousMode extends OpMode {
             elementMidPose = elementMidPose.minus(pos(0, 48));
             elementRightPose = elementRightPose.minus(pos(0, 48));
         }
-
-        // account for error in carousel scoring
-        final double HUB_X_ERROR = CAROUSEL ? (Match.isRed ? 3 : -2) : 5;
-        final double HUB_Y_ERROR = Match.isRed ? 5 : 0;
-        hubPose = hubPose.plus(pos(HUB_X_ERROR, HUB_Y_ERROR));
-        preHubPose = preHubPose.plus(pos(HUB_X_ERROR, HUB_Y_ERROR));
-        hubWallPose = hubWallPose.plus(pos(HUB_X_ERROR, HUB_Y_ERROR));
     }
 
+    /**
+     * Performs the autonomous path based on the OpMode's name (which may be changed by inheritance)
+     * and other configuration variables (i.e. {@link #SCORING_CYCLES}).
+     */
     @Override
-    public void runOpMode() throws InterruptedException {
+    public void runOpMode() {
         Match.setupTelemetry();
         // *** Initialization ***
         Thread initVisionThread = new Thread(this::initVisionWebcam);
@@ -240,21 +247,21 @@ public abstract class AutonomousMode extends OpMode {
             queue(() -> {
                 outtake.slideTo(Barcode.BOT);
                 outtake.dumpOut();
-                sleep(1000);
+                sleep(2400);
                 outtake.dumpIn();
+                outtake.slideTo(Barcode.ZERO);
             });
         }
 
         // *** Park ***
         Match.status("Initializing: park");
-        // TODO: move back
-        queue(fromHere()
-                .now(outtake::dumpIn)
-                .now(() -> outtake.slideTo(Barcode.ZERO))
-                .lineToSplineHeading(preHubPose, getVelocityConstraint(30, 5, TRACK_WIDTH), getAccelerationConstraint(15))
-                .lineTo(calibrateHubWallPose.vec(), getVelocityConstraint(30, 5, TRACK_WIDTH), getAccelerationConstraint(15))
-        );
         if (!isOuttakeReset) {
+            queue(fromHere()
+                    .now(outtake::dumpIn)
+                    .now(() -> outtake.slideTo(Barcode.ZERO))
+                    .lineToSplineHeading(preHubPose, getVelocityConstraint(30, 5, TRACK_WIDTH), getAccelerationConstraint(15))
+                    .lineTo(calibrateHubWallPose.vec(), getVelocityConstraint(30, 5, TRACK_WIDTH), getAccelerationConstraint(15))
+            );
             isOuttakeReset = true;
         } else {
             queue(fromHere()
@@ -267,7 +274,12 @@ public abstract class AutonomousMode extends OpMode {
         // *** Wrapping Up ***
         if (VISION) {
             Match.status("Initializing: vision");
-            initVisionThread.join();
+            try {
+                initVisionThread.join();
+            } catch (InterruptedException ignored) {
+                Match.status("OpMode interrupted");
+                return;
+            }
             scanner.start();
         }
         Match.status("Task queue ready, waiting for start");
@@ -277,7 +289,12 @@ public abstract class AutonomousMode extends OpMode {
         // *** Scan Barcode ***
         if (VISION) {
             Match.status("Scanning");
-            barcode = scanner.getBarcode();
+            try {
+                barcode = scanner.getBarcode();
+            } catch (InterruptedException ignored) {
+                Match.status("OpMode interrupted");
+                return;
+            }
             scanner.stop();
         }
 
@@ -292,8 +309,9 @@ public abstract class AutonomousMode extends OpMode {
     // endregion
 
     // region Vision Initialization
+
     /**
-     * Initializes vision using Vuforia (OpenCV will use a pass-through)
+     * Initializes vision using Vuforia (OpenCV will use a pass-through).
      */
     protected void initVisionVuforia() {
         navigator = new VuforiaNavigator(hardwareMap, telemetry);
@@ -375,11 +393,11 @@ public abstract class AutonomousMode extends OpMode {
     }
 
     /**
-     * Converts a pose from Cartesian to Roadrunner by rotate the coordinate plane 90 degrees
+     * Converts a pose from Cartesian to Roadrunner by rotating the coordinate plane 90 degrees
      * clockwise (positive y-axis points at the shared hub).
      *
-     * @param x x-coordinate of the robot (+x points toward the red alliance station)
-     * @param y y-coordinate of the robot (+y points toward the shared hub)
+     * @param x       x-coordinate of the robot (+x points toward the red alliance station)
+     * @param y       y-coordinate of the robot (+y points toward the shared hub)
      * @param heading heading of the robot (+y / shared hub is zero degrees)
      */
     public static Pose2d pos(double x, double y, double heading) {
@@ -390,33 +408,53 @@ public abstract class AutonomousMode extends OpMode {
         }
     }
 
+    /**
+     * Adds an object into the task queue.
+     *
+     * @param o the object
+     */
     protected void queue(Object o) {
         tasks.add(o);
     }
 
+    /**
+     * Builds the {@link TrajectorySequenceBuilder} and adds the built {@link TrajectorySequence} to
+     * the task queue.
+     *
+     * @param seqBuilder the trajectory sequence builder
+     */
     protected void queue(TrajectorySequenceBuilder seqBuilder) {
         queue(seqBuilder.build());
     }
 
-    protected void queue(Supplier<TrajectorySequence> seq) {
-        queue(seq.get());
-    }
-
-    protected void queue(RobotRunnable run) {
-        queue((Object) run);
+    /**
+     * Adds a special runnable task to the task queue. A {@link RobotRunnable} object is used
+     * instead of {@link Runnable} because the lambda could throw an {@link InterruptedException}
+     * due to the nature of autonomous code in robotics.
+     *
+     * @param runnable the runnable
+     */
+    protected void queue(RobotRunnable runnable) {
+        queue((Object) runnable);
     }
 
     /**
-     *  Sets the last pose manually when robot.turn() is used between trajectory sequences
+     * Specify the robot's current pose manually. This will shadow the end pose of the last
+     * trajectory in the {@link #tasks} ArrayList.
+     *
+     * @see #getCurrentPose()
      */
     protected void queue(Pose2d pose) {
         queue((Object) pose);
     }
 
     /**
-     * @return the pose where the last trajectory (or manual movement) left off
+     * Retrieves the pose where the last trajectory left off, unless otherwise specified by
+     * {@link #queue(Pose2d)}.
+     *
+     * @return the pose where the robot is at assuming a perfect execution
      */
-    protected Pose2d getLastPose() {
+    protected Pose2d getCurrentPose() {
         for (int i = tasks.size() - 1; i >= 0; i--) {
             if (tasks.get(i) instanceof TrajectorySequence) {
                 return ((TrajectorySequence) tasks.get(i)).end();
@@ -427,26 +465,54 @@ public abstract class AutonomousMode extends OpMode {
         return initialPose;
     }
 
+    /**
+     * Retrieves a {@link TrajectorySequenceBuilder} that starts from the pose indicated by
+     * {@link #getCurrentPose()}
+     *
+     * @return a {@link TrajectorySequenceBuilder} that begins at the robot's current pose
+     */
     protected TrajectorySequenceBuilder fromHere() {
-        return drive.from(getLastPose());
+        return drive.from(getCurrentPose());
     }
 
+    /**
+     * Retrieves a {@link TrajectorySequenceBuilder} that starts from the given pose.
+     *
+     * @param pose the pose from which the trajectory sequence starts
+     * @return a {@link TrajectorySequenceBuilder} that begins at the given pose
+     */
     protected TrajectorySequenceBuilder from(Pose2d pose) {
         return drive.from(pose);
     }
 
+    /**
+     * Activates the {@link #guide}.
+     */
     protected void startGuide() {
         if (VISION) {
             guide.start();
         }
     }
 
+    /**
+     * Deactivates or shuts down the {@link #guide}.
+     */
     protected void stopGuide() {
         if (VISION) {
             guide.stop();
         }
     }
 
+    /**
+     * Queues a y-coordinate calibration of the robot's pose estimate using a given pose. The new
+     * pose estimate will assume the alliance-agnostic y-coordinate and the heading of the given
+     * pose. Future trajectories will automatically begin at the given pose (<em>Note: </em> not the
+     * actual new pose estimate, which cannot be known before the autonomous period actually starts).
+     *
+     * @param calibratedPose the correct pose of the robot
+     * @see #pos(double, double, double)
+     * @see #queue(Pose2d)
+     */
     protected void queueYCalibration(Pose2d calibratedPose) {
         queue(() -> {
             Pose2d currentPose = drive.getPoseEstimate();
@@ -460,6 +526,16 @@ public abstract class AutonomousMode extends OpMode {
         queue(calibratedPose);
     }
 
+    /**
+     * Queues a x-coordinate calibration of the robot's pose estimate using a given pose. The new
+     * pose estimate will assume the alliance-agnostic x-coordinate and the heading of the given
+     * pose. Future trajectories will automatically begin at the given pose (<em>Note: </em> not the
+     * actual new pose estimate, which cannot be known before the autonomous period actually starts).
+     *
+     * @param calibratedPose the correct pose of the robot
+     * @see #pos(double, double, double)
+     * @see #queue(Pose2d)
+     */
     protected void queueXCalibration(Pose2d calibratedPose) {
         queue(() -> {
             Pose2d currentPose = drive.getPoseEstimate();
