@@ -21,7 +21,7 @@ public abstract class Meet0Auto extends AutonomousMode {
     }
 
     @Override
-    public void runOpMode() throws InterruptedException {
+    public void runOpMode() {
         Match.status("Meet 0 runOpMode; initializing robot");
         // *** Initialization ***
         drive = new Drivetrain(hardwareMap);
@@ -53,14 +53,9 @@ public abstract class Meet0Auto extends AutonomousMode {
         Match.status("Initializing: hub & score");
         queue(fromHere().lineToLinearHeading(hubPose));
         queue(() -> {
-            try {
-                shovel.down();
-                sleep(250);
-                shovel.up();
-            } catch (InterruptedException e) {
-                // FIXME: properly handle (define custom functional interface that throws)
-                e.printStackTrace();
-            }
+            shovel.down();
+            sleep(250);
+            shovel.up();
         });
 
         // *** Park ***

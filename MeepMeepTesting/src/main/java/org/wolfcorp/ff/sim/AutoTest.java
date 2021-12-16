@@ -20,6 +20,8 @@ public class AutoTest {
     protected Pose2d hubPose; // score freight into hub
     protected Pose2d whPose; // load freight from warehouse
     protected Pose2d parkPose; // where the robot parks
+    protected Pose2d preHubPose;
+    protected Pose2d preWhPose;
 
     protected double length = 15;
     protected double width = 13;
@@ -41,8 +43,10 @@ public class AutoTest {
         elementMidPose = elementLeftPose.minus(pos(0, 8.4));
         elementRightPose = elementMidPose.minus(pos(0, 8.4));
 
-        hubPose = pos(-72 + width / 2, -12, 180);
         whPose = pos(-72 + width / 2, 42, 180);
+        hubPose = pos(-48.5 + width / 2, -12, 90);
+        preHubPose = pos(-48, -12, 0);
+        preWhPose = pos(-72 + width / 2, 12, 0);
 
         if (isWallRunner) {
             parkPose = pos(-72 + width / 2, 37, 180);
@@ -77,21 +81,11 @@ public class AutoTest {
                 .setConstraints(60, 60, Math.toRadians(180), Math.toRadians(180), 15)
                 .setBotDimensions(width,length)
                 .followTrajectorySequence(drive -> drive
-                        .trajectorySequenceBuilder(initialPose)
-                        .lineToLinearHeading(preCarouselPose)
-                        .lineTo(carouselPose.vec())
-                        .waitSeconds(1)
-                        .lineTo(postCarouselPose.vec())
-                        .lineToLinearHeading(initialPose)
-                        .lineTo(elementLeftPose.vec())
-                        .lineTo(hubPose.vec())
-                        .waitSeconds(1)
+                        .trajectorySequenceBuilder(hubPose)
+                        .lineToSplineHeading(preHubPose.minus(pos(10,-12)))
+                        //.splineToSplineHeading(preHubPose.minus(pos(15,-15)),0)
+                        .splineToLinearHeading(preWhPose,0)
                         .lineTo(whPose.vec())
-                        .waitSeconds(1)
-                        .lineTo(hubPose.vec())
-                        .waitSeconds(1)
-                        .lineTo(whPose.vec())
-                        .lineTo(parkPose.vec())
                         .build()
                 )
                 .start();

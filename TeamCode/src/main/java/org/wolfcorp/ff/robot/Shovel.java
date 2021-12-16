@@ -104,17 +104,17 @@ public class Shovel {
         motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         motor.setPower(0.2);
         moveTimer.reset();
-        while (motor.isBusy() && moveTimer.milliseconds() < TIMEOUT);
+        while (motor.isBusy() && moveTimer.milliseconds() < TIMEOUT && !Thread.currentThread().isInterrupted());
         motor.setPower(0);
         motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 
-    public void down() throws InterruptedException {
+    public void down() {
         motor.setTargetPosition(motor.getCurrentPosition() - TICKS);
         motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         motor.setPower(0.1);
         moveTimer.reset();
-        while (motor.isBusy() && moveTimer.milliseconds() < TIMEOUT);
+        while (motor.isBusy() && moveTimer.milliseconds() < TIMEOUT && !Thread.currentThread().isInterrupted());
         motor.setPower(0);
         motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }

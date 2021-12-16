@@ -8,7 +8,7 @@ import org.wolfcorp.ff.opmode.Match;
 @Autonomous(name = "Guide Vision Test", group = "test")
 public class GuideAuto extends AutonomousMode {
     @Override
-    public void runOpMode() throws InterruptedException {
+    public void runOpMode() {
         Match.setupTelemetry();
         initVisionWebcam();
         guide.start();
@@ -18,7 +18,7 @@ public class GuideAuto extends AutonomousMode {
             idle();
             if (Thread.interrupted()) {
                 guide.stop();
-                throw new InterruptedException();
+                break;
             }
         }
     }

@@ -9,9 +9,9 @@ import org.wolfcorp.ff.opmode.Match;
 import java.util.function.Consumer;
 
 public class CarouselSpinner {
-    public static final double SPIN_TIME = 3500; // millis
+    public static final double SPIN_TIME = 2750; // millis
     public static final Long WAIT_TIME = 1000L; // millis
-    public static final double TURN_POWER = 1;
+    public static final double TURN_POWER = 1.0;
 
     private final CRServo servo;
     private final ElapsedTime spinTimer = new ElapsedTime();
@@ -20,7 +20,7 @@ public class CarouselSpinner {
     public CarouselSpinner(HardwareMap hwMap, Consumer<Long> s) {
         servo = hwMap.get(CRServo.class, "spinner");
         sleep = s;
-        if (Match.isRed) {
+        if (Match.RED) {
             servo.setDirection(CRServo.Direction.REVERSE);
         } else {
             servo.setDirection(CRServo.Direction.FORWARD);

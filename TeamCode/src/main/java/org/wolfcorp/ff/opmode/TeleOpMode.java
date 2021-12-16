@@ -7,8 +7,11 @@ import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.wolfcorp.ff.robot.CarouselSpinner;
 import org.wolfcorp.ff.robot.Drivetrain;
 import org.wolfcorp.ff.robot.Intake;
@@ -16,11 +19,15 @@ import org.wolfcorp.ff.robot.Outtake;
 import org.wolfcorp.ff.vision.Barcode;
 
 public abstract class TeleOpMode extends OpMode {
+    private boolean maskSlowMode = false;
     private boolean maskCheckpoint = false;
     private boolean maskIntake = false;
     private boolean maskSlide = false;
     private boolean maskDump = false;
     private boolean maskSpinner = false;
+
+    private boolean slowMode = false;
+    private boolean dumpFull = false;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -31,6 +38,9 @@ public abstract class TeleOpMode extends OpMode {
         Intake intake = new Intake(hardwareMap);
         Outtake outtake = new Outtake(hardwareMap);
         CarouselSpinner spinner = new CarouselSpinner(hardwareMap, this::sleep);
+
+//        DigitalChannel touchSensor = hardwareMap.get(DigitalChannel.class, "touch");
+        DistanceSensor distanceSensor = hardwareMap.get(DistanceSensor.class, "dumpDistance");
 
         Match.status("Initializing robot");
         drive.setPoseEstimate(Match.teleOpInitialPose);
@@ -43,6 +53,13 @@ public abstract class TeleOpMode extends OpMode {
         while (opModeIsActive()) {
             telemetry.clear();
             // *** Drivetrain ***
+            if (gamepad1.right_bumper && !maskSlowMode) {
+                slowMode = !slowMode;
+                maskSlowMode = true;
+            }
+            if (!gamepad1.right_bumper) {
+                maskSlowMode = false;
+            }
             if (!drive.isBusy()) {
                 telemetry.addLine("TeleOp: Drive");
                 Vector2d input = new Vector2d(
@@ -72,8 +89,8 @@ public abstract class TeleOpMode extends OpMode {
                             gamepad1.right_stick_y,
                             -gamepad1.right_stick_x,
                             gamepad1.left_stick_x,
-                            1,
-                            gamepad1.right_trigger > 0.8
+                            0.4,
+                            slowMode
                     );
                 }
             }
@@ -121,12 +138,12 @@ public abstract class TeleOpMode extends OpMode {
             // *** Intake ***
             if (gamepad2.b && !gamepad2.start && !maskIntake) {
                 maskIntake = true;
+                intake.out();
+            } else if (gamepad2.x && !maskIntake) {
+                maskIntake = true;
                 // the dump must be at the bottom-most position when intake is on
                 outtake.slideToAsync(Barcode.ZERO);
                 intake.in();
-            } else if (gamepad2.x && !maskIntake) {
-                maskIntake = true;
-                intake.out();
             }
 
             if (!gamepad2.b && !gamepad2.x) {
@@ -171,10 +188,19 @@ public abstract class TeleOpMode extends OpMode {
             if (gamepad2.right_bumper && !maskDump) {
                 maskDump = true;
                 outtake.toggleDump();
+                dumpFull = false;
             }
 
             if (!gamepad2.right_bumper) {
                 maskDump = false;
+            }
+//
+//            if (!touchSensor.getState()) {
+//                dumpFull = true;
+//            }
+//
+            if (distanceSensor.getDistance(DistanceUnit.INCH) < 1.5) {
+                dumpFull = true;
             }
 
             // *** Odometry update ***
@@ -205,6 +231,10 @@ public abstract class TeleOpMode extends OpMode {
             telemetry.addData("RB Power", drive.rightBack.getPower());
             telemetry.addData("RB Current", drive.rightBack.getCurrent(CurrentUnit.MILLIAMPS));
             telemetry.addData("RB Position", drive.rightBack.getCurrentPosition());
+
+//            telemetry.addData("Touch Sensor", !touchSensor.getState());
+            telemetry.addData("Dump Distance", distanceSensor.getDistance(DistanceUnit.INCH));
+            telemetry.addData("Dump is full?", dumpFull);
 
             telemetry.update();
         }

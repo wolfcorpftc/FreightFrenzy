@@ -8,7 +8,7 @@ import org.wolfcorp.ff.opmode.Match;
 @Autonomous(name = "Barcode Vision Test", group = "test")
 public class BarcodeAuto extends AutonomousMode {
     @Override
-    public void runOpMode() throws InterruptedException {
+    public void runOpMode() {
         Match.setupTelemetry();
         initVisionWebcam();
         scanner.start();

@@ -5,8 +5,11 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.wolfcorp.ff.opmode.Match;
 import org.wolfcorp.ff.vision.Barcode;
+
+import java.util.Objects;
 
 public class Outtake {
     public static final double SLIDE_TICKS_PER_REV = 1425.1;
@@ -15,7 +18,7 @@ public class Outtake {
     public static final double SLIDE_DOWN_SPEED = -0.85 * SLIDE_MAX_SPEED; // ticks/sec
 
     public static final int SLIDE_TOP_POSITION = 2000;
-    public static final int SLIDE_MID_POSITION = 1000;
+    public static final int SLIDE_MID_POSITION = 1300;
     public static final int SLIDE_BOT_POSITION = 400;
 
     public static final int SLIDE_MIN_POSITION = -100;
@@ -108,10 +111,20 @@ public class Outtake {
      * Moves the slide to a hub level / tier synchronously
      * @param barcode destination hub level / tier
      */
-    @SuppressWarnings("StatementWithEmptyBody")
     public void slideTo(Barcode barcode) {
         slideToAsync(barcode);
-        while (motor.isBusy() && !Thread.interrupted());
+        Telemetry.Item currentPositionItem = Match.createLogItem("Outtake - current position", motor.getCurrentPosition());
+        Telemetry.Item targetPositionItem = Match.createLogItem("Outtake - target position", motor.getTargetPosition());
+        Match.log("Outtake slideTo() loop begins");
+        while (motor.isBusy() && !Thread.currentThread().isInterrupted()) {
+            Match.status("Outtake looping");
+            Objects.requireNonNull(currentPositionItem).setValue(motor.getCurrentPosition());
+            Match.update();
+        }
+        Match.status("Outtake loop done");
+        Match.log("Outtake slideTo() loop ends");
+        Match.removeLogItem(currentPositionItem);
+        Match.removeLogItem(targetPositionItem);
         resetSlide();
     }
 

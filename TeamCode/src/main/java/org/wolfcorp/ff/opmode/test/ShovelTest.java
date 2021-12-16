@@ -10,7 +10,7 @@ import org.wolfcorp.ff.robot.Shovel;
 @Autonomous(name = "Shovel Test", group = "test")
 public class ShovelTest extends Meet0Auto {
     @Override
-    public void runOpMode() throws InterruptedException {
+    public void runOpMode() {
         Match.setupTelemetry();
         Match.status("Initializing robot");
         shovel = new Shovel(hardwareMap);
