@@ -146,7 +146,7 @@ public abstract class AutonomousMode extends OpMode {
 
         Pose2d hubOffset = pos(CAROUSEL ? (RED ? 3 : -2) : 5, RED ? 5 : 2);
         trueHubPose = pos(-48.5, -12, 90);
-        hubPose = trueHubPose.plus(pos(RED ? -4 : 2, CAROUSEL ? 0 : -3)).plus(hubOffset);
+        hubPose = trueHubPose.plus(pos(RED ? -4 : 5, CAROUSEL ? 0 : -3)).plus(hubOffset);
         preHubPose = pos(-48, -12, 0).plus(hubOffset);
         hubWallPose = pos(-72 + WIDTH / 2, -12, 0).plus(hubOffset);
         calibrateHubWallPose = hubWallPose.minus(pos(6, 0)); // hubOffset is already applied
@@ -232,14 +232,15 @@ public abstract class AutonomousMode extends OpMode {
                     .splineToLinearHeading(preWhPose.minus(pos(5, 0)), 0)
                     .lineTo(calibrateWhPose.vec(), getVelocityConstraint(30, 5, TRACK_WIDTH), getAccelerationConstraint(30)));
             queue(() -> {
+                sleep(1000);
                 intake.in();
                 // FIXME: replace with trajectory forward
-                drive.forward(0.5, 5);
+                drive.forward(0.1, 1.25);
             });
             queueWarehouseSensorCalibration(trueWhPose);
             // *** Warehouse to hub ***
             queue(fromHere()
-                    .UNSTABLE_addTemporalMarkerOffset(1, () -> intake.getMotor().setVelocity(Intake.OUT_SPEED))
+                    // .UNSTABLE_addTemporalMarkerOffset(1, () -> intake.getMotor().setVelocity(Intake.OUT_SPEED))
                     .lineTo(preWhPose.minus(pos(2, 0)).vec())
                     .now(intake::off)
                     .splineToSplineHeading(hubPose.minus(pos(4.5, 0))) // TODO: name pose?

@@ -434,8 +434,7 @@ public class Drivetrain extends MecanumDrive {
         return new double[]{distance, degree};
     }
 
-    public void setDriveTargetPos(int lf, int rf,
-                                  int lb, int rb) {
+    public void setDriveTargetPos(int lf, int rf, int lb, int rb) {
         leftFront.setTargetPosition(lf);
         rightFront.setTargetPosition(rf);
         leftBack.setTargetPosition(lb);
@@ -483,7 +482,6 @@ public class Drivetrain extends MecanumDrive {
                 && rightFront.isBusy()
                 && leftBack.isBusy()
                 && rightBack.isBusy()) {
-            setMotorPowers(Math.abs(speed) + controller.update(leftFront.getCurrentPosition()));
             updatePoseEstimate();
         }
 
@@ -504,7 +502,7 @@ public class Drivetrain extends MecanumDrive {
     }
 
     public void forward(double speed, double distance, double timeoutSec) {
-        drive(speed, -distance, -distance, timeoutSec);
+        drive(speed, distance, distance, timeoutSec);
     }
 
     public void forward(double speed, double distance) {
@@ -512,7 +510,7 @@ public class Drivetrain extends MecanumDrive {
     }
 
     public void backward(double speed, double distance, double timeoutSec) {
-        drive(speed, distance, distance, timeoutSec);
+        drive(speed, -distance, -distance, timeoutSec);
     }
 
     public void backward(double speed, double distance) {
