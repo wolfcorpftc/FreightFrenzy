@@ -20,8 +20,9 @@ public class WarehouseGuide extends Detector implements Guide {
     private Mat mat = new Mat();
     private Mat hierarchy = new Mat();
     private ArrayList<MatOfPoint> contours = new ArrayList<>();
-    private Freight target = Freight.GOLD;
+    private Freight target = Freight.SILVER;
     private PolarPoint targetPoint = INVALID_RESULT;
+    private PolarPoint lastAccessed = INVALID_RESULT;
 
     private final Object updateLock = new Object();
     private final ResettableCountDownLatch latch = new ResettableCountDownLatch(1);
@@ -114,18 +115,36 @@ public class WarehouseGuide extends Detector implements Guide {
         return input;
     }
 
+    /**
+     * @return the relative position of the desired freight
+     */
     public PolarPoint navigate() throws InterruptedException {
         // no need to use .equals() actually
         if (targetPoint == INVALID_RESULT) {
             latch.await();
         }
+        lastAccessed = targetPoint;
         return targetPoint;
     }
 
+    /**
+     * @return the last navigation result accessed through {@link WarehouseGuide#navigate()}
+     */
+    public PolarPoint getLastNavigation() {
+        return lastAccessed;
+    }
+
+    /**
+     * @return current target freight type
+     */
     public Freight getTarget() {
         return target;
     }
 
+    /**
+     * Sets the desired target freight type.
+     * @param f desired target freight type
+     */
     public void setTarget(Freight f) {
         synchronized (updateLock) {
             latch.reset();

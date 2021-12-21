@@ -1,5 +1,17 @@
 package org.wolfcorp.ff.robot;
 
+import static org.wolfcorp.ff.robot.DriveConstants.MAX_ACCEL;
+import static org.wolfcorp.ff.robot.DriveConstants.MAX_ANG_ACCEL;
+import static org.wolfcorp.ff.robot.DriveConstants.MAX_ANG_VEL;
+import static org.wolfcorp.ff.robot.DriveConstants.MAX_VEL;
+import static org.wolfcorp.ff.robot.DriveConstants.MOTOR_VELO_PID;
+import static org.wolfcorp.ff.robot.DriveConstants.RUN_USING_ENCODER;
+import static org.wolfcorp.ff.robot.DriveConstants.TRACK_WIDTH;
+import static org.wolfcorp.ff.robot.DriveConstants.encoderTicksToInches;
+import static org.wolfcorp.ff.robot.DriveConstants.kA;
+import static org.wolfcorp.ff.robot.DriveConstants.kStatic;
+import static org.wolfcorp.ff.robot.DriveConstants.kV;
+
 import androidx.annotation.NonNull;
 
 import com.acmerobotics.dashboard.config.Config;
@@ -40,19 +52,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.wolfcorp.ff.robot.DriveConstants.MAX_ACCEL;
-import static org.wolfcorp.ff.robot.DriveConstants.MAX_ANG_ACCEL;
-import static org.wolfcorp.ff.robot.DriveConstants.MAX_ANG_VEL;
-import static org.wolfcorp.ff.robot.DriveConstants.MAX_VEL;
-import static org.wolfcorp.ff.robot.DriveConstants.MOTOR_VELO_PID;
-import static org.wolfcorp.ff.robot.DriveConstants.RUN_USING_ENCODER;
-import static org.wolfcorp.ff.robot.DriveConstants.TRACK_WIDTH;
-import static org.wolfcorp.ff.robot.DriveConstants.encoderTicksToInches;
-import static org.wolfcorp.ff.robot.DriveConstants.kA;
-import static org.wolfcorp.ff.robot.DriveConstants.kStatic;
-import static org.wolfcorp.ff.robot.DriveConstants.kV;
-
 @Config
+@SuppressWarnings("unused")
 public class Drivetrain extends MecanumDrive {
     public static PIDCoefficients TRANSLATIONAL_PID = new PIDCoefficients(4, 0, 0);
     public static PIDCoefficients HEADING_PID = new PIDCoefficients(2, 0, 0);
@@ -68,22 +69,24 @@ public class Drivetrain extends MecanumDrive {
     private static final TrajectoryVelocityConstraint VEL_CONSTRAINT = getVelocityConstraint(MAX_VEL, MAX_ANG_VEL, TRACK_WIDTH);
     private static final TrajectoryAccelerationConstraint ACCEL_CONSTRAINT = getAccelerationConstraint(MAX_ACCEL);
 
-    private TrajectoryFollower follower;
-
     public DcMotorEx leftFront, leftBack, rightBack, rightFront;
-    private List<DcMotorEx> motors;
 
+    /** { {@link #leftFront}, {@link #leftBack}, {@link #rightBack}, {@link #rightFront} } */
+    private final List<DcMotorEx> motors;
+
+    /** If true, the current trajectory will be aborted. This will be reset after a new one is added */
     private boolean abort = false;
 
-    private BNO055IMU imu;
-    private VoltageSensor batteryVoltageSensor;
+    private final BNO055IMU imu;
+    private final VoltageSensor batteryVoltageSensor;
 
+    /** Speed multiplier for {@link #drive(double, double, double, double, double, double)}*/
     public double speedMultiplier = 1;
 
     public Drivetrain(HardwareMap hardwareMap) {
         super(kV, kA, kStatic, TRACK_WIDTH, TRACK_WIDTH, LATERAL_MULTIPLIER);
 
-        follower = new HolonomicPIDVAFollower(TRANSLATIONAL_PID, TRANSLATIONAL_PID, HEADING_PID,
+        TrajectoryFollower follower = new HolonomicPIDVAFollower(TRANSLATIONAL_PID, TRANSLATIONAL_PID, HEADING_PID,
                 new Pose2d(0.5, 0.5, Math.toRadians(5.0)), 0.5);
 
         LynxModuleUtil.ensureMinimumFirmwareVersion(hardwareMap);
@@ -196,13 +199,13 @@ public class Drivetrain extends MecanumDrive {
         return trajectorySequenceRunner.getLastPoseError();
     }
 
-    public void abort(){
+    public void abort() {
         abort = true;
     }
 
     public void update() {
         updatePoseEstimate();
-        if(abort){
+        if (abort) {
             trajectorySequenceRunner.followTrajectorySequenceAsync(null);
             return;
         }
@@ -349,19 +352,21 @@ public class Drivetrain extends MecanumDrive {
     public void setMotorPowers(double v) {
         this.setMotorPowers(v, v, v, v);
     }
+
     public void drive(double x, double y, double rotation, double slowModeSpeed, boolean slowModeCondition) {
 
         double[] wheelSpeeds = new double[4];
 
-        /*wheelSpeeds[0] = x * (slowModeCondition ? smX : 1) + y * (slowModeCondition ? smY : 1) + rotation * (slowModeCondition ? smH : 1); // LF
-        wheelSpeeds[1] = x * (slowModeCondition ? smX : 1) - y * (slowModeCondition ? smY : 1) - rotation * (slowModeCondition ? smH : 1); // RF
-        wheelSpeeds[2] = x * (slowModeCondition ? smX : 1) - y * (slowModeCondition ? smY : 1) + rotation * (slowModeCondition ? smH : 1); // LB
-        wheelSpeeds[3] = x * (slowModeCondition ? smX : 1) + y * (slowModeCondition ? smY : 1) - rotation * (slowModeCondition ? smH : 1); // RB*/
+        // wheelSpeeds[0] = x * (slowModeCondition ? smX : 1) + y * (slowModeCondition ? smY : 1) + rotation * (slowModeCondition ? smH : 1); // LF
+        // wheelSpeeds[1] = x * (slowModeCondition ? smX : 1) - y * (slowModeCondition ? smY : 1) - rotation * (slowModeCondition ? smH : 1); // RF
+        // wheelSpeeds[2] = x * (slowModeCondition ? smX : 1) - y * (slowModeCondition ? smY : 1) + rotation * (slowModeCondition ? smH : 1); // LB
+        // wheelSpeeds[3] = x * (slowModeCondition ? smX : 1) + y * (slowModeCondition ? smY : 1) - rotation * (slowModeCondition ? smH : 1); // RB
 
-        wheelSpeeds[0] = x + y + rotation;
-        wheelSpeeds[1] = x - y - rotation;
-        wheelSpeeds[2] = x - y + rotation;
-        wheelSpeeds[3] = x + y - rotation;
+        // FIXME: wheelSpeeds doesn't match setMotorPowers
+        wheelSpeeds[0] = x + y + rotation; // LF
+        wheelSpeeds[1] = x - y - rotation; // RF
+        wheelSpeeds[2] = x - y + rotation; // LB
+        wheelSpeeds[3] = x + y - rotation; // RB
 
         normalize(wheelSpeeds);
 
@@ -381,35 +386,32 @@ public class Drivetrain extends MecanumDrive {
         setMotorPowers(wheelSpeeds[0], wheelSpeeds[2], wheelSpeeds[3], wheelSpeeds[1]);
     }
 
-    public void resetAngle(){
+    public void resetAngle() {
         double angle = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
         System.out.println(angle);
-        if(Math.abs(angle)<0.5){
+        if (Math.abs(angle) < 0.5) {
             setMotorPowers(0, 0, 0, 0);
             return;
         }
-        if(angle<0){
-            angle=Math.max(0.1,Math.min(1,Math.abs(angle)/50));
+        angle = Math.max(0.1, Math.min(1, Math.abs(angle) / 50));
+        if (angle < 0) {
             setMotorPowers(-angle, -angle, angle, angle);
-        }
-        else{
-            angle=Math.max(0.1,Math.min(1,Math.abs(angle)/50));
+        } else {
             setMotorPowers(angle, angle, -angle, -angle);
         }
     }
-    public void turnTo(double degree){
+
+    public void turnTo(double degree) {
         double angle = degree + imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
         System.out.println(angle);
-        if(Math.abs(angle)<0.5){
+        if (Math.abs(angle) < 0.5) {
             setMotorPowers(0, 0, 0, 0);
             return;
         }
-        if(angle<0){
-            angle=Math.max(0.1,Math.min(1,Math.abs(angle)/50));
+        angle = Math.max(0.1, Math.min(1, Math.abs(angle) / 50));
+        if (angle < 0) {
             setMotorPowers(-angle, -angle, angle, angle);
-        }
-        else{
-            angle=Math.max(0.1,Math.min(1,Math.abs(angle)/50));
+        } else {
             setMotorPowers(angle, angle, -angle, -angle);
         }
     }
@@ -421,24 +423,24 @@ public class Drivetrain extends MecanumDrive {
         System.out.println("angle" + angle);
     }
 
-    public double[] aim(){
+    public double[] aim() {
         Pose2d position = getPoseEstimate(); // current position
         // distance from the goal
-        double x = 72-position.getX();
-        double y = 48-position.getY();
+        double x = 72 - position.getX();
+        double y = 48 - position.getY();
         // solve for the desired pose using trig
-        double distance = Math.sqrt(x*x+y*y);
-        double degree = Math.toDegrees(Math.atan(-y/x));
-        return new double[]{distance,degree};
+        double distance = Math.sqrt(x * x + y * y);
+        double degree = Math.toDegrees(Math.atan(-y / x));
+        return new double[]{distance, degree};
     }
 
-    public void setDriveTargetPos(int lf, int rf,
-                                  int lb, int rb) {
+    public void setDriveTargetPos(int lf, int rf, int lb, int rb) {
         leftFront.setTargetPosition(lf);
         rightFront.setTargetPosition(rf);
         leftBack.setTargetPosition(lb);
         rightBack.setTargetPosition(rb);
     }
+
     /*
      *  Method to perfmorm a relative move, based on encoder counts.
      *  Encoders are not reset as the move is based on the current position.
@@ -480,7 +482,6 @@ public class Drivetrain extends MecanumDrive {
                 && rightFront.isBusy()
                 && leftBack.isBusy()
                 && rightBack.isBusy()) {
-            setMotorPowers(Math.abs(speed) + controller.update(leftFront.getCurrentPosition()));
             updatePoseEstimate();
         }
 
@@ -501,8 +502,7 @@ public class Drivetrain extends MecanumDrive {
     }
 
     public void forward(double speed, double distance, double timeoutSec) {
-        double converted = distance;
-        drive(speed, -converted, -converted, timeoutSec);
+        drive(speed, distance, distance, timeoutSec);
     }
 
     public void forward(double speed, double distance) {
@@ -510,7 +510,7 @@ public class Drivetrain extends MecanumDrive {
     }
 
     public void backward(double speed, double distance, double timeoutSec) {
-        drive(speed, distance, distance, timeoutSec);
+        drive(speed, -distance, -distance, timeoutSec);
     }
 
     public void backward(double speed, double distance) {
@@ -540,6 +540,6 @@ public class Drivetrain extends MecanumDrive {
 
     public void calibrateY(Pose2d calibratedY) {
         Pose2d current = getPoseEstimate();
-        setPoseEstimate(new Pose2d(calibratedY.getY(), current.getY(), current.getHeading()));
+        setPoseEstimate(new Pose2d(current.getX(), calibratedY.getY(), current.getHeading()));
     }
 }

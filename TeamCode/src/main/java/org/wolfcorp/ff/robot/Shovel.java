@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.wolfcorp.ff.opmode.Match;
 import org.wolfcorp.ff.opmode.OpMode;
 
 public class Shovel {
@@ -92,7 +93,7 @@ public class Shovel {
         if (stayStillThread != null && stayStillThread.isAlive()) {
             stayStillThread.interrupt();
             stayStillThread.join();
-            OpMode.log("Waiting for stayStillThread to die... Done");
+            Match.status("Waiting for stayStillThread to die... Done");
         }
         motor.setPower(0);
         motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -103,17 +104,17 @@ public class Shovel {
         motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         motor.setPower(0.2);
         moveTimer.reset();
-        while (motor.isBusy() && moveTimer.milliseconds() < TIMEOUT);
+        while (motor.isBusy() && moveTimer.milliseconds() < TIMEOUT && !Thread.currentThread().isInterrupted());
         motor.setPower(0);
         motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 
-    public void down() throws InterruptedException {
+    public void down() {
         motor.setTargetPosition(motor.getCurrentPosition() - TICKS);
         motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         motor.setPower(0.1);
         moveTimer.reset();
-        while (motor.isBusy() && moveTimer.milliseconds() < TIMEOUT);
+        while (motor.isBusy() && moveTimer.milliseconds() < TIMEOUT && !Thread.currentThread().isInterrupted());
         motor.setPower(0);
         motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }

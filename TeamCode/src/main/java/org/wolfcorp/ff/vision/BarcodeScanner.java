@@ -9,22 +9,24 @@ import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvWebcam;
+import org.wolfcorp.ff.opmode.Match;
 
 import java.util.concurrent.CountDownLatch;
 
 public class BarcodeScanner extends Detector {
-    private Mat mat = new Mat();
+    private final Mat mat = new Mat();
     private Rect leftROI, midROI, rightROI;
-    private Mat leftMat, midMat, rightMat;
-    private Telemetry telemetry;
     private volatile Barcode barcode = null;
-    private CountDownLatch latch = new CountDownLatch(1);
+    private final CountDownLatch latch = new CountDownLatch(1);
 
-    public BarcodeScanner(OpenCvCamera cam, Telemetry t) {
+    private Telemetry.Item leftItem;
+    private Telemetry.Item midItem;
+    private Telemetry.Item rightItem;
+    private Telemetry.Item barcodeItem;
+    private Telemetry.Item targetLevelItem;
+
+    public BarcodeScanner(OpenCvCamera cam) {
         super(cam);
-        telemetry = t;
-
-        // TODO: figure out coordinates of ROIs
     }
 
     @Override
@@ -32,12 +34,10 @@ public class BarcodeScanner extends Detector {
         Imgproc.cvtColor(input, mat, Imgproc.COLOR_RGBA2RGB);
         Imgproc.cvtColor(mat, mat, Imgproc.COLOR_RGB2HSV);
 
-        // TODO: figure out lower and upper bounds for shipping element
         Scalar lowerBound = new Scalar(30,100,100);
         Scalar upperBound = new Scalar(80,255,255);
         Core.inRange(mat, lowerBound, upperBound, mat);
 
-        // TODO: switch to exact ROIs once we have actual camera placement
         if (leftROI == null) {
             // casting int-division to int to suppress linter
             leftROI  = new Rect(
@@ -54,16 +54,17 @@ public class BarcodeScanner extends Detector {
             );
         }
 
-        leftMat = mat.submat(leftROI);
-        midMat = mat.submat(midROI);
-        rightMat = mat.submat(rightROI);
+        Mat leftMat = mat.submat(leftROI);
+        Mat midMat = mat.submat(midROI);
+        Mat rightMat = mat.submat(rightROI);
 
         double leftValue = Core.sumElems(leftMat).val[0];
         double midValue = Core.sumElems(midMat).val[0];
         double rightValue = Core.sumElems(rightMat).val[0];
-        telemetry.addData("Left", leftValue);
-        telemetry.addData("Middle", midValue);
-        telemetry.addData("Right", rightValue);
+
+        leftItem.setValue(leftValue);
+        midItem.setValue(midValue);
+        rightItem.setValue(rightValue);
 
         leftMat.release();
         midMat.release();
@@ -76,27 +77,27 @@ public class BarcodeScanner extends Detector {
         Scalar leftColor, midColor, rightColor;
         if (max == leftValue) {
             barcode = Barcode.BOT;
-            telemetry.addData("Barcode", "left");
-            telemetry.addData("Target Level", "bottom");
+            barcodeItem.setValue("left");
+            targetLevelItem.setValue("bottom");
             leftColor = matchColor;
             midColor = rightColor = mismatchColor;
         }
         else if (max == midValue) {
             barcode = Barcode.MID;
-            telemetry.addData("Barcode", "middle");
-            telemetry.addData("Target Level", "middle");
+            barcodeItem.setValue("middle");
+            targetLevelItem.setValue("middle");
             midColor = matchColor;
             leftColor = rightColor = mismatchColor;
         }
         else {
             barcode = Barcode.TOP;
-            telemetry.addData("Barcode", "right");
-            telemetry.addData("Result", "top");
+            barcodeItem.setValue("right");
+            targetLevelItem.setValue("top");
             rightColor = matchColor;
             leftColor = midColor = mismatchColor;
         }
         latch.countDown();
-        telemetry.update();
+        Match.telemetry.update();
 
         Imgproc.rectangle(input, leftROI, leftColor);
         Imgproc.rectangle(input, midROI, midColor);
@@ -110,5 +111,24 @@ public class BarcodeScanner extends Detector {
             latch.await();
         }
         return barcode;
+    }
+
+    public void start() {
+        Match.log("Barcode Scanner started");
+        leftItem = Match.createLogItem("Barcode - Left Value", 0);
+        midItem = Match.createLogItem("Barcode - Mid Value", 0);
+        rightItem = Match.createLogItem("Barcode - Right Value", 0);
+        barcodeItem = Match.createLogItem("Barcode - Barcode", "undefined");
+        targetLevelItem = Match.createLogItem("Barcode - Target Level", "undefined");
+        super.start();
+    }
+    public void stop() {
+        super.stop();
+        Match.log("Barcode Scanner stopped");
+        Match.removeLogItem(leftItem);
+        Match.removeLogItem(midItem);
+        Match.removeLogItem(rightItem);
+        Match.removeLogItem(barcodeItem);
+        Match.removeLogItem(targetLevelItem);
     }
 }

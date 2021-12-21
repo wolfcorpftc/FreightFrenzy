@@ -3,26 +3,22 @@ package org.wolfcorp.ff.opmode;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 public abstract class OpMode extends LinearOpMode {
-    static private OpMode instance = null;
-
+    /**
+     * Based on the OpMode name, initialize {@link Match} members appropriately.
+     */
     public OpMode() {
-        instance = this;
-
-        Match.isRed = this.getClass().getSimpleName().contains("Red");
-
-        // Faster telemetry
-        telemetry.setMsTransmissionInterval(50);
+        Match.statusItem = null; // allows previous telemetry object to be GC'd (not sure if needed)
+        Match.telemetry = telemetry; // don't do any additional config here, see Match#setupTelemetry
+        Match.RED = modeNameContains("Red");
     }
 
-    static public void log(String s) {
-        if (instance == null) {
-            return;
-        }
-        instance.telemetry.addLine(s);
-        instance.telemetry.update();
-    }
-
-    protected void resetInstance() {
-        instance = null;
+    /**
+     * Tests whether the current OpMode name contains given substring.
+     *
+     * @param searchTerm the search term
+     * @return whether the OpMode name contains the search term
+     */
+    public boolean modeNameContains(String searchTerm) {
+        return this.getClass().getSimpleName().contains(searchTerm);
     }
 }

@@ -1,8 +1,6 @@
 package org.wolfcorp.ff.opmode.meet0;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
-import com.acmerobotics.roadrunner.path.PathBuilder;
-import com.acmerobotics.roadrunner.path.QuinticSpline;
 
 import org.wolfcorp.ff.opmode.AutonomousMode;
 import org.wolfcorp.ff.opmode.Match;
@@ -23,8 +21,8 @@ public abstract class Meet0Auto extends AutonomousMode {
     }
 
     @Override
-    public void runOpMode() throws InterruptedException {
-        log("Meet 0 runOpMode; initializing robot");
+    public void runOpMode() {
+        Match.status("Meet 0 runOpMode; initializing robot");
         // *** Initialization ***
         drive = new Drivetrain(hardwareMap);
         drive.setPoseEstimate(initialPose);
@@ -32,14 +30,14 @@ public abstract class Meet0Auto extends AutonomousMode {
         shovel = new Shovel(hardwareMap);
         spinner = new CarouselSpinner(hardwareMap, this::sleep);
 
-        log("Robot initialized, preparing task queue");
+        Match.status("Robot initialized, preparing task queue");
 
 //        queue(shovel::stayStill);
 
         // *** Spin carousel & go to hub ***
         if (CAROUSEL) {
-            log("Initializing: carousel");
-            queue(fromHere().lineToLinearHeading(fakePreCarouselPose));
+            Match.status("Initializing: carousel");
+            queue(fromHere().lineToLinearHeading(calibratePreCarouselPose));
             //queue(fromHere().lineToLinearHeading(preCarouselPose));
             // TODO: replace one axis only
             queue(() -> drive.setPoseEstimate(preCarouselPose));
@@ -52,33 +50,26 @@ public abstract class Meet0Auto extends AutonomousMode {
         }
 
         // *** Score pre-loaded cube ***
-        log("Initializing: hub & score");
+        Match.status("Initializing: hub & score");
         queue(fromHere().lineToLinearHeading(hubPose));
         queue(() -> {
-            try {
-                shovel.down();
-                sleep(250);
-                shovel.up();
-            } catch (InterruptedException e) {
-                // FIXME: properly handle (define custom functional interface that throws)
-                e.printStackTrace();
-            }
+            shovel.down();
+            sleep(250);
+            shovel.up();
         });
 
         // *** Park ***
-        log("Initializing: park");
+        Match.status("Initializing: park");
         queue(fromHere().splineToSplineHeading(preWhPose, deg(0)).lineTo(parkPose.vec()));
 
         // *** START ***
-        log("Task queue initialized, waiting for start");
+        Match.status("Task queue initialized, waiting for start");
         waitForStart();
         runTasks();
-        log("All tasks done");
+        Match.status("All tasks done");
 
         sleep(1000);
         Match.teleOpInitialPose = drive.getPoseEstimate();
         Match.hubPose = hubPose;
-
-        resetInstance();
     }
 }
