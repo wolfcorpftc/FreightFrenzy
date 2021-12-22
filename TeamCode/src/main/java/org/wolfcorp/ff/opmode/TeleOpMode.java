@@ -62,6 +62,7 @@ public abstract class TeleOpMode extends OpMode {
             }
             if (!drive.isBusy()) {
                 telemetry.addLine("TeleOp: Drive");
+                /*
                 Vector2d input = new Vector2d(
                         //-gamepad1.right_stick_y,
                         //-gamepad1.right_stick_x
@@ -93,6 +94,14 @@ public abstract class TeleOpMode extends OpMode {
                             slowMode
                     );
                 }
+              */
+                drive.drive(
+                        gamepad1.right_stick_y,
+                        -gamepad1.right_stick_x,
+                        gamepad1.left_stick_x,
+                        0.4,
+                        slowMode
+                );
             }
 
             // *** Carousel Spinner ***
@@ -111,6 +120,7 @@ public abstract class TeleOpMode extends OpMode {
 
             // *** Driver Assist: Checkpoint ***
             // Go to checkpoint / hub
+            /*
             if (gamepad1.b && !gamepad1.start && !maskCheckpoint) {
                 maskCheckpoint = true;
                 Trajectory toHub = drive.trajectoryBuilder(drive.getPoseEstimate())
@@ -133,7 +143,7 @@ public abstract class TeleOpMode extends OpMode {
             // Unblock checkpoint functionalities when button presses are released
             if ((!gamepad1.b || (gamepad1.b && gamepad1.start)) && !gamepad1.y && !gamepad1.x) {
                 maskCheckpoint = false;
-            }
+            }*/
 
             // *** Intake ***
             if (gamepad2.b && !gamepad2.start && !maskIntake) {
@@ -207,10 +217,17 @@ public abstract class TeleOpMode extends OpMode {
             drive.update();
 
             // *** Telemetry ***
+            telemetry.addData("Spinner isOn", spinner.isOn());
+            telemetry.addData("Spinner Mask", maskSpinner);
+            telemetry.addData("Spinner Power", spinner.getServo().getPower());
+            telemetry.addData("Slow Mode", slowMode);
+            telemetry.addData("Mask Slow Mode", maskSlowMode);
+
             telemetry.addData("Robot Pose", drive.getPoseEstimate().toString());
 
-            telemetry.addData("Intake Current Pos", intake.getMotor().getCurrentPosition());
-            telemetry.addData("Intake Target Pos", intake.getMotor().getTargetPosition());
+            telemetry.addData("Intake Current Speed", intake.getMotor().getVelocity());
+            telemetry.addData("Intake Current Power", intake.getMotor().getPower());
+            telemetry.addData("Intake Current Current", intake.getMotor().getCurrent(CurrentUnit.MILLIAMPS));
 
             telemetry.addData("Outtake Current Pos", outtake.getMotor().getCurrentPosition());
             telemetry.addData("Outtake Target Pos", outtake.getMotor().getTargetPosition());

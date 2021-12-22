@@ -13,15 +13,15 @@ public class Intake {
     public static final double TICKS_PER_REV = 103.8;
     public static final int INTAKE_REVS = 20;
     public static final double MAX_SPEED = 1620 / 60.0 * TICKS_PER_REV; // ticks/sec
-    public static final double IN_SPEED = 0.4 * MAX_SPEED; // ticks/sec
-    public static final double OUT_SPEED = -0.25 * MAX_SPEED; // ticks/sec; TODO: tune
+    public static final double IN_SPEED = -0.4 * MAX_SPEED; // ticks/sec
+    public static final double OUT_SPEED = 0.25 * MAX_SPEED; // ticks/sec; TODO: tune
 
     private final DcMotorEx motor;
 
     public Intake(HardwareMap hwMap) {
         motor = hwMap.get(DcMotorEx.class, "intake");
         motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        motor.setDirection(DcMotor.Direction.REVERSE);
+        motor.setDirection(DcMotor.Direction.FORWARD);
         motor.setPower(0);
         motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);

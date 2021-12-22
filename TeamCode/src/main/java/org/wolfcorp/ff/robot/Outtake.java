@@ -23,7 +23,7 @@ public class Outtake {
     public static final int SLIDE_MIN_POSITION = -100;
     public static final int SLIDE_MAX_POSITION = 2100;
     public static final double DUMP_IN_POSITION = 0.88;
-    public static final double DUMP_OUT_POSITION = 0.45;
+    public static final double DUMP_OUT_POSITION = 0.40;
     private final DcMotorEx motor; // slide motor
     private final Servo servo; // dump servo
 

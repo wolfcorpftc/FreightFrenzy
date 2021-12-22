@@ -79,4 +79,8 @@ public class CarouselSpinner {
     public void spin() {
         spin(1);
     }
+
+    public CRServo getServo() {
+        return servo;
+    }
 }
