@@ -8,6 +8,7 @@ import org.wolfcorp.ff.opmode.AutonomousMode;
 import org.wolfcorp.ff.opmode.Match;
 import org.wolfcorp.ff.opmode.OpMode;
 import org.wolfcorp.ff.robot.Drivetrain;
+import org.wolfcorp.ff.robot.DumpIndicator;
 import org.wolfcorp.ff.robot.Intake;
 
 @Autonomous(name = "Debug", group = "test")
@@ -15,18 +16,9 @@ public class DebugAuto extends AutonomousMode {
     @Override
     public void runOpMode() {
         Match.setupTelemetry();
-//        Match.setupTelemetry();
-//        Match.status("Initializing");
-//        Intake intake = new Intake(hardwareMap);
-//        queue(fromHere().strafeLeft(3));
-//        queue(() -> intake.in(5));
-//        Match.status("Ready for start");
-//        waitForStart();
-//        runTasks();
-        drive = new Drivetrain(hardwareMap);
-        drive.setPoseEstimate(initialPose);
+        DumpIndicator indicator = new DumpIndicator(hardwareMap);
         waitForStart();
-        queue(fromHere().forward(3));
-        runTasks();
+        indicator.empty();
+        while (opModeIsActive());
     }
 }

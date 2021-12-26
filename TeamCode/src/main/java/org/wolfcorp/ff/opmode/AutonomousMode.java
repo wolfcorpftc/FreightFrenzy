@@ -6,9 +6,11 @@ import static org.wolfcorp.ff.robot.DriveConstants.TRACK_WIDTH;
 import static org.wolfcorp.ff.robot.DriveConstants.WIDTH;
 import static org.wolfcorp.ff.robot.Drivetrain.getAccelerationConstraint;
 import static org.wolfcorp.ff.robot.Drivetrain.getVelocityConstraint;
+import static org.wolfcorp.ff.robot.DumpIndicator.Status.EMPTY;
+import static org.wolfcorp.ff.robot.DumpIndicator.Status.FULL;
+import static org.wolfcorp.ff.robot.DumpIndicator.Status.OVERFLOW;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
-import com.qualcomm.robotcore.hardware.DistanceSensor;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
@@ -16,10 +18,7 @@ import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvWebcam;
 import org.wolfcorp.ff.BuildConfig;
-import org.wolfcorp.ff.robot.CarouselSpinner;
-import org.wolfcorp.ff.robot.Drivetrain;
 import org.wolfcorp.ff.robot.Intake;
-import org.wolfcorp.ff.robot.Outtake;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequence;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequenceBuilder;
 import org.wolfcorp.ff.vision.Barcode;
@@ -33,15 +32,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 public abstract class AutonomousMode extends OpMode {
-    // region Hardware
-    protected Drivetrain drive = null;
-    protected CarouselSpinner spinner = null;
-    protected OpenCvCamera camera = null;
-    protected Intake intake = null;
-    protected Outtake outtake = null;
-    protected DistanceSensor rangeSensor;
-    // endregion
-
     // region Configuration
     public final boolean VISION = !modeNameContains("NV");
     public final boolean CAROUSEL = modeNameContains("Carousel");
@@ -51,10 +41,15 @@ public abstract class AutonomousMode extends OpMode {
     // endregion
 
     // region Vision Fields
+    protected OpenCvCamera camera = null;
     protected BarcodeScanner scanner;
     protected Guide guide;
     protected VuforiaNavigator navigator;
     protected Barcode barcode;
+    // endregion
+
+    // region Miscellaneous
+    boolean handleExcess = false;
     // endregion
 
     // region Poses
@@ -146,14 +141,14 @@ public abstract class AutonomousMode extends OpMode {
 
         Pose2d hubOffset = pos(CAROUSEL ? (RED ? 3 : -2) : 5, RED ? 5 : 2);
         trueHubPose = pos(-48.5, -12, 90);
-        hubPose = trueHubPose.plus(pos(RED ? -4 : 5, CAROUSEL ? 0 : -3)).plus(hubOffset);
+        hubPose = trueHubPose.plus(pos(RED ? -4 : 2, CAROUSEL ? 0 : -3)).plus(hubOffset);
         preHubPose = pos(-48, -12, 0).plus(hubOffset);
         hubWallPose = pos(-72 + WIDTH / 2, -12, 0).plus(hubOffset);
         calibrateHubWallPose = hubWallPose.minus(pos(6, 0)); // hubOffset is already applied
 
         preWhPose = pos(-72 + WIDTH / 2, 12, 0);
         calibratePreWhPose = preWhPose.minus(pos(4, 0));
-        trueWhPose = pos(-72 + WIDTH / 2, 42, 0);
+        trueWhPose = pos(-72 + WIDTH / 2, 30, 0);
         whPose = trueWhPose.plus(pos(0, 13));
         calibrateWhPose = whPose.minus(pos(8, 0));
 
@@ -180,18 +175,16 @@ public abstract class AutonomousMode extends OpMode {
     public void runOpMode() {
         Match.setupTelemetry();
         // *** Initialization ***
+        initHardware();
+
+        Match.status("Starting vision init thread");
         Thread initVisionThread = new Thread(this::initVisionWebcam);
         if (VISION) {
             initVisionThread.start();
         }
 
-        drive = new Drivetrain(hardwareMap);
+        Match.status("Setting pose");
         drive.setPoseEstimate(initialPose);
-        intake = new Intake(hardwareMap);
-        outtake = new Outtake(hardwareMap);
-        spinner = new CarouselSpinner(hardwareMap, this::sleep);
-
-        rangeSensor = hardwareMap.get(DistanceSensor.class, "sensor_range");
 
         Match.status("Robot Initialized, preparing task queue");
 
@@ -225,33 +218,59 @@ public abstract class AutonomousMode extends OpMode {
             if (!isOuttakeReset) {
                 queue(outtake::dumpIn);
                 queue(() -> outtake.slideToAsync(Barcode.ZERO));
+                isOuttakeReset = true;
             }
             // *** Hub to warehouse ***
             queue(fromHere()
-                    .lineToSplineHeading(preHubPose.minus(pos(10, -12)))
-                    .splineToLinearHeading(preWhPose.minus(pos(5, 0)), 0)
+                    .lineToSplineHeading(preHubPose.plus(pos(-4, 12)))
+                    .lineTo(preWhPose.minus(pos(7, 0)).vec())
                     .lineTo(calibrateWhPose.vec(), getVelocityConstraint(30, 5, TRACK_WIDTH), getAccelerationConstraint(30)));
+            // *** Intake ***
             queue(() -> {
-                sleep(1000);
                 intake.in();
-                // FIXME: replace with trajectory forward
-                drive.forward(0.1, 1.25);
+                while (intakeRampDistance.getDistance(DistanceUnit.INCH) > 5 && dumpIndicator.update() == EMPTY) {
+                   drive.setMotorPowers(0.1);
+                }
+                while (dumpIndicator.update() == EMPTY) {
+                    drive.setMotorPowers(0.05);
+                }
+                drive.setMotorPowers(0);
+                if (dumpIndicator.update() != EMPTY) {
+                    intake.out();
+                }
             });
-            queueWarehouseSensorCalibration(trueWhPose);
+            queueWarehouseSensorCalibration(trueWhPose.plus(pos(0, 24)));
             // *** Warehouse to hub ***
             queue(fromHere()
-                    // .UNSTABLE_addTemporalMarkerOffset(1, () -> intake.getMotor().setVelocity(Intake.OUT_SPEED))
-                    .lineTo(preWhPose.minus(pos(2, 0)).vec())
-                    .now(intake::off)
-                    .splineToSplineHeading(hubPose.minus(pos(4.5, 0))) // TODO: name pose?
-//                            .splineToSplineHeading(hubPose.minus(pos(7, 0))) // TODO: name pose?
-                    // TODO: name pose
+                    .lineTo(preWhPose.minus(pos(10, 0)).vec())
+                    .now(() -> {
+                        if (dumpIndicator.update() == EMPTY) {
+                            // pass
+                        } else if (dumpIndicator.update() == FULL) {
+                            intake.out();
+                        } else {
+                            outtake.slideToAsync(Barcode.EXCESS);
+                            outtake.dumpExcess();
+                            intake.out();
+                            handleExcess = true;
+                        }
+                    }));
+            queueCalibration(preWhPose);
+            queue(fromHere()
+                    .splineToSplineHeading(hubPose.minus(pos(4.5, 0)))
+                    .now(() -> {
+                    })
                     .lineTo(hubPose.minus(pos(2.5, 0)).vec(), getVelocityConstraint(20, 5, TRACK_WIDTH), getAccelerationConstraint(20))
-//                    .lineTo(hubPose.minus(pos(5, 0)).vec(), getVelocityConstraint(20, 5, TRACK_WIDTH), getAccelerationConstraint(20))
             );
             queueHubSensorCalibration(trueHubPose);
             // *** Score ***
             queue(() -> {
+                if (handleExcess) {
+                    outtake.resetSlide();
+                    handleExcess = false;
+                }
+                intake.off();
+
                 outtake.slideTo(Barcode.TOP); // since it gets counted in TeleOp period scoring
                 outtake.dumpOut();
                 sleep(1200);
@@ -273,10 +292,9 @@ public abstract class AutonomousMode extends OpMode {
         } else {
             // FIXME: change to the same as the if branch
             queue(fromHere()
-                    .lineToLinearHeading(preHubPose)
-                    .lineTo(calibrateHubWallPose.vec()));
-            queueXCalibration(hubWallPose);
-            queue(fromHere().lineTo(parkPose.minus(pos(5, 3)).vec(), getVelocityConstraint(40, 5, TRACK_WIDTH), getAccelerationConstraint(30)));
+                    .lineToSplineHeading(preHubPose.plus(pos(-4, 12)))
+                    .lineTo(preWhPose.minus(pos(7, 0)).vec())
+                    .lineTo(calibrateWhPose.vec(), getVelocityConstraint(30, 5, TRACK_WIDTH), getAccelerationConstraint(30)));
         }
         // TODO: name pose
         queueWarehouseSensorCalibration(parkPose);
@@ -315,6 +333,7 @@ public abstract class AutonomousMode extends OpMode {
         sleep(1000);
         Match.teleOpInitialPose = drive.getPoseEstimate();
         Match.hubPose = hubPose;
+        resetHardware();
     }
     // endregion
 
@@ -562,8 +581,7 @@ public abstract class AutonomousMode extends OpMode {
     /**
      * Queues a xy-coordinates calibration of the robot's pose estimate using a given pose. The new
      * pose estimate will assume the alliance-agnostic xy-coordinates and the heading of the given
-     * pose. Future trajectories will automatically begin at the given pose (<em>Note: </em> not the
-     * actual new pose estimate, which cannot be known before the autonomous period actually starts).
+     * pose. Future trajectories will automatically begin at the given pose.
      *
      * @param calibratedPose the correct pose of the robot
      * @see #pos(double, double, double)
@@ -574,6 +592,15 @@ public abstract class AutonomousMode extends OpMode {
         queue(calibratedPose);
     }
 
+    /**
+     * Queues a x-coordinates calibration of the robot's pose estimate at the hub. The new pose
+     * estimate will calibrate the alliance-agnostic x-coordinates based on the distance sensor
+     * reading. Future trajectories will begin at a predicted pose.
+     *
+     * @param predictedPose the correct pose of the robot
+     * @see #pos(double, double, double)
+     * @see #queue(Pose2d)
+     */
     protected void queueHubSensorCalibration(Pose2d predictedPose) {
         queue(() -> {
             Pose2d currentPose = drive.getPoseEstimate();
@@ -586,6 +613,16 @@ public abstract class AutonomousMode extends OpMode {
         });
         queue(predictedPose);
     }
+
+    /**
+     * Queues a y-coordinates calibration of the robot's pose estimate at the warehouse. The new
+     * pose estimate will calibrate the alliance-agnostic y-coordinates based on the distance sensor
+     * reading. Future trajectories will begin at a predicted pose.
+     *
+     * @param predictedPose the correct pose of the robot
+     * @see #pos(double, double, double)
+     * @see #queue(Pose2d)
+     */
     protected void queueWarehouseSensorCalibration(Pose2d predictedPose) {
         queue(() -> {
             Pose2d currentPose = drive.getPoseEstimate();

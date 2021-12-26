@@ -13,24 +13,33 @@ public class Intake {
     public static final double TICKS_PER_REV = 103.8;
     public static final int INTAKE_REVS = 20;
     public static final double MAX_SPEED = 1620 / 60.0 * TICKS_PER_REV; // ticks/sec
-    public static final double IN_SPEED = -0.4 * MAX_SPEED; // ticks/sec
-    public static final double OUT_SPEED = 0.25 * MAX_SPEED; // ticks/sec; TODO: tune
+    public static final double IN_SPEED = -0.365 * MAX_SPEED; // ticks/sec
+    public static final double OUT_SPEED = 0.25 * MAX_SPEED; // ticks/sec;
 
     private final DcMotorEx motor;
+
+    private final Object motorModeLock = new Object();
 
     public Intake(HardwareMap hwMap) {
         motor = hwMap.get(DcMotorEx.class, "intake");
         motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         motor.setDirection(DcMotor.Direction.FORWARD);
         motor.setPower(0);
-        motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        synchronized (motorModeLock) {
+            motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        }
+    }
+
+    // FIXME: add comment and ensure all usages are correct
+    public void in() {
+        motor.setVelocity(IN_SPEED);
     }
 
     /**
      * Toggles the intake to take in game elements. Intended for TeleOp.
      */
-    public void in() {
+    public void toggleIn() {
         if (isOn()) {
             off();
         } else {
@@ -39,14 +48,17 @@ public class Intake {
     }
 
     /**
-     * Rotates the motor inward for a given number of revolutions.
+     * Rotates the motor inward for a given number of revolutions. <b>WARNING: </b> Running
+     * {@link #in(int)} and {@link #out(int)} at the same time may result in undefined behavior.
      *
      * @param revs the number of revolutions
      */
     public void in(int revs) {
-        motor.setTargetPosition((int) (motor.getCurrentPosition() + revs * TICKS_PER_REV));
-        motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        motor.setVelocity(IN_SPEED);
+        synchronized (motorModeLock) {
+            motor.setTargetPosition((int) (motor.getCurrentPosition() + revs * TICKS_PER_REV));
+            motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            motor.setVelocity(IN_SPEED);
+        }
         // TODO: remove message after debugging
         Telemetry.Item positionItem = Match.createLogItem("Intake position", motor.getCurrentPosition());
         while (motor.isBusy() && !Thread.currentThread().isInterrupted()) {
@@ -54,28 +66,42 @@ public class Intake {
             Match.update();
         }
         Match.removeLogItem(positionItem);
-        motor.setPower(0);
-        motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        synchronized (motorModeLock) {
+            motor.setPower(0);
+            motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        }
     }
 
     /**
-     * Rotates the motor outward for a given number of revolutions.
+     * Rotates the motor outward for a given number of revolutions. <b>WARNING: </b> Running
+     * {@link #in(int)} and {@link #out(int)} at the same time may result in undefined behavior.
      *
      * @param revs the number of revolutions
      */
     public void out(int revs) {
-        motor.setTargetPosition((int) (motor.getCurrentPosition() - revs * TICKS_PER_REV));
-        motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        motor.setVelocity(OUT_SPEED);
+        synchronized (motorModeLock) {
+            motor.setTargetPosition((int) (motor.getCurrentPosition() - revs * TICKS_PER_REV));
+            motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            motor.setVelocity(OUT_SPEED);
+        }
         while (motor.isBusy() && !Thread.currentThread().isInterrupted());
-        motor.setPower(0);
-        motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        synchronized (motorModeLock) {
+            motor.setPower(0);
+            motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        }
+    }
+
+    /**
+     * Makes the intake spit out / repel game elements. Intended for TeleOp.
+     */
+    public void out() {
+        motor.setVelocity(OUT_SPEED);
     }
 
     /**
      * Toggles the intake to repel game elements. Intended for TeleOp.
      */
-    public void out() {
+    public void toggleOut() {
         if (isOn()) {
             off();
         } else {

@@ -4,8 +4,11 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.wolfcorp.ff.opmode.Match;
+import org.wolfcorp.ff.opmode.OpMode;
 import org.wolfcorp.ff.vision.Barcode;
 
 import java.util.Objects;
@@ -17,16 +20,24 @@ public class Outtake {
     public static final double SLIDE_DOWN_SPEED = -0.85 * SLIDE_MAX_SPEED; // ticks/sec
 
     public static final int SLIDE_TOP_POSITION = 2000;
-    public static final int SLIDE_MID_POSITION = 1300;
+    public static final int SLIDE_MID_POSITION = 1000;
+    public static final int SLIDE_EXCESS_POSITION = 400;
     public static final int SLIDE_BOT_POSITION = 400;
 
     public static final int SLIDE_MIN_POSITION = -100;
     public static final int SLIDE_MAX_POSITION = 2100;
+
+    public static final double DUMP_EXCESS_POSITION = 0.99;
     public static final double DUMP_IN_POSITION = 0.88;
     public static final double DUMP_OUT_POSITION = 0.40;
+
+    public static final double DUMP_OVERFLOW_DIST = 1.6;
+    public static final double DUMP_FULL_DIST = 1.6;
+
     private final DcMotorEx motor; // slide motor
     private final Servo servo; // dump servo
 
+    private final Object motorModeLock = new Object();
     private boolean isDumpOut = false;
 
     public Outtake(HardwareMap hwMap) {
@@ -35,18 +46,20 @@ public class Outtake {
 
         motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         motor.setPower(0);
-        motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        synchronized (motorModeLock) {
+            motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        }
     }
 
     /**
      * Sets the slide to move. Intended for TeleOp.
      * @param extend whether to extend or retract the slide
      */
-    public void slide(boolean extend, boolean ignoreOverextension) {
+    public void slide(boolean extend, boolean overextend) {
         boolean isOverextension = (extend && motor.getCurrentPosition() >= SLIDE_MAX_POSITION)
                 || (!extend && motor.getCurrentPosition() <= SLIDE_MIN_POSITION);
-        if (!isOverextension || ignoreOverextension) {
+        if (!isOverextension || overextend) {
             motor.setVelocity(extend ? SLIDE_UP_SPEED : SLIDE_DOWN_SPEED);
         }
         else {
@@ -58,15 +71,15 @@ public class Outtake {
     /**
      * Moves the slide outward. Intended for TeleOp.
      */
-    public void extend(boolean ignoreOverextension) {
-        slide(true, ignoreOverextension);
+    public void extend(boolean overextend) {
+        slide(true, overextend);
     }
 
     /**
      * Moves the slide inward. Intended for TeleOp.
      */
-    public void retract(boolean ignoreOverextension) {
-        slide(false, ignoreOverextension);
+    public void retract(boolean overextend) {
+        slide(false, overextend);
     }
 
     /**
@@ -74,9 +87,11 @@ public class Outtake {
      * This method can stop {@code RUN_TO_POSITION}.
      */
     public void resetSlide() {
-        motor.setVelocity(0);
-        motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        synchronized (motorModeLock) {
+            motor.setVelocity(0);
+            motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        }
     }
 
     /**
@@ -89,17 +104,20 @@ public class Outtake {
         resetSlide();
         switch (barcode) {
             case TOP:
-                runToPositionAsync(SLIDE_TOP_POSITION);
+                slideToPositionAsync(SLIDE_TOP_POSITION);
                 break;
             case MID:
-                runToPositionAsync(SLIDE_MID_POSITION);
+                slideToPositionAsync(SLIDE_MID_POSITION);
+                break;
+            case EXCESS:
+                slideToPositionAsync(SLIDE_EXCESS_POSITION);
                 break;
             default:
             case BOT:
-                runToPositionAsync(SLIDE_BOT_POSITION);
+                slideToPositionAsync(SLIDE_BOT_POSITION);
                 break;
             case ZERO:
-                runToPositionAsync(0);
+                slideToPositionAsync(0);
                 break;
         }
     }
@@ -129,21 +147,25 @@ public class Outtake {
      * Treats current encoder position as zero
      */
     public void setInitialPos() {
-        motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        synchronized (motorModeLock) {
+            motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        }
     }
 
     /**
      * Synchronously move the slide to an encoder position. Interrupt-aware.
      * @param position destination encoder position
      */
-    public void runToPositionAsync(int position) {
-        motor.setTargetPosition(position);
-        motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        if (motor.getCurrentPosition() < position) {
-            motor.setVelocity(SLIDE_UP_SPEED);
-        } else {
-            motor.setVelocity(SLIDE_DOWN_SPEED);
+    public void slideToPositionAsync(int position) {
+        synchronized (motorModeLock) {
+            motor.setTargetPosition(position);
+            motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            if (motor.getCurrentPosition() < position) {
+                motor.setVelocity(SLIDE_UP_SPEED);
+            } else {
+                motor.setVelocity(SLIDE_DOWN_SPEED);
+            }
         }
     }
 
@@ -176,7 +198,7 @@ public class Outtake {
     }
 
     /**
-     * Asynchronously turn the dump inward.
+     * Asynchronously turns the dump inward.
      */
     public void dumpIn() {
         isDumpOut = false;
@@ -184,11 +206,19 @@ public class Outtake {
     }
 
     /**
-     * Asynchronously turn the dump outward.
+     * Asynchronously turns the dump outward.
      */
     public void dumpOut() {
         isDumpOut = true;
         servo.setPosition(DUMP_OUT_POSITION);
+    }
+
+    /**
+     * Asynchronously turns the dump inward to dispose of the extra game element.
+     */
+    public void dumpExcess() {
+        isDumpOut = false;
+        servo.setPosition(DUMP_EXCESS_POSITION);
     }
 
     /**

@@ -1,24 +1,16 @@
 package org.wolfcorp.ff.opmode;
 
-import static org.wolfcorp.ff.opmode.AutonomousMode.deg;
-
 import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.roadrunner.geometry.Pose2d;
-import com.acmerobotics.roadrunner.geometry.Vector2d;
-import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DigitalChannel;
-import com.qualcomm.robotcore.hardware.DistanceSensor;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.wolfcorp.ff.robot.CarouselSpinner;
-import org.wolfcorp.ff.robot.Drivetrain;
-import org.wolfcorp.ff.robot.Intake;
 import org.wolfcorp.ff.robot.Outtake;
 import org.wolfcorp.ff.vision.Barcode;
 
 public abstract class TeleOpMode extends OpMode {
+    protected FtcDashboard dashboard = null;
+
     private boolean maskSlowMode = false;
     private boolean maskCheckpoint = false;
     private boolean maskIntake = false;
@@ -27,22 +19,16 @@ public abstract class TeleOpMode extends OpMode {
     private boolean maskSpinner = false;
 
     private boolean slowMode = false;
-    private boolean dumpFull = false;
 
     @Override
     public void runOpMode() throws InterruptedException {
         Match.setupTelemetry();
+        telemetry.setAutoClear(true);
+        initHardware();
 
-        FtcDashboard dashboard = FtcDashboard.getInstance();
-        Drivetrain drive = new Drivetrain(hardwareMap);
-        Intake intake = new Intake(hardwareMap);
-        Outtake outtake = new Outtake(hardwareMap);
-        CarouselSpinner spinner = new CarouselSpinner(hardwareMap, this::sleep);
+        dashboard = FtcDashboard.getInstance();
 
-//        DigitalChannel touchSensor = hardwareMap.get(DigitalChannel.class, "touch");
-        DistanceSensor distanceSensor = hardwareMap.get(DistanceSensor.class, "dumpDistance");
-
-        Match.status("Initializing robot");
+        Match.status("Setting pose");
         drive.setPoseEstimate(Match.teleOpInitialPose);
 
         Match.status("Robot initialized, waiting for start");
@@ -51,7 +37,6 @@ public abstract class TeleOpMode extends OpMode {
 
         Match.status("Start!");
         while (opModeIsActive()) {
-            telemetry.clear();
             // *** Drivetrain ***
             if (gamepad1.right_bumper && !maskSlowMode) {
                 slowMode = !slowMode;
@@ -119,6 +104,7 @@ public abstract class TeleOpMode extends OpMode {
             }
 
             // *** Driver Assist: Checkpoint ***
+
             // Go to checkpoint / hub
             /*
             if (gamepad1.b && !gamepad1.start && !maskCheckpoint) {
@@ -148,12 +134,12 @@ public abstract class TeleOpMode extends OpMode {
             // *** Intake ***
             if (gamepad2.b && !gamepad2.start && !maskIntake) {
                 maskIntake = true;
-                intake.out();
+                intake.toggleOut();
             } else if (gamepad2.x && !maskIntake) {
                 maskIntake = true;
                 // the dump must be at the bottom-most position when intake is on
                 outtake.slideToAsync(Barcode.ZERO);
-                intake.in();
+                intake.toggleIn();
             }
 
             if (!gamepad2.b && !gamepad2.x) {
@@ -198,27 +184,21 @@ public abstract class TeleOpMode extends OpMode {
             if (gamepad2.right_bumper && !maskDump) {
                 maskDump = true;
                 outtake.toggleDump();
-                dumpFull = false;
             }
 
             if (!gamepad2.right_bumper) {
                 maskDump = false;
             }
-//
-//            if (!touchSensor.getState()) {
-//                dumpFull = true;
-//            }
-//
-            if (distanceSensor.getDistance(DistanceUnit.INCH) < 1.5) {
-                dumpFull = true;
-            }
+
+            // *** Outtake: dump status ***
+            dumpIndicator.update();
 
             // *** Odometry update ***
             drive.update();
 
             // *** Telemetry ***
-            telemetry.addData("Spinner isOn", spinner.isOn());
-            telemetry.addData("Spinner Mask", maskSpinner);
+            telemetry.addData("Spinner is On", spinner.isOn());
+            telemetry.addData("Spinner Masked", maskSpinner);
             telemetry.addData("Spinner Power", spinner.getServo().getPower());
             telemetry.addData("Slow Mode", slowMode);
             telemetry.addData("Mask Slow Mode", maskSlowMode);
@@ -250,10 +230,13 @@ public abstract class TeleOpMode extends OpMode {
             telemetry.addData("RB Position", drive.rightBack.getCurrentPosition());
 
 //            telemetry.addData("Touch Sensor", !touchSensor.getState());
-            telemetry.addData("Dump Distance", distanceSensor.getDistance(DistanceUnit.INCH));
-            telemetry.addData("Dump is full?", dumpFull);
+            telemetry.addData("Lower Dump Distance", lowerDumpDistance.getDistance(DistanceUnit.INCH));
+            telemetry.addData("Upper Dump Distance", upperDumpDistance.getDistance(DistanceUnit.INCH));
+            telemetry.addData("Dump Status", dumpIndicator.update().toString().toLowerCase());
+            telemetry.addData("Intake Ramp Distance", intakeRampDistance.getDistance(DistanceUnit.INCH));
 
             telemetry.update();
         }
+        resetHardware();
     }
 }
