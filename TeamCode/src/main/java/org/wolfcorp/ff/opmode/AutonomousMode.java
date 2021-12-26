@@ -11,6 +11,7 @@ import static org.wolfcorp.ff.robot.DumpIndicator.Status.FULL;
 import static org.wolfcorp.ff.robot.DumpIndicator.Status.OVERFLOW;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
@@ -18,6 +19,7 @@ import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvWebcam;
 import org.wolfcorp.ff.BuildConfig;
+import org.wolfcorp.ff.robot.DriveConstants;
 import org.wolfcorp.ff.robot.Intake;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequence;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequenceBuilder;
@@ -37,7 +39,7 @@ public abstract class AutonomousMode extends OpMode {
     public final boolean CAROUSEL = modeNameContains("Carousel");
     public final boolean WALL_RUNNER = modeNameContains("WR");
 
-    public static final int SCORING_CYCLES = 1;
+    public static final int SCORING_CYCLES = 4;
     // endregion
 
     // region Vision Fields
@@ -203,7 +205,7 @@ public abstract class AutonomousMode extends OpMode {
         if (CAROUSEL) {
             queue(fromHere().now(() -> outtake.slideToAsync(barcode)).lineTo(carouselPose.plus(pos(0, 24)).vec()).splineToLinearHeading(hubPose.minus(pos(5, 0)), deg(0)).lineTo(hubPose.plus(pos(2.5, 0)).vec(), getVelocityConstraint(35, 5, TRACK_WIDTH), getAccelerationConstraint(25)));
         } else {
-            queue(fromHere().now(() -> outtake.slideToAsync(barcode)).splineToSplineHeading(hubPose.minus(pos(5, 0))).lineTo(hubPose.plus(pos(2.5, 0)).vec(), getVelocityConstraint(30, 5, TRACK_WIDTH), getAccelerationConstraint(25)));
+            queue(fromHere().now(() -> outtake.slideToAsync(barcode)).lineToLinearHeading(hubPose.minus(pos(5, -2.5))).lineTo(hubPose.minus(pos(3.5, -2.5)).vec(), getVelocityConstraint(30, 5, TRACK_WIDTH), getAccelerationConstraint(25)));
         }
         queue(() -> {
             outtake.dumpOut();
@@ -227,41 +229,53 @@ public abstract class AutonomousMode extends OpMode {
                     .lineTo(calibrateWhPose.vec(), getVelocityConstraint(30, 5, TRACK_WIDTH), getAccelerationConstraint(30)));
             // *** Intake ***
             queue(() -> {
-                intake.in();
-                while (intakeRampDistance.getDistance(DistanceUnit.INCH) > 5 && dumpIndicator.update() == EMPTY) {
+                intake.getMotor().setVelocity(0.5 * Intake.IN_SPEED); //temp addition
+                while (intakeRampDistance.getDistance(DistanceUnit.INCH) > 6.5 && dumpIndicator.update() == EMPTY) {
                    drive.setMotorPowers(0.1);
+                   drive.updatePoseEstimate();
                 }
-                while (dumpIndicator.update() == EMPTY) {
+                intake.in();
+                ElapsedTime timer = new ElapsedTime();
+                while (dumpIndicator.update() == EMPTY && timer.seconds() < 3) {
+                    drive.updatePoseEstimate();
                     drive.setMotorPowers(0.05);
                 }
                 drive.setMotorPowers(0);
+
+            });
+            // TEST!
+//            queue(() -> drive.sidestepRight(0.75, 5 * (RED ? 1 : -1)));
+            queue(() -> sleep(500));
+            queue(() -> {
                 if (dumpIndicator.update() != EMPTY) {
+                    outtake.slideToAsync(Barcode.TOP);
                     intake.out();
+                } else {
+                    intake.getMotor().setVelocity(1.75 * Intake.IN_SPEED);
                 }
             });
-            queueWarehouseSensorCalibration(trueWhPose.plus(pos(0, 24)));
+            queueWarehouseSensorCalibration(pos(-72 + DriveConstants.WIDTH / 2, 46, 0));
+            queue(() -> Match.status(drive.getPoseEstimate() + "; sensor = " + rangeSensor.getDistance(DistanceUnit.INCH)));
             // *** Warehouse to hub ***
             queue(fromHere()
-                    .lineTo(preWhPose.minus(pos(10, 0)).vec())
+                    // get out
+                    .lineTo(preWhPose.minus(pos(4, 10)).vec())
                     .now(() -> {
-                        if (dumpIndicator.update() == EMPTY) {
-                            // pass
-                        } else if (dumpIndicator.update() == FULL) {
-                            intake.out();
-                        } else {
-                            outtake.slideToAsync(Barcode.EXCESS);
-                            outtake.dumpExcess();
-                            intake.out();
-                            handleExcess = true;
+                        switch (dumpIndicator.update()) {
+                            case EMPTY:
+                                break;
+                            case FULL:
+                                outtake.slideToAsync(Barcode.TOP);
+                                intake.out();
+                            case OVERFLOW:
+                                outtake.slideToAsync(Barcode.EXCESS);
+                                outtake.dumpExcess();
+                                intake.out();
+                                handleExcess = true;
+                                break;
                         }
                     }));
-            queueCalibration(preWhPose);
-            queue(fromHere()
-                    .splineToSplineHeading(hubPose.minus(pos(4.5, 0)))
-                    .now(() -> {
-                    })
-                    .lineTo(hubPose.minus(pos(2.5, 0)).vec(), getVelocityConstraint(20, 5, TRACK_WIDTH), getAccelerationConstraint(20))
-            );
+            queue(fromHere().lineToSplineHeading(hubPose.minus(pos(6, 0)))); // 3.5 -2.5 , old:  2, 8
             queueHubSensorCalibration(trueHubPose);
             // *** Score ***
             queue(() -> {
@@ -271,7 +285,8 @@ public abstract class AutonomousMode extends OpMode {
                 }
                 intake.off();
 
-                outtake.slideTo(Barcode.TOP); // since it gets counted in TeleOp period scoring
+//                outtake.slideTo(Barcode.TOP); // since it gets counted in TeleOp period scoring
+                outtake.slideTo(Barcode.TOP);
                 outtake.dumpOut();
                 sleep(1200);
                 outtake.dumpIn();

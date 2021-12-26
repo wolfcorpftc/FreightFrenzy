@@ -65,7 +65,7 @@ public class DumpIndicator {
         boolean overflow = OpMode.lowerDumpDistance.getDistance(DistanceUnit.INCH) < Outtake.DUMP_FULL_DIST;
         boolean full = OpMode.upperDumpDistance.getDistance(DistanceUnit.INCH) < Outtake.DUMP_OVERFLOW_DIST;
 
-        if (overflow) {
+        if (full && overflow) {
             overflow();
             return Status.OVERFLOW;
         } else if (full) {
