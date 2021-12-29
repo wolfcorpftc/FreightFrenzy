@@ -1,5 +1,6 @@
 package org.wolfcorp.ff.opmode;
 
+import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 
@@ -17,8 +18,8 @@ public abstract class OpMode extends LinearOpMode {
     public static CarouselSpinner spinner = null;
     public static DumpIndicator dumpIndicator = null;
     public static DistanceSensor rangeSensor;
-    public static DistanceSensor upperDumpDistance = null;
-    public static DistanceSensor lowerDumpDistance = null;
+    public static RevColorSensorV3 upperDumpDistance = null;
+    public static RevColorSensorV3 lowerDumpDistance = null;
     public static DistanceSensor intakeRampDistance = null;
 
     /**
@@ -52,8 +53,8 @@ public abstract class OpMode extends LinearOpMode {
         spinner = new CarouselSpinner(hardwareMap, this::sleep);
         dumpIndicator = new DumpIndicator(hardwareMap);
         rangeSensor = hardwareMap.get(DistanceSensor.class, "sensor_range");
-        upperDumpDistance = hardwareMap.get(DistanceSensor.class, "upperDumpDist");
-        lowerDumpDistance = hardwareMap.get(DistanceSensor.class, "lowerDumpDist");
+        upperDumpDistance = hardwareMap.get(RevColorSensorV3.class, "upperDumpDist");
+        lowerDumpDistance = hardwareMap.get(RevColorSensorV3.class, "lowerDumpDist");
         intakeRampDistance = hardwareMap.get(DistanceSensor.class, "intakeDist");
 
         Match.status("Initialized robot hardware");

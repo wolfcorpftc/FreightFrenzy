@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.wolfcorp.ff.robot.CarouselSpinner;
 import org.wolfcorp.ff.robot.Outtake;
 import org.wolfcorp.ff.vision.Barcode;
 
@@ -17,6 +18,9 @@ public abstract class TeleOpMode extends OpMode {
     private boolean maskSlide = false;
     private boolean maskDump = false;
     private boolean maskSpinner = false;
+    private boolean maskManualSpinner = false;
+    private boolean maskOuttakeReset = false;
+    private boolean maskSpinnerOverride = false;
 
     private boolean slowMode = false;
 
@@ -89,9 +93,19 @@ public abstract class TeleOpMode extends OpMode {
                 );
             }
 
-            // *** Carousel Spinner ***
+            // *** Automatic Carousel Spinner ***
             if (gamepad2.left_bumper && !maskSpinner) {
                 maskSpinner = true;
+                spinner.spin(8, CarouselSpinner.SPIN_TIME, 300);
+            }
+
+            if (!gamepad2.left_bumper) {
+                maskSpinner = false;
+            }
+
+            // *** Manual Carousel Spinner ***
+            if (gamepad2.left_trigger > 0.8 && !maskManualSpinner) {
+                maskManualSpinner = true;
                 if (spinner.isOn()) {
                     spinner.off();
                 } else {
@@ -99,8 +113,18 @@ public abstract class TeleOpMode extends OpMode {
                 }
             }
 
-            if (!gamepad2.left_bumper) {
-                maskSpinner = false;
+            if (gamepad2.left_trigger < 0.8) {
+                maskManualSpinner = false;
+            }
+
+            // *** Override Carousel Spinner ***
+            if (gamepad1.left_trigger > 0.8 && gamepad1.right_trigger > 0.8 && !maskSpinnerOverride) {
+                maskSpinnerOverride = true;
+                spinner.stopSpin();
+            }
+
+            if (!(gamepad1.left_trigger > 0.8 && gamepad1.right_trigger > 0.8)) {
+                maskSpinnerOverride = false;
             }
 
             // *** Driver Assist: Checkpoint ***
@@ -180,6 +204,17 @@ public abstract class TeleOpMode extends OpMode {
                 maskSlide = false;
             }
 
+            // *** Outtake : reset ***
+            if (gamepad2.left_trigger > 0.8 && gamepad2.right_trigger > 0.8 && !maskOuttakeReset) {
+                outtake.getMotor().setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                outtake.getMotor().setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                maskOuttakeReset = true;
+            }
+
+            if (gamepad2.left_trigger < 0.8 || gamepad2.right_trigger < 0.8) {
+                maskOuttakeReset = false;
+            }
+
             // *** Outtake: dump ***
             if (gamepad2.right_bumper && !maskDump) {
                 maskDump = true;
@@ -232,6 +267,9 @@ public abstract class TeleOpMode extends OpMode {
 //            telemetry.addData("Touch Sensor", !touchSensor.getState());
             telemetry.addData("Lower Dump Distance", lowerDumpDistance.getDistance(DistanceUnit.INCH));
             telemetry.addData("Upper Dump Distance", upperDumpDistance.getDistance(DistanceUnit.INCH));
+            telemetry.addData("Dump R", lowerDumpDistance.red());
+            telemetry.addData("Dump G", lowerDumpDistance.green());
+            telemetry.addData("Dump B", lowerDumpDistance.blue());
             telemetry.addData("Dump Status", dumpIndicator.update().toString().toLowerCase());
             telemetry.addData("Intake Ramp Distance", intakeRampDistance.getDistance(DistanceUnit.INCH));
 

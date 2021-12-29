@@ -5,13 +5,15 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.wolfcorp.ff.opmode.Match;
+import org.wolfcorp.ff.opmode.OpMode;
 
 import java.util.function.Consumer;
 
 public class CarouselSpinner {
-    public static final double SPIN_TIME = 2750; // millis
+    public static final double SPIN_TIME = 2200; // millis
     public static final Long WAIT_TIME = 1000L; // millis
     public static final double TURN_POWER = 1.0;
+    public static Thread spinThread = null;
 
     private final CRServo servo;
     private final ElapsedTime spinTimer = new ElapsedTime();
@@ -58,17 +60,23 @@ public class CarouselSpinner {
      * @param times how many times the motor should spin
      * @see #WAIT_TIME
      */
-    public void spin(int times) {
-        for (int i = times; i >= 1; i--) {
-            spinTimer.reset();
-            on();
-            while (spinTimer.milliseconds() < SPIN_TIME && !Thread.currentThread().isInterrupted())
-                ;
-            off();
-            if (i != 1) {
-                sleep.accept(WAIT_TIME);
+    public void spin(int times, double spinTime, long waitTime) {
+        Runnable runnable = () -> {
+            for (int i = times; i >= 1; i--) {
+                spinTimer.reset();
+                on();
+                OpMode.dumpIndicator.full();
+                while (spinTimer.milliseconds() < spinTime);
+                off();
+                OpMode.dumpIndicator.overflow();
+                if (i != 1) {
+                    sleep.accept(waitTime);
+                }
             }
-        }
+        };
+
+        spinThread = new Thread(runnable);
+        spinThread.start();
     }
 
     /**
@@ -76,8 +84,17 @@ public class CarouselSpinner {
      *
      * @see #spin(int)
      */
+
     public void spin() {
         spin(1);
+    }
+
+    public void spin(int time) { spin(time, SPIN_TIME, WAIT_TIME); }
+
+    public void stopSpin() {
+        if (spinThread != null && !spinThread.isInterrupted()) {
+            spinThread.interrupt();
+        }
     }
 
     public CRServo getServo() {

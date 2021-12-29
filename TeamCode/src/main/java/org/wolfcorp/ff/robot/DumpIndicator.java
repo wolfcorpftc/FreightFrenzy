@@ -1,5 +1,6 @@
 package org.wolfcorp.ff.robot;
 
+import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.LED;
 
@@ -62,18 +63,31 @@ public class DumpIndicator {
      * @return the status of the dump
      */
     public Status update() {
-        boolean overflow = OpMode.lowerDumpDistance.getDistance(DistanceUnit.INCH) < Outtake.DUMP_FULL_DIST;
-        boolean full = OpMode.upperDumpDistance.getDistance(DistanceUnit.INCH) < Outtake.DUMP_OVERFLOW_DIST;
-
-        if (full && overflow) {
+        if (hasFreight(OpMode.upperDumpDistance)) {
             overflow();
             return Status.OVERFLOW;
-        } else if (full) {
+        } else if (hasFreight(OpMode.lowerDumpDistance)) {
             full();
             return Status.FULL;
         } else {
             empty();
             return Status.EMPTY;
         }
+    }
+
+    public boolean hasFreight(RevColorSensorV3 sensor) {
+        if (sensor == OpMode.upperDumpDistance &&
+            OpMode.upperDumpDistance.getDistance(DistanceUnit.INCH) > Outtake.DUMP_OVERFLOW_DIST) {
+            return false;
+        } else if (sensor == OpMode.lowerDumpDistance &&
+            OpMode.lowerDumpDistance.getDistance(DistanceUnit.INCH) > Outtake.DUMP_OVERFLOW_DIST) {
+            return false;
+        }
+
+        /*if (sensor.red() > 2000 && sensor.blue() > 2000 && sensor.green() > 2000) {
+            return false;
+        }*/
+
+        return true;
     }
 }
