@@ -7,6 +7,8 @@ import com.qualcomm.robotcore.hardware.LED;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.wolfcorp.ff.opmode.OpMode;
 
+import java.util.Arrays;
+
 public class DumpIndicator {
     private final LED leftGreen;
     private final LED rightGreen;
@@ -57,37 +59,33 @@ public class DumpIndicator {
         rightRed.enable(true);
     }
 
+    protected static double average(int... numbers) {
+        return numbers.length == 0 ? 0 : (double) Arrays.stream(numbers).sum() / numbers.length;
+    }
+
     /**
      * Updates the dump indicator based on distance sensor readings.
      *
      * @return the status of the dump
      */
     public Status update() {
-        if (hasFreight(OpMode.upperDumpDistance)) {
+        boolean overflow = OpMode.upperDumpDistance.getDistance(DistanceUnit.INCH) < Outtake.DUMP_OVERFLOW_DIST;
+        boolean full = OpMode.lowerDumpDistance.getDistance(DistanceUnit.INCH) < Outtake.DUMP_FULL_DIST;
+
+//        double overflowRGBAverage = average(OpMode.upperDumpDistance.red(), OpMode.upperDumpDistance.green(), OpMode.upperDumpDistance.blue());
+//        boolean overflow = OpMode.upperDumpDistance.getDistance(DistanceUnit.INCH) < Outtake.DUMP_OVERFLOW_DIST;
+//        double fullRGBAverage = average(OpMode.lowerDumpDistance.red(), OpMode.lowerDumpDistance.green(), OpMode.lowerDumpDistance.blue());
+//        boolean full = OpMode.upperDumpDistance.getDistance(DistanceUnit.INCH) < Outtake.DUMP_FULL_DIST;
+
+        if (full && overflow) {
             overflow();
             return Status.OVERFLOW;
-        } else if (hasFreight(OpMode.lowerDumpDistance)) {
+        } else if (full) {
             full();
             return Status.FULL;
         } else {
             empty();
             return Status.EMPTY;
         }
-    }
-
-    public boolean hasFreight(RevColorSensorV3 sensor) {
-        if (sensor == OpMode.upperDumpDistance &&
-            OpMode.upperDumpDistance.getDistance(DistanceUnit.INCH) > Outtake.DUMP_OVERFLOW_DIST) {
-            return false;
-        } else if (sensor == OpMode.lowerDumpDistance &&
-            OpMode.lowerDumpDistance.getDistance(DistanceUnit.INCH) > Outtake.DUMP_OVERFLOW_DIST) {
-            return false;
-        }
-
-        /*if (sensor.red() > 2000 && sensor.blue() > 2000 && sensor.green() > 2000) {
-            return false;
-        }*/
-
-        return true;
     }
 }

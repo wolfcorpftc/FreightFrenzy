@@ -4,6 +4,7 @@ import com.acmerobotics.roadrunner.geometry.Pose2d;
 
 import org.wolfcorp.ff.opmode.AutonomousMode;
 import org.wolfcorp.ff.opmode.Match;
+import org.wolfcorp.ff.opmode.RobotRunnable;
 import org.wolfcorp.ff.robot.CarouselSpinner;
 import org.wolfcorp.ff.robot.DriveConstants;
 import org.wolfcorp.ff.robot.Drivetrain;
@@ -42,7 +43,7 @@ public abstract class Meet0Auto extends AutonomousMode {
             // TODO: replace one axis only
             queue(() -> drive.setPoseEstimate(preCarouselPose));
             queue(from(preCarouselPose).lineTo(carouselPose.vec()));
-            queue((Runnable) spinner::spin);
+            queue((RobotRunnable) spinner::spin);
         }
         else {
             // Compensation for lack of error

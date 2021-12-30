@@ -10,7 +10,7 @@ import org.wolfcorp.ff.opmode.OpMode;
 import java.util.function.Consumer;
 
 public class CarouselSpinner {
-    public static final double SPIN_TIME = 2200; // millis
+    public static final double SPIN_TIME = 2400; // millis
     public static final Long WAIT_TIME = 1000L; // millis
     public static final double TURN_POWER = 1.0;
     public static Thread spinThread = null;
@@ -60,9 +60,9 @@ public class CarouselSpinner {
      * @param times how many times the motor should spin
      * @see #WAIT_TIME
      */
-    public void spin(int times, double spinTime, long waitTime) {
+    public Thread spinAsync(int times, double spinTime, long waitTime) {
         Runnable runnable = () -> {
-            for (int i = times; i >= 1; i--) {
+            for (int i = times; i >= 1 && !Thread.interrupted(); i--) {
                 spinTimer.reset();
                 on();
                 OpMode.dumpIndicator.full();
@@ -77,6 +77,7 @@ public class CarouselSpinner {
 
         spinThread = new Thread(runnable);
         spinThread.start();
+        return spinThread;
     }
 
     /**
@@ -85,11 +86,11 @@ public class CarouselSpinner {
      * @see #spin(int)
      */
 
-    public void spin() {
+    public void spin() throws InterruptedException {
         spin(1);
     }
 
-    public void spin(int time) { spin(time, SPIN_TIME, WAIT_TIME); }
+    public void spin(int time) throws InterruptedException { spinAsync(time, SPIN_TIME, WAIT_TIME).join(); }
 
     public void stopSpin() {
         if (spinThread != null && !spinThread.isInterrupted()) {

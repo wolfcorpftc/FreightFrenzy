@@ -54,7 +54,10 @@ public abstract class OpMode extends LinearOpMode {
         dumpIndicator = new DumpIndicator(hardwareMap);
         rangeSensor = hardwareMap.get(DistanceSensor.class, "sensor_range");
         upperDumpDistance = hardwareMap.get(RevColorSensorV3.class, "upperDumpDist");
+        upperDumpDistance.enableLed(false);
         lowerDumpDistance = hardwareMap.get(RevColorSensorV3.class, "lowerDumpDist");
+        lowerDumpDistance.enableLed(false);
+        lowerDumpDistance.enableLed(false);
         intakeRampDistance = hardwareMap.get(DistanceSensor.class, "intakeDist");
 
         Match.status("Initialized robot hardware");
@@ -67,7 +70,7 @@ public abstract class OpMode extends LinearOpMode {
     protected void resetHardware() {
         Match.status("Resetting robot hardware...");
 
-        drive = null;
+       drive = null;
         intake = null;
         outtake = null;
         spinner = null;

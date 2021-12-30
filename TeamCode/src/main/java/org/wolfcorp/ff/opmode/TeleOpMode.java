@@ -96,7 +96,7 @@ public abstract class TeleOpMode extends OpMode {
             // *** Automatic Carousel Spinner ***
             if (gamepad2.left_bumper && !maskSpinner) {
                 maskSpinner = true;
-                spinner.spin(8, CarouselSpinner.SPIN_TIME, 300);
+                spinner.spinAsync(8, CarouselSpinner.SPIN_TIME, 300);
             }
 
             if (!gamepad2.left_bumper) {

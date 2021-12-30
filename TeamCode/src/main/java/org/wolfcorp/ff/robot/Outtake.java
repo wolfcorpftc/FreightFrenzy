@@ -19,7 +19,7 @@ public class Outtake {
     public static final double SLIDE_UP_SPEED = 0.85 * SLIDE_MAX_SPEED; // ticks/sec
     public static final double SLIDE_DOWN_SPEED = -0.85 * SLIDE_MAX_SPEED; // ticks/sec
 
-    public static final int SLIDE_TOP_POSITION = 2000;
+    public static final int SLIDE_TOP_POSITION = 1900;
     public static final int SLIDE_MID_POSITION = 1000;
     public static final int SLIDE_EXCESS_POSITION = 400;
     public static final int SLIDE_BOT_POSITION = 400;

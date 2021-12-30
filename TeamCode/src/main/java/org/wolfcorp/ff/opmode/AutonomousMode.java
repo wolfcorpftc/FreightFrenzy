@@ -39,7 +39,7 @@ public abstract class AutonomousMode extends OpMode {
     public final boolean CAROUSEL = modeNameContains("Carousel");
     public final boolean WALL_RUNNER = modeNameContains("WR");
 
-    public static final int SCORING_CYCLES = 4;
+    public static final int SCORING_CYCLES = 2;
     // endregion
 
     // region Vision Fields
@@ -197,15 +197,16 @@ public abstract class AutonomousMode extends OpMode {
             queueYCalibration(preCarouselPose);
             queue(fromHere().lineTo(carouselPose.vec(), getVelocityConstraint(10, 5, TRACK_WIDTH), getAccelerationConstraint(10)));
             // queue(fromHere().lineTo(carouselPose.minus(pos(0.7, 0)).vec(), getVelocityConstraint(10, 2, TRACK_WIDTH), getAccelerationConstraint(10)));
-            queue(spinner::spin);
+            queue(() -> spinner.spin());
         }
 
         // *** Pre-loaded cube ***
         Match.status("Initializing: preloaded");
         if (CAROUSEL) {
-            queue(fromHere().now(() -> outtake.slideToAsync(barcode)).lineTo(carouselPose.plus(pos(0, 24)).vec()).splineToLinearHeading(hubPose.minus(pos(5, 0)), deg(0)).lineTo(hubPose.plus(pos(2.5, 0)).vec(), getVelocityConstraint(35, 5, TRACK_WIDTH), getAccelerationConstraint(25)));
+            queue(fromHere().now(() -> outtake.slideToAsync(barcode)).lineTo(carouselPose.plus(pos(0, 24)).vec()).splineToLinearHeading(hubPose.plus(pos(5.5, 0)), deg(0), getVelocityConstraint(35, 5, TRACK_WIDTH), getAccelerationConstraint(25)));
+//            queue(fromHere().now(() -> outtake.slideToAsync(barcode)).lineTo(carouselPose.plus(pos(0, 24)).vec()).splineToLinearHeading(hubPose.minus(pos(5, 0)), deg(0)).lineTo(hubPose.plus(pos(5.5, 0)).vec(), getVelocityConstraint(35, 5, TRACK_WIDTH), getAccelerationConstraint(25)));
         } else {
-            queue(fromHere().now(() -> outtake.slideToAsync(barcode)).lineToLinearHeading(hubPose.minus(pos(5, -2.5))).lineTo(hubPose.minus(pos(3.5, -2.5)).vec(), getVelocityConstraint(30, 5, TRACK_WIDTH), getAccelerationConstraint(25)));
+            queue(fromHere().now(() -> outtake.slideToAsync(barcode)).lineToLinearHeading(hubPose.minus(pos(3.5, -2.5)), getVelocityConstraint(40, 5, TRACK_WIDTH), getAccelerationConstraint(40)));
         }
         queue(() -> {
             outtake.dumpOut();
@@ -223,32 +224,36 @@ public abstract class AutonomousMode extends OpMode {
                 isOuttakeReset = true;
             }
             // *** Hub to warehouse ***
+//            queue(fromHere()
+//                    .lineToSplineHeading(preHubPose.plus(pos(-4, 12)))
+//                    .lineTo(preWhPose.minus(pos(7, 0)).vec())
+//                    .lineTo(calibrateWhPose.vec(), getVelocityConstraint(30, 5, TRACK_WIDTH), getAccelerationConstraint(30)));
             queue(fromHere()
-                    .lineToSplineHeading(preHubPose.plus(pos(-4, 12)))
-                    .lineTo(preWhPose.minus(pos(7, 0)).vec())
-                    .lineTo(calibrateWhPose.vec(), getVelocityConstraint(30, 5, TRACK_WIDTH), getAccelerationConstraint(30)));
+                    .lineToLinearHeading(calibrateHubWallPose)
+                    .now(() -> {
+                        drive.setPoseEstimate(hubWallPose);
+                        intake.in();
+                    })
+                    .lineTo(calibrateWhPose.minus(pos(0, 5)).vec()));
             // *** Intake ***
             queue(() -> {
-                intake.getMotor().setVelocity(0.5 * Intake.IN_SPEED); //temp addition
-                while (intakeRampDistance.getDistance(DistanceUnit.INCH) > 6.5 && dumpIndicator.update() == EMPTY) {
+//                intake.getMotor().setVelocity(0.5 * Intake.IN_SPEED); //temp addition
+                while (false && intakeRampDistance.getDistance(DistanceUnit.INCH) > 6.5 && dumpIndicator.update() == EMPTY) {
                    drive.setMotorPowers(0.1);
                    drive.updatePoseEstimate();
                 }
-                intake.in();
                 ElapsedTime timer = new ElapsedTime();
-                while (dumpIndicator.update() == EMPTY && timer.seconds() < 3) {
+                while (dumpIndicator.update() == EMPTY && timer.seconds() < 0.5) {
                     drive.updatePoseEstimate();
-                    drive.setMotorPowers(0.05);
+                    drive.setMotorPowers(0.3);
                 }
                 drive.setMotorPowers(0);
-
             });
             // TEST!
 //            queue(() -> drive.sidestepRight(0.75, 5 * (RED ? 1 : -1)));
             queue(() -> sleep(500));
             queue(() -> {
                 if (dumpIndicator.update() != EMPTY) {
-                    outtake.slideToAsync(Barcode.TOP);
                     intake.out();
                 } else {
                     intake.getMotor().setVelocity(1.75 * Intake.IN_SPEED);
@@ -263,19 +268,23 @@ public abstract class AutonomousMode extends OpMode {
                     .now(() -> {
                         switch (dumpIndicator.update()) {
                             case EMPTY:
+                                intake.in();
                                 break;
                             case FULL:
-                                outtake.slideToAsync(Barcode.TOP);
                                 intake.out();
                             case OVERFLOW:
-                                outtake.slideToAsync(Barcode.EXCESS);
-                                outtake.dumpExcess();
+//                                outtake.slideToAsync(Barcode.EXCESS);
+                                // outtake.dumpExcess();
                                 intake.out();
                                 handleExcess = true;
                                 break;
                         }
                     }));
-            queue(fromHere().lineToSplineHeading(hubPose.minus(pos(6, 0)))); // 3.5 -2.5 , old:  2, 8
+            queue(fromHere().addTemporalMarker(0.5, () -> {
+                if (dumpIndicator.update() == FULL) {
+                    outtake.slideToAsync(Barcode.TOP);
+                }
+            }).lineToSplineHeading(hubPose.minus(pos(8, 0)))); // 3.5 -2.5 , old:  2, 8
             queueHubSensorCalibration(trueHubPose);
             // *** Score ***
             queue(() -> {
@@ -306,13 +315,28 @@ public abstract class AutonomousMode extends OpMode {
             isOuttakeReset = true;
         } else {
             // FIXME: change to the same as the if branch
+
             queue(fromHere()
-                    .lineToSplineHeading(preHubPose.plus(pos(-4, 12)))
-                    .lineTo(preWhPose.minus(pos(7, 0)).vec())
-                    .lineTo(calibrateWhPose.vec(), getVelocityConstraint(30, 5, TRACK_WIDTH), getAccelerationConstraint(30)));
+                    .lineToLinearHeading(calibrateHubWallPose)
+                    .now(() -> {
+                        drive.setPoseEstimate(hubWallPose);
+                    })
+                    .lineTo(calibrateWhPose.minus(pos(0, 5)).vec())
+                    .lineTo(calibrateWhPose.vec(), getVelocityConstraint(40, 5, TRACK_WIDTH), getAccelerationConstraint(40)));
         }
         // TODO: name pose
         queueWarehouseSensorCalibration(parkPose);
+        queue(() -> {
+            intake.in();
+            while (dumpIndicator.update() == EMPTY && opModeIsActive()) {
+            }
+            if (dumpIndicator.update() == OVERFLOW) {
+//                outtake.dumpExcess();
+                intake.out();
+            } else {
+                intake.off();
+            }
+        });
 
         // *** Wrapping Up ***
         if (VISION) {
