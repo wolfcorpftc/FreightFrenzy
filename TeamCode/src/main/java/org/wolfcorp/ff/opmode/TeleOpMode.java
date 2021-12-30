@@ -6,6 +6,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.wolfcorp.ff.robot.CarouselSpinner;
+import org.wolfcorp.ff.robot.Drivetrain;
 import org.wolfcorp.ff.robot.Outtake;
 import org.wolfcorp.ff.vision.Barcode;
 
@@ -21,6 +22,9 @@ public abstract class TeleOpMode extends OpMode {
     private boolean maskManualSpinner = false;
     private boolean maskOuttakeReset = false;
     private boolean maskSpinnerOverride = false;
+    private boolean maskSnapTurn = false;
+    private boolean maskGyroReset = false;
+    private boolean maskSlamForward = false;
 
     private boolean slowMode = false;
 
@@ -49,41 +53,9 @@ public abstract class TeleOpMode extends OpMode {
             if (!gamepad1.right_bumper) {
                 maskSlowMode = false;
             }
+
             if (!drive.isBusy()) {
                 telemetry.addLine("TeleOp: Drive");
-                /*
-                Vector2d input = new Vector2d(
-                        //-gamepad1.right_stick_y,
-                        //-gamepad1.right_stick_x
-                        (gamepad1.dpad_left ? 0.5 : 0) - (gamepad1.dpad_right ? 0.5 : 0),
-                        (gamepad1.dpad_up ? 0.5 : 0) - (gamepad1.dpad_down ? 0.5 : 0)
-                ).rotated(-drive.getPoseEstimate().getHeading() - deg(90));
-
-//                drive.drive(
-//                        -input.getX(),
-//                        input.getY(),
-//                        gamepad1.left_stick_x,
-//                        1,
-//                        gamepad1.right_trigger > 0.8
-//                );
-                if (input.getX() * input.getY() != 0) {
-                    drive.setWeightedDrivePower(
-                            new Pose2d(
-                                    input.getY(),
-                                    input.getX(),
-                                    -gamepad1.left_stick_x
-                            )
-                    );
-                } else {
-                    drive.drive(
-                            gamepad1.right_stick_y,
-                            -gamepad1.right_stick_x,
-                            gamepad1.left_stick_x,
-                            0.4,
-                            slowMode
-                    );
-                }
-              */
                 drive.drive(
                         gamepad1.right_stick_y,
                         -gamepad1.right_stick_x,
@@ -91,6 +63,46 @@ public abstract class TeleOpMode extends OpMode {
                         0.4,
                         slowMode
                 );
+            }
+
+            // *** Snap Robot *** //
+            if (gamepad1.left_bumper && !maskSnapTurn) {
+                maskSnapTurn = true;
+                // TODO: CHECK FOR BUGS
+                drive.turnAsync(Math.round(drive.getExternalHeading() / 90.0) * 90);
+            } else if (!gamepad1.left_bumper) {
+                maskSnapTurn = false;
+            }
+
+            // *** Reset Gyro *** //
+            if (gamepad1.dpad_left && !maskGyroReset) {
+                maskGyroReset = true;
+                // TODO: Talk with kevin about reset
+                drive.setExternalHeading(Math.round(drive.getExternalHeading() / 90.0) * 90);
+            } else if (!gamepad1.dpad_left) {
+                maskSnapTurn = false;
+            }
+
+            // *** Slam and Forward *** //
+            if (gamepad1.left_trigger > 0.8 && !maskSlamForward) {
+                maskSlamForward = true;
+                // FIXME: test and find right direction, does this even work?
+                switch ((int) (Math.round(drive.getExternalHeading() / 90.0) * 90)) {
+                    case 0:
+                    case 90:
+                        drive.sidestepLeft(0.6, Drivetrain.SLAM_ERROR);
+                        break;
+                    case -90:
+                    case 180:
+                    case -180:
+                        drive.sidestepRight(0.6, Drivetrain.SLAM_ERROR);
+                        break;
+                }
+                // TODO: talk with Kevin about reset
+                drive.setExternalHeading(Math.round(drive.getExternalHeading() / 90.0) * 90);
+                drive.forward(0.6, Drivetrain.SLAM_FORWARD);
+            } else if (gamepad1.left_trigger < 0.8) {
+                maskSlamForward = false;
             }
 
             // *** Automatic Carousel Spinner ***
@@ -126,34 +138,6 @@ public abstract class TeleOpMode extends OpMode {
             if (!(gamepad1.left_trigger > 0.8 && gamepad1.right_trigger > 0.8)) {
                 maskSpinnerOverride = false;
             }
-
-            // *** Driver Assist: Checkpoint ***
-
-            // Go to checkpoint / hub
-            /*
-            if (gamepad1.b && !gamepad1.start && !maskCheckpoint) {
-                maskCheckpoint = true;
-                Trajectory toHub = drive.trajectoryBuilder(drive.getPoseEstimate())
-                        .lineToLinearHeading(Match.hubPose)
-                        .build();
-                drive.followAsync(toHub);
-            }
-
-            // Set current pose as checkpoint / hub
-            if (gamepad1.y && !maskCheckpoint) {
-                maskCheckpoint = true;
-                drive.setPoseEstimate(Match.hubPose);
-            }
-
-            // Cancel current trajectory to pose
-            if (Math.abs(gamepad1.right_stick_y) + Math.abs(gamepad1.right_stick_x) + Math.abs(gamepad1.left_stick_x) > 0.1) {
-                drive.abort();
-            }
-
-            // Unblock checkpoint functionalities when button presses are released
-            if ((!gamepad1.b || (gamepad1.b && gamepad1.start)) && !gamepad1.y && !gamepad1.x) {
-                maskCheckpoint = false;
-            }*/
 
             // *** Intake ***
             if (gamepad2.b && !gamepad2.start && !maskIntake) {

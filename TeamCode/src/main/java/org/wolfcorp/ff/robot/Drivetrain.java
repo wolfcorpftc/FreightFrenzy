@@ -55,6 +55,9 @@ import java.util.List;
 @Config
 @SuppressWarnings("unused")
 public class Drivetrain extends MecanumDrive {
+    public static double SLAM_ERROR = 5;
+    public static double SLAM_FORWARD = 18;
+
     public static PIDCoefficients TRANSLATIONAL_PID = new PIDCoefficients(4, 0, 0);
     public static PIDCoefficients HEADING_PID = new PIDCoefficients(2, 0, 0);
 
@@ -421,17 +424,6 @@ public class Drivetrain extends MecanumDrive {
         System.out.println(imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES));
         if (condition) turn(angle);
         System.out.println("angle" + angle);
-    }
-
-    public double[] aim() {
-        Pose2d position = getPoseEstimate(); // current position
-        // distance from the goal
-        double x = 72 - position.getX();
-        double y = 48 - position.getY();
-        // solve for the desired pose using trig
-        double distance = Math.sqrt(x * x + y * y);
-        double degree = Math.toDegrees(Math.atan(-y / x));
-        return new double[]{distance, degree};
     }
 
     public void setDriveTargetPos(int lf, int rf, int lb, int rb) {
