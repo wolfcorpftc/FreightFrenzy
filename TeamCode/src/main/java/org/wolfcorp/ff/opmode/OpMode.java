@@ -9,6 +9,7 @@ import org.wolfcorp.ff.robot.Drivetrain;
 import org.wolfcorp.ff.robot.DumpIndicator;
 import org.wolfcorp.ff.robot.Intake;
 import org.wolfcorp.ff.robot.Outtake;
+import org.wolfcorp.ff.robot.ShippingArm;
 
 public abstract class OpMode extends LinearOpMode {
     // public is fine :)
@@ -16,6 +17,7 @@ public abstract class OpMode extends LinearOpMode {
     public static Intake intake = null;
     public static Outtake outtake = null;
     public static CarouselSpinner spinner = null;
+    public static ShippingArm shippingArm = null;
     public static DumpIndicator dumpIndicator = null;
     public static DistanceSensor rangeSensor;
     public static RevColorSensorV3 upperDumpDistance = null;
@@ -51,6 +53,7 @@ public abstract class OpMode extends LinearOpMode {
         intake = new Intake(hardwareMap);
         outtake = new Outtake(hardwareMap);
         spinner = new CarouselSpinner(hardwareMap, this::sleep);
+        shippingArm = new ShippingArm(hardwareMap);
         dumpIndicator = new DumpIndicator(hardwareMap);
         rangeSensor = hardwareMap.get(DistanceSensor.class, "sensor_range");
         upperDumpDistance = hardwareMap.get(RevColorSensorV3.class, "upperDumpDist");

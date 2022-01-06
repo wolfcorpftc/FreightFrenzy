@@ -8,6 +8,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.wolfcorp.ff.robot.CarouselSpinner;
 import org.wolfcorp.ff.robot.Drivetrain;
 import org.wolfcorp.ff.robot.Outtake;
+import org.wolfcorp.ff.robot.ShippingArm;
 import org.wolfcorp.ff.vision.Barcode;
 
 public abstract class TeleOpMode extends OpMode {
@@ -143,11 +144,15 @@ public abstract class TeleOpMode extends OpMode {
             if (gamepad2.b && !gamepad2.start && !maskIntake) {
                 maskIntake = true;
                 intake.toggleOut();
+                shippingArm.armOutAsync();
+                shippingArm.openClaw();
             } else if (gamepad2.x && !maskIntake) {
                 maskIntake = true;
                 // the dump must be at the bottom-most position when intake is on
                 outtake.slideToAsync(Barcode.ZERO);
                 intake.toggleIn();
+                shippingArm.armInAsync();
+                shippingArm.closeClaw();
             }
 
             if (!gamepad2.b && !gamepad2.x) {
@@ -207,6 +212,19 @@ public abstract class TeleOpMode extends OpMode {
 
             if (!gamepad2.right_bumper) {
                 maskDump = false;
+            }
+
+            // *** Shipping Element Arm: claw ***
+            if (gamepad2.dpad_left) {
+                shippingArm.closeClaw();
+            }
+
+            // *** Shipping Element Arm: claw ***
+            double armMultiplier = Math.abs(gamepad2.left_stick_y);
+            if (gamepad2.left_stick_y < -0.02) {
+                shippingArm.getMotor().setVelocity(armMultiplier * ShippingArm.ARM_OUT_SPEED);
+            } else if (gamepad2.left_stick_y > 0.02){
+                shippingArm.getMotor().setVelocity(armMultiplier * ShippingArm.ARM_IN_SPEED);
             }
 
             // *** Outtake: dump status ***
