@@ -251,9 +251,7 @@ public abstract class TeleOpMode extends OpMode {
 
             // *** Telemetry ***
 
-            telemetry.addData("Shipping Arm Mode", shippingArm.getMotor().getMode());
             telemetry.addData("Shipping Arm Position", shippingArm.getMotor().getCurrentPosition());
-            telemetry.addData("Shipping Arm Target Position", shippingArm.getTargetPosition());
 
             telemetry.addData("Spinner is On", spinner.isOn());
             telemetry.addData("Spinner Masked", maskSpinner);
