@@ -19,9 +19,9 @@ import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 @Config
 public class DriveConstants {
     /** Motor spec: ticks per revolution */
-    public static final double TICKS_PER_REV = 537.7; // TODO: check
+    public static final double TICKS_PER_REV = 537.7;
     /** Motor spec: maximum RPM */
-    public static final double MAX_RPM = 312; // TODO: check
+    public static final double MAX_RPM = 312;
 
     /**
      * Set to true to enable built-in hub velocity control using drive encoders.

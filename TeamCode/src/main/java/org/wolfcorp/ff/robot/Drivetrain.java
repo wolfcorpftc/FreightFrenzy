@@ -3,9 +3,11 @@ package org.wolfcorp.ff.robot;
 import static org.wolfcorp.ff.robot.DriveConstants.MAX_ACCEL;
 import static org.wolfcorp.ff.robot.DriveConstants.MAX_ANG_ACCEL;
 import static org.wolfcorp.ff.robot.DriveConstants.MAX_ANG_VEL;
+import static org.wolfcorp.ff.robot.DriveConstants.MAX_RPM;
 import static org.wolfcorp.ff.robot.DriveConstants.MAX_VEL;
 import static org.wolfcorp.ff.robot.DriveConstants.MOTOR_VELO_PID;
 import static org.wolfcorp.ff.robot.DriveConstants.RUN_USING_ENCODER;
+import static org.wolfcorp.ff.robot.DriveConstants.TICKS_PER_REV;
 import static org.wolfcorp.ff.robot.DriveConstants.TRACK_WIDTH;
 import static org.wolfcorp.ff.robot.DriveConstants.encoderTicksToInches;
 import static org.wolfcorp.ff.robot.DriveConstants.kA;
@@ -43,6 +45,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.wolfcorp.ff.opmode.Match;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequence;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequenceBuilder;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequenceRunner;
@@ -174,6 +177,41 @@ public class Drivetrain extends MecanumDrive {
         waitForIdle();
     }
 
+    public void turnAsyncDeg(double deg) {
+        turnAsync(Math.toRadians(deg));
+    }
+
+    public void turnDeg(double deg) {
+        turn(Math.toRadians(deg));
+    }
+
+    public void turnToDeg(double deg) {
+        turnToDegAsync(deg);
+        waitForIdle();
+    }
+
+    public void turnToDegAsync(double deg) {
+        double angle = deg - getExternalHeadingDeg();
+        if (Math.abs(angle) < 1) {
+            setMotorPowers(0, 0, 0, 0);
+            return;
+        }
+        double power = Math.max(0.05, Math.min(0.5, Math.abs(angle) / 100));
+        if (angle > 0) {
+            setMotorPowers(-power, -power, power, power);
+        } else {
+            setMotorPowers(power, power, -power, -power);
+        }
+    }
+
+    public double getExternalHeadingDeg() {
+        return Math.toDegrees(getExternalHeading());
+    }
+
+    public void setExternalHeadingDeg(double deg) {
+        setExternalHeading(Math.toRadians(deg));
+    }
+
     public void followAsync(Trajectory trajectory) {
         abort = false;
         trajectorySequenceRunner.followTrajectorySequenceAsync(
@@ -289,10 +327,17 @@ public class Drivetrain extends MecanumDrive {
 
     @Override
     public void setMotorPowers(double lf, double lb, double rb, double rf) {
-        leftFront.setPower(lf);
-        leftBack.setPower(lb);
-        rightBack.setPower(rb);
-        rightFront.setPower(rf);
+        if (RUN_USING_ENCODER) {
+            leftFront.setVelocity(lf * MAX_RPM * TICKS_PER_REV / 60);
+            leftBack.setVelocity(lb * MAX_RPM * TICKS_PER_REV / 60);
+            rightBack.setVelocity(rb * MAX_RPM * TICKS_PER_REV / 60);
+            rightFront.setVelocity(rf * MAX_RPM * TICKS_PER_REV / 60);
+        } else {
+            leftFront.setPower(lf);
+            leftBack.setPower(lb);
+            rightBack.setPower(rb);
+            rightFront.setPower(rf);
+        }
     }
 
     @Override
@@ -389,41 +434,8 @@ public class Drivetrain extends MecanumDrive {
         setMotorPowers(wheelSpeeds[0], wheelSpeeds[2], wheelSpeeds[3], wheelSpeeds[1]);
     }
 
-    public void resetAngle() {
-        double angle = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
-        System.out.println(angle);
-        if (Math.abs(angle) < 0.5) {
-            setMotorPowers(0, 0, 0, 0);
-            return;
-        }
-        angle = Math.max(0.1, Math.min(1, Math.abs(angle) / 50));
-        if (angle < 0) {
-            setMotorPowers(-angle, -angle, angle, angle);
-        } else {
-            setMotorPowers(angle, angle, -angle, -angle);
-        }
-    }
-
-    public void turnTo(double degree) {
-        double angle = degree + imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
-        System.out.println(angle);
-        if (Math.abs(angle) < 0.5) {
-            setMotorPowers(0, 0, 0, 0);
-            return;
-        }
-        angle = Math.max(0.1, Math.min(1, Math.abs(angle) / 50));
-        if (angle < 0) {
-            setMotorPowers(-angle, -angle, angle, angle);
-        } else {
-            setMotorPowers(angle, angle, -angle, -angle);
-        }
-    }
-
     public void turnForward(boolean condition) {
-        double angle = Math.toRadians(-imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle);
-        System.out.println(imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES));
-        if (condition) turn(angle);
-        System.out.println("angle" + angle);
+        turnToDeg(0);
     }
 
     public void setDriveTargetPos(int lf, int rf, int lb, int rb) {

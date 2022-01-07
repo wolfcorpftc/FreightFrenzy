@@ -11,6 +11,7 @@ import org.wolfcorp.ff.robot.Outtake;
 import org.wolfcorp.ff.robot.ShippingArm;
 import org.wolfcorp.ff.vision.Barcode;
 
+// NOTE ABOUT TELEOP: Direction of robot is SWAPPED
 public abstract class TeleOpMode extends OpMode {
     protected FtcDashboard dashboard = null;
 
@@ -26,6 +27,7 @@ public abstract class TeleOpMode extends OpMode {
     private boolean maskSnapTurn = false;
     private boolean maskGyroReset = false;
     private boolean maskSlamForward = false;
+    private boolean maskToggleClaw = false;
 
     private boolean slowMode = false;
 
@@ -42,6 +44,11 @@ public abstract class TeleOpMode extends OpMode {
 
         Match.status("Robot initialized, waiting for start");
         outtake.getServo().setPosition(Outtake.DUMP_IN_POSITION);
+
+        if (Match.RED) {
+            drive.setExternalHeadingDeg(180);
+        }
+
         waitForStart();
 
         Match.status("Start!");
@@ -55,7 +62,8 @@ public abstract class TeleOpMode extends OpMode {
                 maskSlowMode = false;
             }
 
-            if (!drive.isBusy()) {
+            if (!drive.isBusy() && drive.leftFront.getMode() != DcMotor.RunMode.RUN_TO_POSITION
+                    && !maskGyroReset && !maskSlamForward && !maskSnapTurn) {
                 telemetry.addLine("TeleOp: Drive");
                 drive.drive(
                         gamepad1.right_stick_y,
@@ -67,11 +75,11 @@ public abstract class TeleOpMode extends OpMode {
             }
 
             // *** Snap Robot *** //
-            if (gamepad1.left_bumper && !maskSnapTurn) {
+            if (gamepad1.left_bumper) {
                 maskSnapTurn = true;
-                // TODO: CHECK FOR BUGS
-                drive.turnAsync(Math.round(drive.getExternalHeading() / 90.0) * 90);
-            } else if (!gamepad1.left_bumper) {
+                // TODO: talk with kevin
+                drive.turnToDegAsync(Math.round(drive.getExternalHeadingDeg() / 90.0) * 90);
+            } else {
                 maskSnapTurn = false;
             }
 
@@ -79,30 +87,35 @@ public abstract class TeleOpMode extends OpMode {
             if (gamepad1.dpad_left && !maskGyroReset) {
                 maskGyroReset = true;
                 // TODO: Talk with kevin about reset
-                drive.setExternalHeading(Math.round(drive.getExternalHeading() / 90.0) * 90);
+                drive.setExternalHeadingDeg((Math.round(drive.getExternalHeadingDeg() / 90.0) * 90) % 360);
             } else if (!gamepad1.dpad_left) {
-                maskSnapTurn = false;
+                maskGyroReset = false;
             }
 
             // *** Slam and Forward *** //
-            if (gamepad1.left_trigger > 0.8 && !maskSlamForward) {
+            if (gamepad1.dpad_up && !maskSlamForward) {
                 maskSlamForward = true;
-                // FIXME: test and find right direction, does this even work?
-                switch ((int) (Math.round(drive.getExternalHeading() / 90.0) * 90)) {
+                switch ((int) (Math.round(drive.getExternalHeadingDeg() / 90.0) * 90) % 360) {
                     case 0:
                     case 90:
-                        drive.sidestepLeft(0.6, Drivetrain.SLAM_ERROR);
+                        drive.trajectorySequenceRunner.followTrajectorySequenceAsync(
+                                drive.from(drive.getPoseEstimate())
+                                        .strafeRight(Drivetrain.SLAM_ERROR)
+                                        .back(Drivetrain.SLAM_FORWARD)
+                                        .build()
+                        );
                         break;
-                    case -90:
+                    case 270:
                     case 180:
-                    case -180:
-                        drive.sidestepRight(0.6, Drivetrain.SLAM_ERROR);
+                        drive.trajectorySequenceRunner.followTrajectorySequenceAsync(
+                                drive.from(drive.getPoseEstimate())
+                                        .strafeLeft(Drivetrain.SLAM_ERROR)
+                                        .back(Drivetrain.SLAM_FORWARD)
+                                        .build()
+                        );
                         break;
                 }
-                // TODO: talk with Kevin about reset
-                drive.setExternalHeading(Math.round(drive.getExternalHeading() / 90.0) * 90);
-                drive.forward(0.6, Drivetrain.SLAM_FORWARD);
-            } else if (gamepad1.left_trigger < 0.8) {
+            } else if (!gamepad1.dpad_up) {
                 maskSlamForward = false;
             }
 
@@ -144,15 +157,11 @@ public abstract class TeleOpMode extends OpMode {
             if (gamepad2.b && !gamepad2.start && !maskIntake) {
                 maskIntake = true;
                 intake.toggleOut();
-                shippingArm.armOutAsync();
-                shippingArm.openClaw();
             } else if (gamepad2.x && !maskIntake) {
                 maskIntake = true;
                 // the dump must be at the bottom-most position when intake is on
                 outtake.slideToAsync(Barcode.ZERO);
                 intake.toggleIn();
-                shippingArm.armInAsync();
-                shippingArm.closeClaw();
             }
 
             if (!gamepad2.b && !gamepad2.x) {
@@ -215,16 +224,25 @@ public abstract class TeleOpMode extends OpMode {
             }
 
             // *** Shipping Element Arm: claw ***
-            if (gamepad2.dpad_left) {
-                shippingArm.closeClaw();
+            if (gamepad2.dpad_left && !maskToggleClaw) {
+                maskToggleClaw = true;
+                shippingArm.toggleClaw();
+            }
+
+            if (!gamepad2.dpad_left) {
+                maskToggleClaw = false;
             }
 
             // *** Shipping Element Arm: claw ***
             double armMultiplier = Math.abs(gamepad2.left_stick_y);
             if (gamepad2.left_stick_y < -0.02) {
-                shippingArm.getMotor().setVelocity(armMultiplier * ShippingArm.ARM_OUT_SPEED);
+                shippingArm.getMotor().setPower(0.2);
+                //shippingArm.getMotor().setVelocity(armMultiplier * ShippingArm.ARM_OUT_SPEED);
             } else if (gamepad2.left_stick_y > 0.02){
-                shippingArm.getMotor().setVelocity(armMultiplier * ShippingArm.ARM_IN_SPEED);
+                shippingArm.getMotor().setPower(-0.2);
+                //shippingArm.getMotor().setVelocity(armMultiplier * ShippingArm.ARM_IN_SPEED);
+            } else {
+                shippingArm.getMotor().setPower(0);
             }
 
             // *** Outtake: dump status ***
@@ -234,6 +252,8 @@ public abstract class TeleOpMode extends OpMode {
             drive.update();
 
             // *** Telemetry ***
+            telemetry.addData("deg", drive.getExternalHeadingDeg());
+            telemetry.addData("calc1", Math.round(drive.getExternalHeadingDeg() / 90.0) * 90);
             telemetry.addData("Spinner is On", spinner.isOn());
             telemetry.addData("Spinner Masked", maskSpinner);
             telemetry.addData("Spinner Power", spinner.getServo().getPower());
@@ -274,6 +294,8 @@ public abstract class TeleOpMode extends OpMode {
             telemetry.addData("Dump B", lowerDumpDistance.blue());
             telemetry.addData("Dump Status", dumpIndicator.update().toString().toLowerCase());
             telemetry.addData("Intake Ramp Distance", intakeRampDistance.getDistance(DistanceUnit.INCH));
+
+            telemetry.addData("Arm Position", shippingArm.getMotor().getCurrentPosition());
 
             telemetry.update();
         }
