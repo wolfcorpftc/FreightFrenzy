@@ -236,13 +236,11 @@ public abstract class TeleOpMode extends OpMode {
             // *** Shipping Element Arm: claw ***
             double armMultiplier = Math.abs(gamepad2.left_stick_y);
             if (gamepad2.left_stick_y < -0.02) {
-                shippingArm.getMotor().setPower(0.2);
-                //shippingArm.getMotor().setVelocity(armMultiplier * ShippingArm.ARM_OUT_SPEED);
+                shippingArm.setArmVelocity(armMultiplier * ShippingArm.ARM_OUT_SPEED);
             } else if (gamepad2.left_stick_y > 0.02){
-                shippingArm.getMotor().setPower(-0.2);
-                //shippingArm.getMotor().setVelocity(armMultiplier * ShippingArm.ARM_IN_SPEED);
+                shippingArm.setArmVelocity(armMultiplier * ShippingArm.ARM_IN_SPEED);
             } else {
-                shippingArm.getMotor().setPower(0);
+                shippingArm.holdPosition();
             }
 
             // *** Outtake: dump status ***
@@ -252,8 +250,11 @@ public abstract class TeleOpMode extends OpMode {
             drive.update();
 
             // *** Telemetry ***
-            telemetry.addData("deg", drive.getExternalHeadingDeg());
-            telemetry.addData("calc1", Math.round(drive.getExternalHeadingDeg() / 90.0) * 90);
+
+            telemetry.addData("Shipping Arm Mode", shippingArm.getMotor().getMode());
+            telemetry.addData("Shipping Arm Position", shippingArm.getMotor().getCurrentPosition());
+            telemetry.addData("Shipping Arm Target Position", shippingArm.getTargetPosition());
+
             telemetry.addData("Spinner is On", spinner.isOn());
             telemetry.addData("Spinner Masked", maskSpinner);
             telemetry.addData("Spinner Power", spinner.getServo().getPower());
@@ -261,6 +262,7 @@ public abstract class TeleOpMode extends OpMode {
             telemetry.addData("Mask Slow Mode", maskSlowMode);
 
             telemetry.addData("Robot Pose", drive.getPoseEstimate().toString());
+            telemetry.addData("Snap To Angle", Math.round(drive.getExternalHeadingDeg() / 90.0) * 90);
 
             telemetry.addData("Intake Current Speed", intake.getMotor().getVelocity());
             telemetry.addData("Intake Current Power", intake.getMotor().getPower());
