@@ -16,8 +16,8 @@ import java.util.Objects;
 public class Outtake {
     public static final double SLIDE_TICKS_PER_REV = 1425.1;
     public static final double SLIDE_MAX_SPEED = 117 / 60.0 * SLIDE_TICKS_PER_REV; // ticks/sec
-    public static final double SLIDE_UP_SPEED = 0.85 * SLIDE_MAX_SPEED; // ticks/sec
-    public static final double SLIDE_DOWN_SPEED = -0.85 * SLIDE_MAX_SPEED; // ticks/sec
+    public static final double SLIDE_UP_SPEED = 0.9 * SLIDE_MAX_SPEED; // ticks/sec
+    public static final double SLIDE_DOWN_SPEED = -0.9 * SLIDE_MAX_SPEED; // ticks/sec
 
     public static final int SLIDE_TOP_POSITION = 1900;
     public static final int SLIDE_MID_POSITION = 1000;

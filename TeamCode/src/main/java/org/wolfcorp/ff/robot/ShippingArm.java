@@ -11,15 +11,16 @@ public class ShippingArm {
     private Servo servo;
     private Object motorModeLock = new Object();
 
+    public static final double ARM_GEAR_RATIO = 2;
     public static final double ARM_TICKS_PER_REV = 1425.1;
     public static final double ARM_MAX_SPEED = 117 / 60.0 * ARM_TICKS_PER_REV; // ticks/sec
     public static final double ARM_HOLD_POSITION_SPEED = 1;
-    public static final double ARM_IN_SPEED = -0.2 * ARM_MAX_SPEED - ARM_HOLD_POSITION_SPEED; // ticks/sec
-    public static final double ARM_OUT_SPEED = 0.2 * ARM_MAX_SPEED + ARM_HOLD_POSITION_SPEED; // ticks/sec
+    public static final double ARM_IN_SPEED = -0.4 * ARM_MAX_SPEED - ARM_HOLD_POSITION_SPEED; // ticks/sec
+    public static final double ARM_OUT_SPEED = 0.4 * ARM_MAX_SPEED + ARM_HOLD_POSITION_SPEED; // ticks/sec
 
     public static final int ARM_IN_POSITION = 0;
-    public static final int ARM_OUT_POSITION = (int) (91.0 / 360 * ARM_TICKS_PER_REV);
-    public static final int ARM_OUTERMOST_POSITION = (int) (230.0 / 360 * ARM_TICKS_PER_REV);
+    public static final int ARM_OUT_POSITION = (int) (91.0 / 360 * ARM_TICKS_PER_REV * ARM_GEAR_RATIO);
+    public static final int ARM_OUTERMOST_POSITION = (int) (230.0 / 360 * ARM_TICKS_PER_REV * ARM_GEAR_RATIO);
 
     public static final double CLAW_OPEN_POSITION = 1;
     public static final double CLAW_CLOSE_POSITION = 0.69;
@@ -43,6 +44,12 @@ public class ShippingArm {
     }
 
     public void armOutAsync() {
+        motor.setTargetPosition(ARM_OUT_POSITION);
+        motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        motor.setVelocity(ARM_OUT_SPEED);
+    }
+
+    public void armOutmostAsync() {
         motor.setTargetPosition(ARM_OUTERMOST_POSITION);
         motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         motor.setVelocity(ARM_OUT_SPEED);
@@ -58,17 +65,18 @@ public class ShippingArm {
     }
 
     public void holdPosition() {
-        if (motor.getCurrentPosition() < ARM_IN_POSITION) {
-            motor.setVelocity(ARM_OUT_SPEED);
-        } else if (motor.getCurrentPosition() > ARM_OUTERMOST_POSITION) {
-            motor.setVelocity(ARM_IN_SPEED);
-        } else if (motor.getCurrentPosition() < ARM_OUT_POSITION - 5) {
-            motor.setVelocity(ARM_HOLD_POSITION_SPEED);
-        } else if (motor.getCurrentPosition() > ARM_OUT_POSITION + 5) {
-            motor.setVelocity(-ARM_HOLD_POSITION_SPEED);
-        } else {
-            motor.setVelocity(0);
-        }
+        motor.setVelocity(0);
+//        if (motor.getCurrentPosition() < ARM_IN_POSITION) {
+//            motor.setVelocity(ARM_OUT_SPEED);
+//        } else if (motor.getCurrentPosition() > ARM_OUTERMOST_POSITION) {
+//            motor.setVelocity(ARM_IN_SPEED);
+//        } else if (motor.getCurrentPosition() < ARM_OUT_POSITION - 5) {
+//            motor.setVelocity(ARM_HOLD_POSITION_SPEED);
+//        } else if (motor.getCurrentPosition() > ARM_OUT_POSITION + 5) {
+//            motor.setVelocity(-ARM_HOLD_POSITION_SPEED);
+//        } else {
+//            motor.setVelocity(0);
+//        }
     }
 
     public void resetArm() {

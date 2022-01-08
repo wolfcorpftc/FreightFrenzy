@@ -2,6 +2,7 @@ package org.wolfcorp.ff.opmode;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
@@ -54,6 +55,8 @@ public abstract class TeleOpMode extends OpMode {
         Match.status("Start!");
         while (opModeIsActive()) {
             // *** Drivetrain ***
+
+            // *** Slow Mode ***
             if (gamepad1.right_bumper && !maskSlowMode) {
                 slowMode = !slowMode;
                 maskSlowMode = true;
@@ -64,14 +67,25 @@ public abstract class TeleOpMode extends OpMode {
 
             if (!drive.isBusy() && drive.leftFront.getMode() != DcMotor.RunMode.RUN_TO_POSITION
                     && !maskGyroReset && !maskSlamForward && !maskSnapTurn) {
-                telemetry.addLine("TeleOp: Drive");
-                drive.drive(
-                        gamepad1.right_stick_y,
-                        -gamepad1.right_stick_x,
-                        gamepad1.left_stick_x,
-                        0.4,
-                        slowMode
-                );
+
+                // *** Even Slower Mode
+                if (gamepad1.right_trigger > 0.5) {
+                    drive.drive(
+                            gamepad1.right_stick_y,
+                            -gamepad1.right_stick_x,
+                            gamepad1.left_stick_x,
+                            0.2,
+                            true
+                    );
+                } else {
+                    drive.drive(
+                            gamepad1.right_stick_y,
+                            -gamepad1.right_stick_x,
+                            gamepad1.left_stick_x,
+                            0.4,
+                            slowMode
+                    );
+                }
             }
 
             // *** Snap Robot *** //
@@ -95,26 +109,7 @@ public abstract class TeleOpMode extends OpMode {
             // *** Slam and Forward *** //
             if (gamepad1.dpad_up && !maskSlamForward) {
                 maskSlamForward = true;
-                switch ((int) (Math.round(drive.getExternalHeadingDeg() / 90.0) * 90) % 360) {
-                    case 0:
-                    case 90:
-                        drive.trajectorySequenceRunner.followTrajectorySequenceAsync(
-                                drive.from(drive.getPoseEstimate())
-                                        .strafeRight(Drivetrain.SLAM_ERROR)
-                                        .back(Drivetrain.SLAM_FORWARD)
-                                        .build()
-                        );
-                        break;
-                    case 270:
-                    case 180:
-                        drive.trajectorySequenceRunner.followTrajectorySequenceAsync(
-                                drive.from(drive.getPoseEstimate())
-                                        .strafeLeft(Drivetrain.SLAM_ERROR)
-                                        .back(Drivetrain.SLAM_FORWARD)
-                                        .build()
-                        );
-                        break;
-                }
+                drive.backward(1, 24);
             } else if (!gamepad1.dpad_up) {
                 maskSlamForward = false;
             }
@@ -122,7 +117,7 @@ public abstract class TeleOpMode extends OpMode {
             // *** Automatic Carousel Spinner ***
             if (gamepad2.left_bumper && !maskSpinner) {
                 maskSpinner = true;
-                spinner.spinAsync(8, CarouselSpinner.SPIN_TIME, 300);
+                spinner.spinAsync(8, CarouselSpinner.SPIN_TIME, 250);
             }
 
             if (!gamepad2.left_bumper) {
@@ -224,20 +219,21 @@ public abstract class TeleOpMode extends OpMode {
             }
 
             // *** Shipping Element Arm: claw ***
-            if (gamepad2.dpad_left && !maskToggleClaw) {
+            if (gamepad2.right_trigger > 0.8 && !maskToggleClaw) {
                 maskToggleClaw = true;
                 shippingArm.toggleClaw();
             }
 
-            if (!gamepad2.dpad_left) {
+            if (gamepad2.right_trigger < 0.8) {
                 maskToggleClaw = false;
             }
 
             // *** Shipping Element Arm: claw ***
-            double armMultiplier = Math.abs(gamepad2.left_stick_y);
+            double armMultiplier = Math.abs(gamepad2.left_stick_y)
+                    * (gamepad2.right_stick_button ? 0.4 : 1);
             if (gamepad2.left_stick_y < -0.02) {
                 shippingArm.setArmVelocity(armMultiplier * ShippingArm.ARM_OUT_SPEED);
-            } else if (gamepad2.left_stick_y > 0.02){
+            } else if (gamepad2.left_stick_y > 0.02) {
                 shippingArm.setArmVelocity(armMultiplier * ShippingArm.ARM_IN_SPEED);
             } else {
                 shippingArm.holdPosition();
@@ -298,6 +294,7 @@ public abstract class TeleOpMode extends OpMode {
             telemetry.addData("Arm Position", shippingArm.getMotor().getCurrentPosition());
 
             telemetry.update();
+
         }
         resetHardware();
     }
