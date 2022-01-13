@@ -42,10 +42,6 @@ import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.hardware.configuration.typecontainers.MotorConfigurationType;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
-import org.wolfcorp.ff.opmode.Match;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequence;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequenceBuilder;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequenceRunner;

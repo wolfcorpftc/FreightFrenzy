@@ -6,6 +6,8 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.wolfcorp.ff.opmode.OpMode;
+
 public class ShippingArm {
     private DcMotorEx motor;
     private Servo servo;
@@ -49,10 +51,22 @@ public class ShippingArm {
         motor.setVelocity(ARM_OUT_SPEED);
     }
 
-    public void armOutmostAsync() {
-        motor.setTargetPosition(ARM_OUTERMOST_POSITION);
-        motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        motor.setVelocity(ARM_OUT_SPEED);
+    // TODO: create armTo() to unify the code
+    public void armOutermostAsync() {
+        synchronized (motorModeLock) {
+            motor.setTargetPosition(ARM_OUTERMOST_POSITION);
+            motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            motor.setVelocity(ARM_OUT_SPEED);
+        }
+    }
+
+    public void armOutermost() {
+        armOutermostAsync();
+        while (motor.isBusy() && OpMode.isActive());
+        synchronized (motorModeLock) {
+            motor.setVelocity(0);
+            motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        }
     }
 
     public void setArmVelocity(double speed) {

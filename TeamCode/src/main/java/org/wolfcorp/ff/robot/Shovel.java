@@ -5,8 +5,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.wolfcorp.ff.opmode.Match;
-import org.wolfcorp.ff.opmode.OpMode;
+import org.wolfcorp.ff.opmode.util.Match;
 
 public class Shovel {
     public static final int MARGIN_OF_ERROR = 10; // margin of error

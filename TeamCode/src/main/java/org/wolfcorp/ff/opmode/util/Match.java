@@ -1,4 +1,4 @@
-package org.wolfcorp.ff.opmode;
+package org.wolfcorp.ff.opmode.util;
 
 import static org.wolfcorp.ff.opmode.AutonomousMode.pos;
 
@@ -7,6 +7,9 @@ import androidx.annotation.Nullable;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.wolfcorp.ff.opmode.AutonomousMode;
+import org.wolfcorp.ff.opmode.OpMode;
+import org.wolfcorp.ff.opmode.TeleOpMode;
 import org.wolfcorp.ff.robot.DriveConstants;
 
 /**

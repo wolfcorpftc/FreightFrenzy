@@ -7,7 +7,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
-import org.wolfcorp.ff.opmode.Match;
+import org.wolfcorp.ff.opmode.util.Match;
 import org.wolfcorp.ff.robot.Drivetrain;
 
 @TeleOp(name = "Motor Test", group = "test")

@@ -3,7 +3,7 @@ package org.wolfcorp.ff.opmode.test;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
 import org.wolfcorp.ff.opmode.AutonomousMode;
-import org.wolfcorp.ff.opmode.Match;
+import org.wolfcorp.ff.opmode.util.Match;
 
 @Autonomous(name = "Guide Vision Test", group = "test")
 public class GuideAuto extends AutonomousMode {

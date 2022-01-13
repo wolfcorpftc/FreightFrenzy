@@ -2,12 +2,11 @@ package org.wolfcorp.ff.opmode;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.wolfcorp.ff.opmode.util.Match;
 import org.wolfcorp.ff.robot.CarouselSpinner;
-import org.wolfcorp.ff.robot.Drivetrain;
 import org.wolfcorp.ff.robot.Outtake;
 import org.wolfcorp.ff.robot.ShippingArm;
 import org.wolfcorp.ff.vision.Barcode;
@@ -139,12 +138,12 @@ public abstract class TeleOpMode extends OpMode {
             }
 
             // *** Override Carousel Spinner ***
-            if (gamepad1.left_trigger > 0.8 && gamepad1.right_trigger > 0.8 && !maskSpinnerOverride) {
+            if (gamepad1.left_trigger > 0.4 && gamepad1.right_trigger > 0.4 && !maskSpinnerOverride) {
                 maskSpinnerOverride = true;
                 spinner.stopSpin();
             }
 
-            if (!(gamepad1.left_trigger > 0.8 && gamepad1.right_trigger > 0.8)) {
+            if (!(gamepad1.left_trigger > 0.4 && gamepad1.right_trigger > 0.4)) {
                 maskSpinnerOverride = false;
             }
 

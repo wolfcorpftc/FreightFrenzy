@@ -3,7 +3,7 @@ package org.wolfcorp.ff.opmode.test;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.wolfcorp.ff.opmode.Match;
+import org.wolfcorp.ff.opmode.util.Match;
 import org.wolfcorp.ff.opmode.meet0.Meet0Auto;
 import org.wolfcorp.ff.robot.Shovel;
 

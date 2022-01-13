@@ -4,11 +4,9 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.wolfcorp.ff.opmode.Match;
-import org.wolfcorp.ff.opmode.OpMode;
+import org.wolfcorp.ff.opmode.util.Match;
 import org.wolfcorp.ff.vision.Barcode;
 
 import java.util.Objects;

@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.wolfcorp.ff.opmode.Match;
+import org.wolfcorp.ff.opmode.util.Match;
 
 public class Intake {
     public static final double TICKS_PER_REV = 103.8;

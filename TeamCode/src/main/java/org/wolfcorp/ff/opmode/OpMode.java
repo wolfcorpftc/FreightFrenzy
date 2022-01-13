@@ -4,6 +4,7 @@ import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 
+import org.wolfcorp.ff.opmode.util.Match;
 import org.wolfcorp.ff.robot.CarouselSpinner;
 import org.wolfcorp.ff.robot.Drivetrain;
 import org.wolfcorp.ff.robot.DumpIndicator;
@@ -12,6 +13,9 @@ import org.wolfcorp.ff.robot.Outtake;
 import org.wolfcorp.ff.robot.ShippingArm;
 
 public abstract class OpMode extends LinearOpMode {
+    /** Initialized in {@link #OpMode()} and reset in {@link #resetHardware()} */
+    private static OpMode instance = null;
+
     // public is fine :)
     public static Drivetrain drive = null;
     public static Intake intake = null;
@@ -31,6 +35,7 @@ public abstract class OpMode extends LinearOpMode {
         Match.statusItem = null; // allows previous telemetry object to be GC'd (not sure if needed)
         Match.telemetry = telemetry; // don't do any additional config here, see Match#setupTelemetry
         Match.RED = modeNameContains("Red");
+        instance = this;
     }
 
     /**
@@ -83,6 +88,12 @@ public abstract class OpMode extends LinearOpMode {
         lowerDumpDistance = null;
         intakeRampDistance = null;
 
+        instance = null;
+
         Match.status("Done resetting robot hardware");
+    }
+
+    public static boolean isActive() {
+        return instance != null && instance.opModeIsActive();
     }
 }

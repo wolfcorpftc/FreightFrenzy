@@ -4,7 +4,7 @@ import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.wolfcorp.ff.opmode.Match;
+import org.wolfcorp.ff.opmode.util.Match;
 import org.wolfcorp.ff.opmode.OpMode;
 
 import java.util.function.Consumer;
@@ -66,7 +66,7 @@ public class CarouselSpinner {
                 spinTimer.reset();
                 on();
                 OpMode.dumpIndicator.full();
-                while (spinTimer.milliseconds() < spinTime);
+                while (spinTimer.milliseconds() < spinTime && !Thread.currentThread().isInterrupted());
                 off();
                 OpMode.dumpIndicator.overflow();
                 if (i != 1) {
