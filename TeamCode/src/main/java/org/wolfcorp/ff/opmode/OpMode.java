@@ -35,6 +35,7 @@ public abstract class OpMode extends LinearOpMode {
         Match.statusItem = null; // allows previous telemetry object to be GC'd (not sure if needed)
         Match.telemetry = telemetry; // don't do any additional config here, see Match#setupTelemetry
         Match.RED = modeNameContains("Red");
+        Match.BLUE = !Match.RED;
         instance = this;
     }
 

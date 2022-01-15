@@ -12,6 +12,7 @@ import org.openftc.easyopencv.OpenCvCamera;
 
 import java.util.ArrayList;
 
+// TODO: rename to Forager
 public class WarehouseGuide extends Detector implements Guide {
     public static final PolarPoint INVALID_RESULT = new PolarPoint(Double.MIN_VALUE, Double.MIN_VALUE);
     // TODO: Find an empirical value

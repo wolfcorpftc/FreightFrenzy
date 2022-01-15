@@ -30,6 +30,8 @@ public final class Match {
      * Whether we are in the red alliance. Initialized in {@link OpMode#OpMode()}.
      */
     public static boolean RED = false;
+    /** Whether we are in the blue alliance. Initialized in {@link OpMode#OpMode()}. */
+    public static boolean BLUE = true;
     /**
      * Where the robot starts in {@link TeleOpMode} according to the pose estimate from
      * {@link AutonomousMode}. Initialized in {@link AutonomousMode#runOpMode()}.

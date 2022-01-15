@@ -12,6 +12,7 @@ import org.wolfcorp.ff.opmode.util.Match;
 
 import java.util.concurrent.CountDownLatch;
 
+// TODO: rename to Decoder
 public class BarcodeScanner extends Detector {
     private final Mat mat = new Mat();
     private Rect leftROI, midROI, rightROI;
@@ -117,8 +118,8 @@ public class BarcodeScanner extends Detector {
         leftItem = Match.createLogItem("Barcode - Left Value", 0);
         midItem = Match.createLogItem("Barcode - Mid Value", 0);
         rightItem = Match.createLogItem("Barcode - Right Value", 0);
-        barcodeItem = Match.createLogItem("Barcode - Barcode", "undefined");
-        targetLevelItem = Match.createLogItem("Barcode - Target Level", "undefined");
+        barcodeItem = Match.createLogItem("Barcode - Barcode", "awaiting result");
+        targetLevelItem = Match.createLogItem("Barcode - Target Level", "awaiting result");
         super.start();
     }
     public void stop() {
