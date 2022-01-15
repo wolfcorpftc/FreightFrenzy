@@ -161,7 +161,7 @@ public abstract class AutonomousMode extends OpMode {
         if (RED) {
             elementLeftPose = pos(-52, WIDTH / 2, 90); // originally x = -54, y = 20.4
             elementMidPose = pos(-52, 7.25 + 8.25, 90); // y-difference was supposed to be 8.4
-            elementRightPose = pos(-52, -1.8 + 8.25, 90);
+            elementRightPose = pos(-52, 11 + 15, 90);
         } else {
             elementLeftPose = pos(-52, 15, 90); // originally x = -54, y = 20.4
             elementMidPose = pos(-52, 8.25, 90); // y-difference was supposed to be 8.4
@@ -300,7 +300,7 @@ public abstract class AutonomousMode extends OpMode {
     }
     public void deposit() {
         Match.status("Initializing: deposit (preloaded & SE)");
-        // move to carouse
+        // move to carousel
         if (CAROUSEL) {
             // already dealt with end pose branching earlier
             queue(from(carouselPose).now(() -> outtake.slideToAsync(barcode)).lineTo(hubPose.vec(), getVelocityConstraint(35, 5, TRACK_WIDTH), getAccelerationConstraint(25)));
@@ -314,6 +314,10 @@ public abstract class AutonomousMode extends OpMode {
             sleep(1200);
             // slide and dump will be reset in cycle()
         });
+        // TODO: fix robot teleporting here. Seems to be held up somewhere here and the next path starts early but the robot does not respond until it is already half way done with path
+
+        // code below not dumping out
+        //queue(fromHere().lineTo(hubPose.plus(pos(0.01,0)).vec()).addTemporalMarker(0,() -> {outtake.dumpOut();}).addTemporalMarker(1.2,() -> {outtake.dumpOut();}));
         // TODO: move to a better pose to cap, do armOut during the path
     }
     public void cycle() {
