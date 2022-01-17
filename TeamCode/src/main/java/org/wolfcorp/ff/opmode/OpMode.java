@@ -59,15 +59,6 @@ public abstract class OpMode extends LinearOpMode {
         intake = new Intake(hardwareMap);
         outtake = new Outtake(hardwareMap);
         spinner = new CarouselSpinner(hardwareMap, this::sleep);
-        shippingArm = new ShippingArm(hardwareMap);
-        dumpIndicator = new DumpIndicator(hardwareMap);
-        rangeSensor = hardwareMap.get(DistanceSensor.class, "sensor_range");
-        upperDumpDistance = hardwareMap.get(RevColorSensorV3.class, "upperDumpDist");
-        upperDumpDistance.enableLed(false);
-        lowerDumpDistance = hardwareMap.get(RevColorSensorV3.class, "lowerDumpDist");
-        lowerDumpDistance.enableLed(false);
-        lowerDumpDistance.enableLed(false);
-        intakeRampDistance = hardwareMap.get(DistanceSensor.class, "intakeDist");
 
         Match.status("Initialized robot hardware");
     }

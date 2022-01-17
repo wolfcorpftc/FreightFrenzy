@@ -15,23 +15,31 @@ public class Intake {
     public static final double OUT_SPEED = 0.25 * MAX_SPEED; // ticks/sec;
 
     private final DcMotorEx motor;
+    private final DcMotorEx motor2;
 
     private final Object motorModeLock = new Object();
 
     public Intake(HardwareMap hwMap) {
         motor = hwMap.get(DcMotorEx.class, "intake");
+        motor2 = hwMap.get(DcMotorEx.class, "intaake");
         motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        motor2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         motor.setDirection(DcMotor.Direction.FORWARD);
+        motor2.setDirection(DcMotor.Direction.FORWARD);
         motor.setPower(0);
+        motor2.setPower(0);
         synchronized (motorModeLock) {
             motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            motor2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            motor2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         }
     }
 
     // FIXME: add comment and ensure all usages are correct
     public void in() {
         motor.setVelocity(IN_SPEED);
+        motor2.setVelocity(IN_SPEED);
     }
 
     /**
@@ -42,6 +50,7 @@ public class Intake {
             off();
         } else {
             motor.setVelocity(IN_SPEED);
+            motor2.setVelocity(IN_SPEED);
         }
     }
 
@@ -54,19 +63,26 @@ public class Intake {
     public void in(int revs) {
         synchronized (motorModeLock) {
             motor.setTargetPosition((int) (motor.getCurrentPosition() + revs * TICKS_PER_REV));
+            motor2.setTargetPosition((int) (motor2.getCurrentPosition() + revs * TICKS_PER_REV));
             motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            motor2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             motor.setVelocity(IN_SPEED);
+            motor2.setVelocity(IN_SPEED);
         }
         // TODO: remove message after debugging
         Telemetry.Item positionItem = Match.createLogItem("Intake position", motor.getCurrentPosition());
-        while (motor.isBusy() && !Thread.currentThread().isInterrupted()) {
+        Telemetry.Item positionItem2 = Match.createLogItem("Intaake position", motor2.getCurrentPosition());
+        while (motor.isBusy() && motor2.isBusy() && !Thread.currentThread().isInterrupted()) {
             positionItem.setValue(motor.getCurrentPosition());
+            positionItem2.setValue(motor2.getCurrentPosition());
             Match.update();
         }
         Match.removeLogItem(positionItem);
         synchronized (motorModeLock) {
             motor.setPower(0);
+            motor.setPower(2);
             motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            motor2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         }
     }
 
@@ -79,13 +95,18 @@ public class Intake {
     public void out(int revs) {
         synchronized (motorModeLock) {
             motor.setTargetPosition((int) (motor.getCurrentPosition() - revs * TICKS_PER_REV));
+            motor2.setTargetPosition((int) (motor2.getCurrentPosition() - revs * TICKS_PER_REV));
             motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            motor2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             motor.setVelocity(OUT_SPEED);
+            motor2.setVelocity(OUT_SPEED);
         }
         while (motor.isBusy() && !Thread.currentThread().isInterrupted());
         synchronized (motorModeLock) {
             motor.setPower(0);
+            motor2.setPower(0);
             motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            motor2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         }
     }
 
@@ -94,6 +115,7 @@ public class Intake {
      */
     public void out() {
         motor.setVelocity(OUT_SPEED);
+        motor2.setVelocity(OUT_SPEED);
     }
 
     /**
@@ -104,6 +126,7 @@ public class Intake {
             off();
         } else {
             motor.setVelocity(OUT_SPEED);
+            motor2.setVelocity(OUT_SPEED);
         }
     }
 
@@ -112,6 +135,7 @@ public class Intake {
      */
     public void off() {
         motor.setVelocity(0);
+        motor2.setVelocity(0);
     }
 
     /**
@@ -130,6 +154,7 @@ public class Intake {
      */
     public void setVelocityRPM(double rpm) {
         motor.setVelocity(rpm / 60.0 * TICKS_PER_REV);
+        motor2.setVelocity(rpm / 60.0 * TICKS_PER_REV);
     }
 
     /**
@@ -139,5 +164,8 @@ public class Intake {
      */
     public DcMotorEx getMotor() {
         return motor;
+    }
+    public DcMotorEx getMotor2() {
+        return motor2;
     }
 }

@@ -20,11 +20,13 @@ public class CarouselSpinner {
     private final Consumer<Long> sleep;
 
     public CarouselSpinner(HardwareMap hwMap, Consumer<Long> s) {
-        servo = hwMap.get(CRServo.class, "spinner");
-        sleep = s;
         if (Match.RED) {
+            servo = hwMap.get(CRServo.class, "redSpinner");
+            sleep = s;
             servo.setDirection(CRServo.Direction.REVERSE);
         } else {
+            servo = hwMap.get(CRServo.class, "blueSpinner");
+            sleep = s;
             servo.setDirection(CRServo.Direction.FORWARD);
         }
     }
@@ -65,10 +67,8 @@ public class CarouselSpinner {
             for (int i = times; i >= 1 && !Thread.interrupted(); i--) {
                 spinTimer.reset();
                 on();
-                OpMode.dumpIndicator.full();
                 while (spinTimer.milliseconds() < spinTime && !Thread.currentThread().isInterrupted());
                 off();
-                OpMode.dumpIndicator.overflow();
                 if (i != 1) {
                     sleep.accept(waitTime);
                 }

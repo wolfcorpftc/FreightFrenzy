@@ -70,16 +70,16 @@ public abstract class TeleOpMode extends OpMode {
                 // *** Even Slower Mode
                 if (gamepad1.right_trigger > 0.5) {
                     drive.drive(
-                            gamepad1.right_stick_y,
                             -gamepad1.right_stick_x,
+                            -gamepad1.right_stick_y,
                             gamepad1.left_stick_x,
                             0.2,
                             true
                     );
                 } else {
                     drive.drive(
-                            gamepad1.right_stick_y,
                             -gamepad1.right_stick_x,
+                            -gamepad1.right_stick_y,
                             gamepad1.left_stick_x,
                             0.4,
                             slowMode
@@ -217,36 +217,10 @@ public abstract class TeleOpMode extends OpMode {
                 maskDump = false;
             }
 
-            // *** Shipping Element Arm: claw ***
-            if (gamepad2.right_trigger > 0.8 && !maskToggleClaw) {
-                maskToggleClaw = true;
-                shippingArm.toggleClaw();
-            }
-
-            if (gamepad2.right_trigger < 0.8) {
-                maskToggleClaw = false;
-            }
-
-            // *** Shipping Element Arm: claw ***
-            double armMultiplier = Math.abs(gamepad2.left_stick_y)
-                    * (gamepad2.right_stick_button ? 0.4 : 1);
-            if (gamepad2.left_stick_y < -0.02) {
-                shippingArm.setArmVelocity(armMultiplier * ShippingArm.ARM_OUT_SPEED);
-            } else if (gamepad2.left_stick_y > 0.02) {
-                shippingArm.setArmVelocity(armMultiplier * ShippingArm.ARM_IN_SPEED);
-            } else {
-                shippingArm.holdPosition();
-            }
-
-            // *** Outtake: dump status ***
-            dumpIndicator.update();
-
             // *** Odometry update ***
             drive.update();
 
             // *** Telemetry ***
-
-            telemetry.addData("Shipping Arm Position", shippingArm.getMotor().getCurrentPosition());
 
             telemetry.addData("Spinner is On", spinner.isOn());
             telemetry.addData("Spinner Masked", maskSpinner);
@@ -260,6 +234,10 @@ public abstract class TeleOpMode extends OpMode {
             telemetry.addData("Intake Current Speed", intake.getMotor().getVelocity());
             telemetry.addData("Intake Current Power", intake.getMotor().getPower());
             telemetry.addData("Intake Current Current", intake.getMotor().getCurrent(CurrentUnit.MILLIAMPS));
+
+            telemetry.addData("Intaake Current Speed", intake.getMotor2().getVelocity());
+            telemetry.addData("Intaake Current Power", intake.getMotor2().getPower());
+            telemetry.addData("Intaake Current Current", intake.getMotor2().getCurrent(CurrentUnit.MILLIAMPS));
 
             telemetry.addData("Outtake Current Pos", outtake.getMotor().getCurrentPosition());
             telemetry.addData("Outtake Target Pos", outtake.getMotor().getTargetPosition());
@@ -280,17 +258,6 @@ public abstract class TeleOpMode extends OpMode {
             telemetry.addData("RB Power", drive.rightBack.getPower());
             telemetry.addData("RB Current", drive.rightBack.getCurrent(CurrentUnit.MILLIAMPS));
             telemetry.addData("RB Position", drive.rightBack.getCurrentPosition());
-
-//            telemetry.addData("Touch Sensor", !touchSensor.getState());
-            telemetry.addData("Lower Dump Distance", lowerDumpDistance.getDistance(DistanceUnit.INCH));
-            telemetry.addData("Upper Dump Distance", upperDumpDistance.getDistance(DistanceUnit.INCH));
-            telemetry.addData("Dump R", lowerDumpDistance.red());
-            telemetry.addData("Dump G", lowerDumpDistance.green());
-            telemetry.addData("Dump B", lowerDumpDistance.blue());
-            telemetry.addData("Dump Status", dumpIndicator.update().toString().toLowerCase());
-            telemetry.addData("Intake Ramp Distance", intakeRampDistance.getDistance(DistanceUnit.INCH));
-
-            telemetry.addData("Arm Position", shippingArm.getMotor().getCurrentPosition());
 
             telemetry.update();
 
