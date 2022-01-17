@@ -151,22 +151,38 @@ public abstract class AutonomousMode extends OpMode {
         // NOTE: All poses are defined assuming we start at blue warehouse!
         if (RED) {
             initialPose = pos(-72 + LENGTH / 2 + 1 /* gap */, WIDTH / 2, 90);
-        } else {
-            initialPose = pos(-72 + LENGTH / 2 + 1 /* gap */, (CAROUSEL ? 1 : -1) * 24 - WIDTH / 2, 90);
+        } else if (BLUE) {
+            initialPose = pos(-72 + LENGTH / 2 + 1 /* gap */, 24 - WIDTH / 2, 90);
         }
-        carouselPose = pos(-53.75, -72 + WIDTH / 2, 90); //  x += RED ? 5 : 0
-        preCarouselPose = carouselPose.plus(pos(3, 0));
-        calibratePreCarouselPose = preCarouselPose.minus(pos(0, 5));
+        if (BLUE && WAREHOUSE) {
+            initialPose = initialPose.minus(pos(0, 2));
+        }
 
-        if (RED) {
+        if (RED && CAROUSEL) {
             elementLeftPose = pos(-52, WIDTH / 2, 90); // originally x = -54, y = 20.4
             elementMidPose = pos(-52, 7.25 + 8.25, 90); // y-difference was supposed to be 8.4
             elementRightPose = pos(-52, 11 + 15, 90);
-        } else {
+        } else if (BLUE && CAROUSEL){
             elementLeftPose = pos(-52, 15, 90); // originally x = -54, y = 20.4
             elementMidPose = pos(-52, 8.25, 90); // y-difference was supposed to be 8.4
             elementRightPose = pos(-52, -1.8, 90);
+        } else if (RED && WAREHOUSE) {
+            // TODO: tune
+            elementLeftPose = pos(-52, WIDTH / 2, 90); // originally x = -54, y = 20.4
+            elementMidPose = pos(-52, 7.25 + 8.25, 90); // y-difference was supposed to be 8.4
+            elementRightPose = pos(-52, 11 + 15, 90);
+        } else if (BLUE && WAREHOUSE) {
+            // TODO: tune
+            // everything is the same except right / top
+            elementLeftPose = pos(-52, 17, 90); // originally x = -54, y = 20.4
+            elementMidPose = pos(-52, 8.25, 90); // y-difference was supposed to be 8.4
+            elementRightPose = pos(-52, -1.8, 90); // FIXME: fix pose; make sure no collision w/ wall
         }
+
+        carouselPose = pos(-54, -72 + WIDTH / 2, 90); //  x += RED ? 5 : 0
+        preCarouselPose = carouselPose.plus(pos(3, 0));
+        calibratePreCarouselPose = preCarouselPose.minus(pos(0, 5));
+
         trueHubPose = pos(-48.5, -12, 90);
         if (RED && CAROUSEL && CYCLE) {
             hubPose = pos(-45, -3, 90);
@@ -184,8 +200,8 @@ public abstract class AutonomousMode extends OpMode {
             hubPose = pos(-42, -12, 90);
             cycleHubPose = pos(-48, -14, 90);
         } else if (BLUE && WAREHOUSE) {
-            hubPose = pos(-42, -12, 90);
-            cycleHubPose = pos(-48, -14, 90);
+            hubPose = pos(-42, -16, 90);
+            cycleHubPose = pos(-48, -16, 90);
         }
         capPose = hubPose.minus(pos(2, WIDTH / 2));
         preHubPose = pos(-48, -12, 0);
@@ -196,7 +212,7 @@ public abstract class AutonomousMode extends OpMode {
         preWhPose = pos(-72 + WIDTH / 2, 12, 0);
         calibratePreWhPose = preWhPose.minus(pos(4, 0));
         trueWhPose = pos(-72 + WIDTH / 2, 30, 0);
-        whPose = trueWhPose.plus(pos(0, 13));
+        whPose = trueWhPose.plus(pos(0, 15));
         calibrateWhPose = whPose.minus(pos(8, 0));
 
         parkPose = pos(-72 + WIDTH / 2, 40.5 + LENGTH / 2, 0);
@@ -205,7 +221,7 @@ public abstract class AutonomousMode extends OpMode {
         calibratePreDuckPose = preDuckPose.minus(pos(3, 0));
         duckPose = preDuckPose.minus(pos(0, 48)); // FIXME: fix the y value
         if (RED) {
-            storageUnitParkPose = pos(-36 + 3, -72 + WIDTH / 2 - 2.5, 90);
+            storageUnitParkPose = pos(-36 + 2.75, -72 + WIDTH / 2 - 2.5, 90);
         } else {
             storageUnitParkPose = pos(-36 + 1, -72 + WIDTH / 2 - 2.5, 90);
         }
@@ -260,12 +276,9 @@ public abstract class AutonomousMode extends OpMode {
         // FIXME: path-building in real-time
         Match.status("Initializing: shipping element (SE)");
         queue(shippingArm::openClaw);
-        queue(shippingArm::armOutermostAsync);
-        queue(() -> sleep(1500));
+        queue(() -> shippingArm.armOutermostAsync(2));
+        queue(() -> sleep(500));
         // step to the side when at warehouse to avoid the barrier
-        if (WAREHOUSE) {
-            queue(fromHere().lineTo(initialPose.minus(pos(0, 4)).vec()));
-        }
         queue(() -> barcode == Barcode.BOT, fromHere().lineTo(elementLeftPose.vec(), getVelocityConstraint(35, 5, TRACK_WIDTH), getAccelerationConstraint(35)));
         queue(() -> barcode == Barcode.MID, fromHere().lineTo(elementMidPose.vec(), getVelocityConstraint(35, 5, TRACK_WIDTH), getAccelerationConstraint(35)));
         queue(() -> barcode == Barcode.TOP, fromHere().lineTo(elementRightPose.vec(), getVelocityConstraint(35, 5, TRACK_WIDTH), getAccelerationConstraint(35)));
@@ -343,18 +356,29 @@ public abstract class AutonomousMode extends OpMode {
 
             // *** Intake ***
             queue(() -> {
-                ElapsedTime timer = new ElapsedTime();
-                TimedController controller = new TimedController(30, 480, 800);
-                drive.setMotorPowers(0.3);
-                while (dumpIndicator.update() == EMPTY) {
+                TimedController intakeController = new TimedController(-25, -475, -800);
+                TimedController driveController = new TimedController(0.020, 0.15, 0.35);
+                while (dumpIndicator.update() == EMPTY && rangeSensor.getDistance(DistanceUnit.INCH) > 20) {
+                    System.out.println("asdf" + rangeSensor.getDistance(DistanceUnit.INCH));
                     drive.updatePoseEstimate();
-                    intake.setVelocityRPM(controller.update());
+                    drive.setMotorPowers(driveController.update());
+                    intake.setVelocityRPM(intakeController.update());
+                }
+                if (dumpIndicator.update() == EMPTY) {
+                    drive.turnDeg(-10);
+                    sleep(250);
+                    drive.turnDeg(20);
+                    sleep(250);
+                    drive.turnDeg(-10);
                 }
                 drive.setMotorPowers(0);
+                intake.setVelocityRPM(0);
+                // TODO: make sure it flows smoothly into next section(s)
             });
             // TEST!
 //            queue(() -> drive.sidestepRight(0.75, 5 * (RED ? 1 : -1)));
             queue(() -> {
+                sleep(250);
                 if (dumpIndicator.update() != EMPTY) {
                     intake.out();
                 } else {
@@ -424,10 +448,10 @@ public abstract class AutonomousMode extends OpMode {
     public void park() {
         Match.status("Initializing: park");
         // park in storage unit
-        if (!CYCLE && CAROUSEL) {
+        if (CAROUSEL && PARK) {
             queue(from(hubPose)
                     .now(outtake::dumpIn)
-                    .now(() -> outtake.slideTo(Barcode.ZERO))
+                    .now(() -> outtake.slideToAsync(Barcode.ZERO))
                     .lineTo(storageUnitParkPose.vec()));
             return;
         }
@@ -435,7 +459,7 @@ public abstract class AutonomousMode extends OpMode {
         if (SCORING_CYCLES == 0) {
             queue(from(hubPose)
                     .now(outtake::dumpIn)
-                    .now(() -> outtake.slideTo(Barcode.ZERO))
+                    .now(() -> outtake.slideToAsync(Barcode.ZERO))
                     .lineToSplineHeading(preHubPose.minus(pos(10, -12)))
                     .splineToLinearHeading(preWhPose.minus(pos(4, 0)), 0)
                     .lineTo(parkPose.minus(pos(10, 0)).vec(), getVelocityConstraint(30, 5, TRACK_WIDTH), getAccelerationConstraint(30)));

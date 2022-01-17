@@ -6,6 +6,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.wolfcorp.ff.opmode.OpMode;
 import org.wolfcorp.ff.opmode.util.Match;
 import org.wolfcorp.ff.vision.Barcode;
 
@@ -129,7 +130,7 @@ public class Outtake {
         Telemetry.Item currentPositionItem = Match.createLogItem("Outtake - current position", motor.getCurrentPosition());
         Telemetry.Item targetPositionItem = Match.createLogItem("Outtake - target position", motor.getTargetPosition());
         Match.log("Outtake slideTo() loop begins");
-        while (motor.isBusy() && !Thread.currentThread().isInterrupted()) {
+        while (motor.isBusy() && OpMode.isActive()) {
             Match.status("Outtake looping");
             Objects.requireNonNull(currentPositionItem).setValue(motor.getCurrentPosition());
             Match.update();

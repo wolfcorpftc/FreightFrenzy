@@ -33,8 +33,9 @@ public class DriveConstants {
      * If using the built-in motor velocity PID, update MOTOR_VELO_PID with the tuned coefficients
      * from {@link org.wolfcorp.ff.robot.opmode.DriveVelocityPIDTuner}.
      */
-    public static PIDFCoefficients MOTOR_VELO_PID = new PIDFCoefficients(23, 3.5, 10,
-            getMotorVelocityF(MAX_RPM / 60 * TICKS_PER_REV));
+    public static PIDFCoefficients MOTOR_VELO_PID = new PIDFCoefficients(0, 10, 5,
+            15);
+            // getMotorVelocityF(MAX_RPM / 60 * TICKS_PER_REV));
 
     /*
      * These are physical constants that can be determined from your robot (including the track
@@ -96,9 +97,9 @@ public class DriveConstants {
 
      */
     /** Maximum velocity */
-    public static double MAX_VEL = 56.2;
+    public static double MAX_VEL = 50;
     /** Maximum acceleration */
-    public static double MAX_ACCEL = 56.2;
+    public static double MAX_ACCEL = 40;
     /** Maximum angular velocity */
     public static double MAX_ANG_VEL = 5.5;
     /** Maximum angular acceleration */

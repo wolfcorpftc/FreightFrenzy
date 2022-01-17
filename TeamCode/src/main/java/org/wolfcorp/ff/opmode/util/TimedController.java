@@ -19,6 +19,8 @@ public class TimedController {
     }
     
     public double update() {
-        return Math.min(timer.seconds() * rate + initialValue, cap);
+        double vel = timer.seconds() * rate + initialValue;
+        if (Math.abs(vel) > Math.abs(cap)) return cap;
+        return vel;
     }
 }

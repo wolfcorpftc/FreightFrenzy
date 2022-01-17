@@ -39,25 +39,37 @@ public class ShippingArm {
         closeClaw();
     }
 
-    public void armInAsync() {
+    public void armInAsync(double multiplier) {
         motor.setTargetPosition(ARM_IN_POSITION);
         motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        motor.setVelocity(ARM_OUT_SPEED);
+        motor.setVelocity(ARM_OUT_SPEED * multiplier);
+    }
+
+    public void armInAsync() {
+        armInAsync(1);
+    }
+
+    public void armOutAsync(double multiplier) {
+        motor.setTargetPosition(ARM_OUT_POSITION);
+        motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        motor.setVelocity(ARM_OUT_SPEED * multiplier);
     }
 
     public void armOutAsync() {
-        motor.setTargetPosition(ARM_OUT_POSITION);
-        motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        motor.setVelocity(ARM_OUT_SPEED);
+        armOutAsync(1);
     }
 
     // TODO: create armTo() to unify the code
-    public void armOutermostAsync() {
+    public void armOutermostAsync(double multiplier) {
         synchronized (motorModeLock) {
             motor.setTargetPosition(ARM_OUTERMOST_POSITION);
             motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            motor.setVelocity(ARM_OUT_SPEED);
+            motor.setVelocity(ARM_OUT_SPEED * multiplier);
         }
+    }
+
+    public void armOutermostAsync() {
+        armOutermostAsync(1);
     }
 
     public void armOutermost() {
