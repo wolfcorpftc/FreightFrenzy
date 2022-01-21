@@ -289,6 +289,7 @@ public abstract class TeleOpMode extends OpMode {
             telemetry.addData("Dump B", lowerDumpDistance.blue());
             telemetry.addData("Dump Status", dumpIndicator.update().toString().toLowerCase());
             telemetry.addData("Intake Ramp Distance", intakeRampDistance.getDistance(DistanceUnit.INCH));
+            telemetry.addData("Pose Calibration Distance", rangeSensor.getDistance(DistanceUnit.INCH));
 
             telemetry.addData("Arm Position", shippingArm.getMotor().getCurrentPosition());
 

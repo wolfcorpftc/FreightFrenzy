@@ -47,7 +47,7 @@ public abstract class AutonomousMode extends OpMode {
     public final boolean CYCLE = modeNameContains("Cycle");
     public final boolean PARK = !CYCLE;
 
-    public static int SCORING_CYCLES = 0;
+    public static int SCORING_CYCLES = 1; // varies based on path
     // endregion
 
     // region Vision Fields
@@ -125,6 +125,8 @@ public abstract class AutonomousMode extends OpMode {
     protected Pose2d duckPose;
     /** Where the robot parks in the storage unit. */
     protected Pose2d storageUnitParkPose;
+    /**Where the robot parks on the shared alliance wall*/
+    protected Pose2d sharedParkPose;
     // endregion
 
     // region Task Queue
@@ -214,6 +216,7 @@ public abstract class AutonomousMode extends OpMode {
         trueWhPose = pos(-72 + WIDTH / 2, 30, 0);
         whPose = trueWhPose.plus(pos(0, 15));
         calibrateWhPose = whPose.minus(pos(8, 0));
+        sharedParkPose = pos(-36,72-WIDTH/2,90);
 
         parkPose = pos(-72 + WIDTH / 2, 40.5 + LENGTH / 2, 0);
 
@@ -228,14 +231,11 @@ public abstract class AutonomousMode extends OpMode {
 
         // Carousel path's initial pose is two tiles over from warehouse.
         if (CAROUSEL) {
-            SCORING_CYCLES = 1;
             Pose2d offset = pos(0, 48);
             initialPose = initialPose.minus(offset);
             elementLeftPose = elementLeftPose.minus(offset);
             elementMidPose = elementMidPose.minus(offset);
             elementRightPose = elementRightPose.minus(offset);
-        } else {
-            SCORING_CYCLES = 2;
         }
     }
 
@@ -275,14 +275,21 @@ public abstract class AutonomousMode extends OpMode {
     public void grabShippingElement() {
         // FIXME: path-building in real-time
         Match.status("Initializing: shipping element (SE)");
-        queue(shippingArm::openClaw);
-        queue(() -> shippingArm.armOutermostAsync(2));
-        queue(() -> sleep(500));
+        queue(() -> {
+            if (BLUE && WAREHOUSE && barcode == Barcode.BOT)
+                return;
+            shippingArm.openClaw();
+            shippingArm.armOutermostAsync(2);
+            sleep(500);
+        });
         // step to the side when at warehouse to avoid the barrier
-        queue(() -> barcode == Barcode.BOT, fromHere().lineTo(elementLeftPose.vec(), getVelocityConstraint(35, 5, TRACK_WIDTH), getAccelerationConstraint(35)));
+        if (!(BLUE && WAREHOUSE))
+            queue(() -> barcode == Barcode.BOT, fromHere().lineTo(elementLeftPose.vec(), getVelocityConstraint(35, 5, TRACK_WIDTH), getAccelerationConstraint(35)));
         queue(() -> barcode == Barcode.MID, fromHere().lineTo(elementMidPose.vec(), getVelocityConstraint(35, 5, TRACK_WIDTH), getAccelerationConstraint(35)));
         queue(() -> barcode == Barcode.TOP, fromHere().lineTo(elementRightPose.vec(), getVelocityConstraint(35, 5, TRACK_WIDTH), getAccelerationConstraint(35)));
         queue(() -> {
+            if (BLUE && WAREHOUSE && barcode == Barcode.BOT)
+                return;
             shippingArm.closeClaw();
             sleep(1000);
             if (CAROUSEL) {
@@ -318,7 +325,10 @@ public abstract class AutonomousMode extends OpMode {
             // already dealt with end pose branching earlier
             queue(from(carouselPose).now(() -> outtake.slideToAsync(barcode)).lineTo(hubPose.vec(), getVelocityConstraint(35, 5, TRACK_WIDTH), getAccelerationConstraint(25)));
         } else {
-            queue(() -> barcode == Barcode.BOT, from(elementLeftPose).now(() -> outtake.slideToAsync(barcode)).lineTo(hubPose.vec(), getVelocityConstraint(35, 5, TRACK_WIDTH), getAccelerationConstraint(25)));
+            if (BLUE && WAREHOUSE)
+                queue(() -> barcode == Barcode.BOT, from(initialPose).now(() -> outtake.slideToAsync(barcode)).lineTo(hubPose.vec(), getVelocityConstraint(35, 5, TRACK_WIDTH), getAccelerationConstraint(25)));
+            else
+                queue(() -> barcode == Barcode.BOT, from(elementLeftPose).now(() -> outtake.slideToAsync(barcode)).lineTo(hubPose.vec(), getVelocityConstraint(35, 5, TRACK_WIDTH), getAccelerationConstraint(25)));
             queue(() -> barcode == Barcode.MID, from(elementMidPose).now(() -> outtake.slideToAsync(barcode)).lineTo(hubPose.vec(), getVelocityConstraint(35, 5, TRACK_WIDTH), getAccelerationConstraint(25)));
             queue(() -> barcode == Barcode.TOP, from(elementRightPose).now(() -> outtake.slideToAsync(barcode)).lineTo(hubPose.vec(), getVelocityConstraint(35, 5, TRACK_WIDTH), getAccelerationConstraint(25)));
         }
@@ -352,27 +362,97 @@ public abstract class AutonomousMode extends OpMode {
                         intake.in();
                     })
                     .lineTo(calibrateWhPose.minus(pos(0, 5)).vec()));
-
-
+            queueXCalibration(whPose.minus(pos(0, 5)));
             // *** Intake ***
             queue(() -> {
-                TimedController intakeController = new TimedController(-25, -475, -800);
-                TimedController driveController = new TimedController(0.020, 0.15, 0.35);
-                while (dumpIndicator.update() == EMPTY && rangeSensor.getDistance(DistanceUnit.INCH) > 20) {
-                    System.out.println("asdf" + rangeSensor.getDistance(DistanceUnit.INCH));
-                    drive.updatePoseEstimate();
-                    drive.setMotorPowers(driveController.update());
-                    intake.setVelocityRPM(intakeController.update());
+//                TimedController intakeController = new TimedController(-25, -475, -800);
+                Thread intakeThread = new Thread(() -> {
+                    TimedController driveController = new TimedController(0.020, 0.15, 0.35);
+                    for (int k = 20; k > 3 && dumpIndicator.update() == EMPTY && !Thread.currentThread().isInterrupted(); k -= 3) {
+                        while (dumpIndicator.update() == EMPTY && rangeSensor.getDistance(DistanceUnit.INCH) > k && !Thread.currentThread().isInterrupted()) {
+                            Match.log("loop a");
+                            System.out.println(rangeSensor.getDistance(DistanceUnit.INCH));
+                            drive.updatePoseEstimate();
+                            drive.setMotorPowers(driveController.update());
+//                        intake.setVelocityRPM(intakeController.update());
+                            if (Thread.currentThread().isInterrupted()) {
+                                return;
+                            }
+                        }
+                        for (int j = 0; j < 3 && dumpIndicator.update() == EMPTY && !Thread.currentThread().isInterrupted(); j++) {
+                            Match.log("loop b");
+                            if (dumpIndicator.update() == EMPTY && !Thread.currentThread().isInterrupted()) {
+                                Match.log("loop c");
+                                if (Thread.currentThread().isInterrupted()) {
+                                    return;
+                                }
+                                drive.follow(from(drive.getPoseEstimate()).forward(7).build());
+                                if (Thread.currentThread().isInterrupted()) {
+                                    return;
+                                }
+                                drive.turnDeg(-10);
+
+                                if (Thread.currentThread().isInterrupted()) {
+                                    return;
+                                }
+                                sleep(250);
+                                if (Thread.currentThread().isInterrupted()) {
+                                    return;
+                                }
+                                drive.turnDeg(20);
+                                if (Thread.currentThread().isInterrupted()) {
+                                    return;
+                                }
+                                sleep(250);
+                                if (Thread.currentThread().isInterrupted()) {
+                                    return;
+                                }
+                                drive.turnDeg(-10);
+                                if (Thread.currentThread().isInterrupted()) {
+                                    return;
+                                }
+                                sleep(250);
+
+                                if (Thread.currentThread().isInterrupted()) {
+                                    return;
+                                }
+                                drive.follow(from(drive.getPoseEstimate()).back(7).build());
+
+                                if (Thread.currentThread().isInterrupted()) {
+                                    return;
+                                }
+                                drive.turnDeg(-10);
+                            }
+                            if (Thread.currentThread().isInterrupted()) {
+                                return;
+                            }
+                        }
+                    }
+                });
+                intakeThread.start();
+                while (opModeIsActive() && !intakeThread.isInterrupted()) {
+                    if (dumpIndicator.update() == EMPTY) {
+                        intake.getMotor().setVelocity(0.8 * Intake.IN_SPEED);
+                    } else {
+                        intakeThread.interrupt();
+                        drive.abort();
+                        intake.out();
+                    }
                 }
-                if (dumpIndicator.update() == EMPTY) {
-                    drive.turnDeg(-10);
-                    sleep(250);
-                    drive.turnDeg(20);
-                    sleep(250);
-                    drive.turnDeg(-10);
-                }
+                Match.status("Waiting for intake thread to die...");
                 drive.setMotorPowers(0);
+                while (intakeThread.isAlive()) {
+                    intakeThread.interrupt();
+                    drive.abort();
+                }
                 intake.setVelocityRPM(0);
+                Match.status("Cycling");
+                drive.follow(from(drive.getPoseEstimate()).lineToLinearHeading(whPose).build());
+                if (RED) {
+                    drive.follow(from(drive.getPoseEstimate()).strafeRight(5).build());
+                } else {
+                    drive.follow(from(drive.getPoseEstimate()).strafeLeft(5).build());
+                }
                 // TODO: make sure it flows smoothly into next section(s)
             });
             // TEST!
@@ -412,7 +492,7 @@ public abstract class AutonomousMode extends OpMode {
                 if (dumpIndicator.update() == FULL) {
                     outtake.slideToAsync(Barcode.TOP);
                 }
-            }).lineToSplineHeading(cycleHubPose));
+            }).lineToSplineHeading(cycleHubPose.plus(pos(0, 3))));
             queueHubSensorCalibration(trueHubPose);
 
 
@@ -464,30 +544,37 @@ public abstract class AutonomousMode extends OpMode {
                     .splineToLinearHeading(preWhPose.minus(pos(4, 0)), 0)
                     .lineTo(parkPose.minus(pos(10, 0)).vec(), getVelocityConstraint(30, 5, TRACK_WIDTH), getAccelerationConstraint(30)));
         } else {
-            queue(fromHere()
+            queue(from(hubPose)
                     .lineToLinearHeading(calibrateHubWallPose)
                     .now(() -> {
                         drive.setPoseEstimate(hubWallPose);
                     })
-                    .lineTo(calibrateWhPose.minus(pos(0, 5)).vec())
-                    .lineTo(calibrateWhPose.vec(), getVelocityConstraint(40, 5, TRACK_WIDTH), getAccelerationConstraint(40)));
+                    .lineTo(calibrateWhPose.minus(pos(0, 10)).vec())
+                    .now(() -> drive.setPoseEstimate(whPose.minus(pos(0, 10))))
+                    //.lineTo(calibrateWhPose.vec(), getVelocityConstraint(40, 5, TRACK_WIDTH), getAccelerationConstraint(40)));
+//                    .lineToLinearHeading(sharedParkPose)
+
+                    .splineToSplineHeading(whPose.plus(pos(20,-3)),deg(-45))
+                    .splineToSplineHeading(sharedParkPose, deg(0))
+                    .forward(10,getVelocityConstraint(20, 5, TRACK_WIDTH),getAccelerationConstraint(20)));
+//            queue(intake::in);
         }
-        queueWarehouseSensorCalibration(parkPose);
+        //queueWarehouseSensorCalibration(parkPose);
+        queueAllianceHubSensorCalibration(sharedParkPose.minus(pos(10,0)));
         queue(shippingArm::resetArm);
     }
     public void getFreight() {
-        if (!CYCLE && CAROUSEL)
+        if (!CYCLE)
             return;
         queue(() -> {
-            intake.in();
-            while (dumpIndicator.update() == EMPTY && opModeIsActive()) {
+            while ( opModeIsActive()) {
+                if (dumpIndicator.update() == EMPTY) {
+                    intake.in();
+                } else {
+                    intake.out();
+                }
             }
-            if (dumpIndicator.update() == OVERFLOW) {
-//                outtake.dumpExcess();
-                intake.out();
-            } else {
-                intake.off();
-            }
+            intake.off();
         });
     }
     public void startScanner() {
@@ -590,6 +677,7 @@ public abstract class AutonomousMode extends OpMode {
         Match.status("Running tasks...");
         try {
             for (Object task : tasks) {
+                // Convert object to actual task, if appropriate
                 if (task instanceof String) {
                     if (dynamicTasks.containsKey(task)) {
                         task = dynamicTasks.get(task);
@@ -604,6 +692,7 @@ public abstract class AutonomousMode extends OpMode {
                     }
                 }
 
+                // Execute task based on class
                 if (task instanceof TrajectorySequence) {
                     drive.follow((TrajectorySequence) task);
                 } else if (task instanceof RobotRunnable) {
@@ -846,6 +935,27 @@ public abstract class AutonomousMode extends OpMode {
             Pose2d correctedPose = new Pose2d(
                     pos(0,72 - rangeSensor.getDistance(DistanceUnit.INCH) - 6.5).getX(),
                     predictedPose.getY(),
+                    currentPose.getHeading()
+            );
+            drive.setPoseEstimate(correctedPose);
+        });
+        queue(predictedPose);
+    }
+    /**
+     * Queues a x-coordinates calibration of the robot's pose estimate at the shared alliance park. The new pose
+     * estimate will calibrate the alliance-agnostic x-coordinates based on the distance sensor
+     * reading. Future trajectories will begin at a predicted pose.
+     *
+     * @param predictedPose the correct pose of the robot
+     * @see #pos(double, double, double)
+     * @see #queue(Pose2d)
+     */
+    protected void queueAllianceHubSensorCalibration(Pose2d predictedPose) {
+        queue(() -> {
+            Pose2d currentPose = drive.getPoseEstimate();
+            Pose2d correctedPose = new Pose2d(
+                    72-WIDTH/2,
+                    pos(-72 + rangeSensor.getDistance(DistanceUnit.INCH) + 6.5,0).getY(),
                     currentPose.getHeading()
             );
             drive.setPoseEstimate(correctedPose);

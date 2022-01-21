@@ -26,9 +26,11 @@ public class AutoTest {
     protected double length = 15;
     protected double width = 13;
 
-    protected boolean isRed = true;
+    protected boolean isRed = false;
     protected boolean isWallRunner = true;
     protected boolean isNearCarousel = false;
+
+    protected Pose2d sharedParkPose;
 
     public void initPoses() {
         initialPose = pos(-72 + width / 2, 12, 180);
@@ -47,6 +49,8 @@ public class AutoTest {
         hubPose = pos(-48.5 + width / 2, -12, 90);
         preHubPose = pos(-48, -12, 0);
         preWhPose = pos(-72 + width / 2, 12, 0);
+
+        sharedParkPose = pos(-36,72-width/2,90);
 
         if (isWallRunner) {
             parkPose = pos(-72 + width / 2, 37, 180);
@@ -67,6 +71,7 @@ public class AutoTest {
 
     public void start() {
         initPoses();
+        initialPose=preWhPose.minus(pos(0,5));
 
         // Declare a MeepMeep instance
         // With a field size of 800 pixels
@@ -81,11 +86,12 @@ public class AutoTest {
                 .setConstraints(60, 60, Math.toRadians(180), Math.toRadians(180), 15)
                 .setBotDimensions(width,length)
                 .followTrajectorySequence(drive -> drive
-                        .trajectorySequenceBuilder(hubPose)
-                        .lineToSplineHeading(preHubPose.minus(pos(10,-12)))
-                        //.splineToSplineHeading(preHubPose.minus(pos(15,-15)),0)
-                        .splineToLinearHeading(preWhPose,0)
-                        .lineTo(whPose.vec())
+                        .trajectorySequenceBuilder(initialPose)
+                        .lineTo(whPose.minus(pos(0,8)).vec())
+                        .splineToSplineHeading(whPose.plus(pos(20,-3)),deg(-45))
+                        .splineToSplineHeading(sharedParkPose, deg(0))
+                        .back(10)
+                        .forward(10)
                         .build()
                 )
                 .start();
