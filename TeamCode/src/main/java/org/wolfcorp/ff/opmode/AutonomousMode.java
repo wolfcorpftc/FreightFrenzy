@@ -165,7 +165,7 @@ public abstract class AutonomousMode extends OpMode {
             elementMidPose = pos(-52, 7.25 + 8.25, 90); // y-difference was supposed to be 8.4
             elementRightPose = pos(-52, 11 + 15, 90);
         } else if (BLUE && CAROUSEL){
-            elementLeftPose = pos(-52, 15, 90); // originally x = -54, y = 20.4
+            elementLeftPose = pos(-52, 17, 90); // originally x = -54, y = 20.4
             elementMidPose = pos(-52, 8.25, 90); // y-difference was supposed to be 8.4
             elementRightPose = pos(-52, -1.8, 90);
         } else if (RED && WAREHOUSE) {
@@ -181,7 +181,11 @@ public abstract class AutonomousMode extends OpMode {
             elementRightPose = pos(-52, -1.8, 90); // FIXME: fix pose; make sure no collision w/ wall
         }
 
-        carouselPose = pos(-54, -72 + WIDTH / 2, 90); //  x += RED ? 5 : 0
+        if (RED) {
+            carouselPose = pos(-54, -72 + WIDTH / 2, 90);
+        } else {
+            carouselPose = pos(-56, -72 + WIDTH / 2, 90);
+        }
         preCarouselPose = carouselPose.plus(pos(3, 0));
         calibratePreCarouselPose = preCarouselPose.minus(pos(0, 5));
 
@@ -196,7 +200,7 @@ public abstract class AutonomousMode extends OpMode {
             hubPose = pos(-43.5, -8, 90);
             cycleHubPose = pos(-48, -14, 90);
         } else if (BLUE && CAROUSEL && PARK) {
-            hubPose = pos(-42, -8, 90);
+            hubPose = pos(-40, -8, 90);
             cycleHubPose = pos(-48, -14, 90);
         } else if (RED && WAREHOUSE) {
             hubPose = pos(-42, -12, 90);
@@ -224,7 +228,7 @@ public abstract class AutonomousMode extends OpMode {
         calibratePreDuckPose = preDuckPose.minus(pos(3, 0));
         duckPose = preDuckPose.minus(pos(0, 48)); // FIXME: fix the y value
         if (RED) {
-            storageUnitParkPose = pos(-36 + 2.75, -72 + WIDTH / 2 - 2.5, 90);
+            storageUnitParkPose = pos(-36 + 1, -72 + WIDTH / 2 - 2.5, 90);
         } else {
             storageUnitParkPose = pos(-36 + 1, -72 + WIDTH / 2 - 2.5, 90);
         }
@@ -371,7 +375,6 @@ public abstract class AutonomousMode extends OpMode {
                     for (int k = 20; k > 3 && dumpIndicator.update() == EMPTY && !Thread.currentThread().isInterrupted(); k -= 3) {
                         while (dumpIndicator.update() == EMPTY && rangeSensor.getDistance(DistanceUnit.INCH) > k && !Thread.currentThread().isInterrupted()) {
                             Match.log("loop a");
-                            System.out.println(rangeSensor.getDistance(DistanceUnit.INCH));
                             drive.updatePoseEstimate();
                             drive.setMotorPowers(driveController.update());
 //                        intake.setVelocityRPM(intakeController.update());
@@ -437,10 +440,12 @@ public abstract class AutonomousMode extends OpMode {
                         intakeThread.interrupt();
                         drive.abort();
                         intake.out();
+                        break;
                     }
                 }
                 Match.status("Waiting for intake thread to die...");
                 drive.setMotorPowers(0);
+                // TODO: Check if this causes errors
                 while (intakeThread.isAlive()) {
                     intakeThread.interrupt();
                     drive.abort();

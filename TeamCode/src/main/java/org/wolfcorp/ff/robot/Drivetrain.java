@@ -253,6 +253,8 @@ public class Drivetrain extends MecanumDrive {
     public void waitForIdle() {
         while (!Thread.currentThread().isInterrupted() && isBusy())
             update();
+
+        trajectorySequenceRunner.followTrajectorySequenceAsync(null);
     }
 
     public boolean isBusy() {
