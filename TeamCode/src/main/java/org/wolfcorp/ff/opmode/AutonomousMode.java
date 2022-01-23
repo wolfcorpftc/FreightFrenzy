@@ -16,6 +16,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.opencv.core.Mat;
 import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvWebcam;
@@ -46,6 +47,7 @@ public abstract class AutonomousMode extends OpMode {
     public final boolean WAREHOUSE = !CAROUSEL;
     public final boolean CYCLE = modeNameContains("Cycle");
     public final boolean PARK = !CYCLE;
+    public boolean justPark = false;
 
     public static int SCORING_CYCLES = 1; // varies based on path
     // endregion
@@ -372,7 +374,7 @@ public abstract class AutonomousMode extends OpMode {
 //                TimedController intakeController = new TimedController(-25, -475, -800);
                 Thread intakeThread = new Thread(() -> {
                     TimedController driveController = new TimedController(0.020, 0.15, 0.35);
-                    for (int k = 20; k > 3 && dumpIndicator.update() == EMPTY && !Thread.currentThread().isInterrupted(); k -= 3) {
+                    for (int k = 24; k > 22 && dumpIndicator.update() == EMPTY && !Thread.currentThread().isInterrupted(); k -= 3) {
                         while (dumpIndicator.update() == EMPTY && rangeSensor.getDistance(DistanceUnit.INCH) > k && !Thread.currentThread().isInterrupted()) {
                             Match.log("loop a");
                             drive.updatePoseEstimate();
@@ -425,12 +427,18 @@ public abstract class AutonomousMode extends OpMode {
                                     return;
                                 }
                                 drive.turnDeg(-10);
+
+                                if (Thread.currentThread().isInterrupted()) {
+                                    return;
+                                }
+
                             }
                             if (Thread.currentThread().isInterrupted()) {
                                 return;
                             }
                         }
                     }
+                    justPark = true;
                 });
                 intakeThread.start();
                 while (opModeIsActive() && !intakeThread.isInterrupted()) {
@@ -457,6 +465,11 @@ public abstract class AutonomousMode extends OpMode {
                     drive.follow(from(drive.getPoseEstimate()).strafeRight(5).build());
                 } else {
                     drive.follow(from(drive.getPoseEstimate()).strafeLeft(5).build());
+                }
+
+                if(justPark){
+                    Match.log("Go straight to park");
+                    return;
                 }
                 // TODO: make sure it flows smoothly into next section(s)
             });
@@ -541,6 +554,10 @@ public abstract class AutonomousMode extends OpMode {
             return;
         }
         // park in warehouse
+        if (justPark) {
+            // Maybe add park spline later
+            return;
+        }
         if (SCORING_CYCLES == 0) {
             queue(from(hubPose)
                     .now(outtake::dumpIn)
@@ -571,6 +588,10 @@ public abstract class AutonomousMode extends OpMode {
     public void getFreight() {
         if (!CYCLE)
             return;
+        if (justPark) {
+            // Maybe add park spline later
+            return;
+        }
         queue(() -> {
             while ( opModeIsActive()) {
                 if (dumpIndicator.update() == EMPTY) {

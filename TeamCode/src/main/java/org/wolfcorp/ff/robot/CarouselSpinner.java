@@ -87,7 +87,7 @@ public class CarouselSpinner {
      */
 
     public void spin() throws InterruptedException {
-        spin(1);
+        spin(3);
     }
 
     public void spin(int time) throws InterruptedException { spinAsync(time, SPIN_TIME, WAIT_TIME).join(); }
