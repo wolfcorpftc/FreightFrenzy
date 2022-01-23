@@ -87,10 +87,12 @@ public class CarouselSpinner {
      */
 
     public void spin() throws InterruptedException {
-        spin(3);
+        spinAsync(1, 1.2 * SPIN_TIME, WAIT_TIME).join();
     }
 
-    public void spin(int time) throws InterruptedException { spinAsync(time, SPIN_TIME, WAIT_TIME).join(); }
+    public void spin(int time) throws InterruptedException {
+        spinAsync(time, SPIN_TIME, WAIT_TIME).join();
+    }
 
     public void stopSpin() {
         if (spinThread != null && !spinThread.isInterrupted()) {

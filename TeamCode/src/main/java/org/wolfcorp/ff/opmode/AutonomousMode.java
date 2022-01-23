@@ -47,7 +47,6 @@ public abstract class AutonomousMode extends OpMode {
     public final boolean WAREHOUSE = !CAROUSEL;
     public final boolean CYCLE = modeNameContains("Cycle");
     public final boolean PARK = !CYCLE;
-    public boolean justPark = false;
 
     public static int SCORING_CYCLES = 1; // varies based on path
     // endregion
@@ -59,10 +58,6 @@ public abstract class AutonomousMode extends OpMode {
     protected VuforiaNavigator navigator;
     protected Barcode barcode;
     protected Thread initVisionThread;
-    // endregion
-
-    // region Miscellaneous
-    private boolean handleExcess = false;
     // endregion
 
     // region Poses
@@ -127,12 +122,16 @@ public abstract class AutonomousMode extends OpMode {
     protected Pose2d duckPose;
     /** Where the robot parks in the storage unit. */
     protected Pose2d storageUnitParkPose;
-    /**Where the robot parks on the shared alliance wall*/
+    /** Where the robot parks on the shared alliance wall */
     protected Pose2d sharedParkPose;
     // endregion
 
     // region Task Queue
-    /** The task queue. */
+    /**
+     * The task queue.
+     *
+     * @see ConditionalTask
+     */
     private final ArrayList<Object> tasks = new ArrayList<>();
     /**
      * Where the contents of named tasks are stored (only necessary if the task content is random,
@@ -253,11 +252,9 @@ public abstract class AutonomousMode extends OpMode {
     public void runOpMode() {
         prologue();
 
-        grabShippingElement();
         spinCarousel(); // CAROUSEL only
         deposit();
         cycle(); // CYCLE only
-        // getDuck(); // CAROUSEL PARK only
         park();
         getFreight(); // CYCLE only
 
@@ -278,65 +275,24 @@ public abstract class AutonomousMode extends OpMode {
 
         Match.status("Robot Initialized, preparing task queue");
     }
-    public void grabShippingElement() {
-        // FIXME: path-building in real-time
-        Match.status("Initializing: shipping element (SE)");
-        queue(() -> {
-            if (BLUE && WAREHOUSE && barcode == Barcode.BOT)
-                return;
-            shippingArm.openClaw();
-            shippingArm.armOutermostAsync(2);
-            sleep(500);
-        });
-        // step to the side when at warehouse to avoid the barrier
-        if (!(BLUE && WAREHOUSE))
-            queue(() -> barcode == Barcode.BOT, fromHere().lineTo(elementLeftPose.vec(), getVelocityConstraint(35, 5, TRACK_WIDTH), getAccelerationConstraint(35)));
-        queue(() -> barcode == Barcode.MID, fromHere().lineTo(elementMidPose.vec(), getVelocityConstraint(35, 5, TRACK_WIDTH), getAccelerationConstraint(35)));
-        queue(() -> barcode == Barcode.TOP, fromHere().lineTo(elementRightPose.vec(), getVelocityConstraint(35, 5, TRACK_WIDTH), getAccelerationConstraint(35)));
-        queue(() -> {
-            if (BLUE && WAREHOUSE && barcode == Barcode.BOT)
-                return;
-            shippingArm.closeClaw();
-            sleep(1000);
-            if (CAROUSEL) {
-                shippingArm.armOutAsync();
-            } else {
-                shippingArm.armInAsync();
-            }
-        });
-    }
     public void spinCarousel() {
         if (CAROUSEL) {
             Match.status("Initializing: carousel");
-//            queue(spinner::on);
-            queue(() -> barcode == Barcode.BOT, from(elementLeftPose) .lineTo(calibratePreCarouselPose.vec()));
-            queue(() -> barcode == Barcode.MID, from(elementMidPose)  .lineTo(calibratePreCarouselPose.vec()));
-            queue(() -> barcode == Barcode.TOP, from(elementRightPose).lineTo(calibratePreCarouselPose.vec()));
+            queue(fromHere().lineTo(calibratePreCarouselPose.vec()));
             queueYCalibration(preCarouselPose);
             queue(fromHere().lineTo(carouselPose.vec(), getVelocityConstraint(10, 5, TRACK_WIDTH), getAccelerationConstraint(10)));
-//            queue(() -> {
-//               ElapsedTime spinTimer = new ElapsedTime();
-//               while (spinTimer.milliseconds() < CarouselSpinner.WAIT_TIME && OpMode.isActive());
-//               spinner.off();
-//               shippingArm.armInAsync();
-//            });
             queue(spinner::spin);
-            queue(shippingArm::armInAsync);
         }
     }
     public void deposit() {
         Match.status("Initializing: deposit (preloaded & SE)");
         // move to carousel
+        queue(() -> outtake.slideToAsync(barcode));
         if (CAROUSEL) {
             // already dealt with end pose branching earlier
-            queue(from(carouselPose).now(() -> outtake.slideToAsync(barcode)).lineTo(hubPose.vec(), getVelocityConstraint(35, 5, TRACK_WIDTH), getAccelerationConstraint(25)));
+            queue(from(carouselPose).lineTo(hubPose.vec(), getVelocityConstraint(35, 5, TRACK_WIDTH), getAccelerationConstraint(25)));
         } else {
-            if (BLUE && WAREHOUSE)
-                queue(() -> barcode == Barcode.BOT, from(initialPose).now(() -> outtake.slideToAsync(barcode)).lineTo(hubPose.vec(), getVelocityConstraint(35, 5, TRACK_WIDTH), getAccelerationConstraint(25)));
-            else
-                queue(() -> barcode == Barcode.BOT, from(elementLeftPose).now(() -> outtake.slideToAsync(barcode)).lineTo(hubPose.vec(), getVelocityConstraint(35, 5, TRACK_WIDTH), getAccelerationConstraint(25)));
-            queue(() -> barcode == Barcode.MID, from(elementMidPose).now(() -> outtake.slideToAsync(barcode)).lineTo(hubPose.vec(), getVelocityConstraint(35, 5, TRACK_WIDTH), getAccelerationConstraint(25)));
-            queue(() -> barcode == Barcode.TOP, from(elementRightPose).now(() -> outtake.slideToAsync(barcode)).lineTo(hubPose.vec(), getVelocityConstraint(35, 5, TRACK_WIDTH), getAccelerationConstraint(25)));
+            queue(fromHere().lineTo(hubPose.vec(), getVelocityConstraint(35, 5, TRACK_WIDTH), getAccelerationConstraint(25)));
         }
         queue(() -> {
             outtake.dumpOut();
@@ -344,10 +300,6 @@ public abstract class AutonomousMode extends OpMode {
             // slide and dump will be reset in cycle()
         });
         // TODO: fix robot teleporting here. Seems to be held up somewhere here and the next path starts early but the robot does not respond until it is already half way done with path
-
-        // code below not dumping out
-        //queue(fromHere().lineTo(hubPose.plus(pos(0.01,0)).vec()).addTemporalMarker(0,() -> {outtake.dumpOut();}).addTemporalMarker(1.2,() -> {outtake.dumpOut();}));
-        // TODO: move to a better pose to cap, do armOut during the path
     }
     public void cycle() {
         if (PARK)
@@ -360,7 +312,7 @@ public abstract class AutonomousMode extends OpMode {
             }
 
 
-            // *** Hub to warehouse ***
+            // *** To warehouse ***
             queue(from(hubPose)
                     .lineToLinearHeading(calibrateHubWallPose)
                     .now(() -> {
@@ -369,6 +321,8 @@ public abstract class AutonomousMode extends OpMode {
                     })
                     .lineTo(calibrateWhPose.minus(pos(0, 5)).vec()));
             queueXCalibration(whPose.minus(pos(0, 5)));
+
+
             // *** Intake ***
             queue(() -> {
 //                TimedController intakeController = new TimedController(-25, -475, -800);
@@ -376,7 +330,6 @@ public abstract class AutonomousMode extends OpMode {
                     TimedController driveController = new TimedController(0.020, 0.15, 0.35);
                     for (int k = 24; k > 22 && dumpIndicator.update() == EMPTY && !Thread.currentThread().isInterrupted(); k -= 3) {
                         while (dumpIndicator.update() == EMPTY && rangeSensor.getDistance(DistanceUnit.INCH) > k && !Thread.currentThread().isInterrupted()) {
-                            Match.log("loop a");
                             drive.updatePoseEstimate();
                             drive.setMotorPowers(driveController.update());
 //                        intake.setVelocityRPM(intakeController.update());
@@ -385,9 +338,7 @@ public abstract class AutonomousMode extends OpMode {
                             }
                         }
                         for (int j = 0; j < 3 && dumpIndicator.update() == EMPTY && !Thread.currentThread().isInterrupted(); j++) {
-                            Match.log("loop b");
                             if (dumpIndicator.update() == EMPTY && !Thread.currentThread().isInterrupted()) {
-                                Match.log("loop c");
                                 if (Thread.currentThread().isInterrupted()) {
                                     return;
                                 }
@@ -396,7 +347,6 @@ public abstract class AutonomousMode extends OpMode {
                                     return;
                                 }
                                 drive.turnDeg(-10);
-
                                 if (Thread.currentThread().isInterrupted()) {
                                     return;
                                 }
@@ -417,28 +367,23 @@ public abstract class AutonomousMode extends OpMode {
                                     return;
                                 }
                                 sleep(250);
-
                                 if (Thread.currentThread().isInterrupted()) {
                                     return;
                                 }
                                 drive.follow(from(drive.getPoseEstimate()).back(7).build());
-
                                 if (Thread.currentThread().isInterrupted()) {
                                     return;
                                 }
                                 drive.turnDeg(-10);
-
                                 if (Thread.currentThread().isInterrupted()) {
                                     return;
                                 }
-
                             }
                             if (Thread.currentThread().isInterrupted()) {
                                 return;
                             }
                         }
                     }
-                    justPark = true;
                 });
                 intakeThread.start();
                 while (opModeIsActive() && !intakeThread.isInterrupted()) {
@@ -466,81 +411,29 @@ public abstract class AutonomousMode extends OpMode {
                 } else {
                     drive.follow(from(drive.getPoseEstimate()).strafeLeft(5).build());
                 }
-
-                if(justPark){
-                    Match.log("Go straight to park");
-                    return;
-                }
-                // TODO: make sure it flows smoothly into next section(s)
-            });
-            // TEST!
-//            queue(() -> drive.sidestepRight(0.75, 5 * (RED ? 1 : -1)));
-            queue(() -> {
-                sleep(250);
-                if (dumpIndicator.update() != EMPTY) {
-                    intake.out();
-                } else {
-                    intake.getMotor().setVelocity(1.75 * Intake.IN_SPEED);
-                }
             });
             queueWarehouseSensorCalibration(pos(-72 + DriveConstants.WIDTH / 2, 46, 0));
-            queue(() -> Match.status(drive.getPoseEstimate() + "; sensor = " + rangeSensor.getDistance(DistanceUnit.INCH)));
 
 
-            // *** Warehouse to hub ***
-            queue(fromHere()
-                    // get out
-                    .lineTo(preWhPose.minus(pos(4, 10)).vec())
-                    .now(() -> {
-                        switch (dumpIndicator.update()) {
-                            case EMPTY:
-                                intake.in();
-                                break;
-                            case FULL:
-                                intake.out();
-                            case OVERFLOW:
-//                                outtake.slideToAsync(Barcode.EXCESS);
-                                // outtake.dumpExcess();
-                                intake.out();
-                                handleExcess = true;
-                                break;
-                        }
-                    }));
+            // *** To hub ***
+            queue(fromHere().lineTo(preWhPose.minus(pos(4, 10)).vec()));
             queue(fromHere().addTemporalMarker(0.5, () -> {
                 if (dumpIndicator.update() == FULL) {
                     outtake.slideToAsync(Barcode.TOP);
                 }
-            }).lineToSplineHeading(cycleHubPose.plus(pos(0, 3))));
+            }).lineToLinearHeading(cycleHubPose.plus(pos(0, 3))));
             queueHubSensorCalibration(trueHubPose);
 
 
             // *** Score ***
             queue(() -> {
-                if (handleExcess) {
-                    outtake.resetSlide();
-                    handleExcess = false;
-                }
                 intake.off();
-
-//                outtake.slideTo(Barcode.TOP); // since it gets counted in TeleOp period scoring
                 outtake.slideTo(Barcode.TOP);
                 outtake.dumpOut();
                 sleep(1200);
                 outtake.dumpIn();
                 outtake.slideToAsync(Barcode.ZERO);
             });
-        }
-    }
-    public void getDuck() {
-        if (CAROUSEL && PARK) {
-            queue(from(hubPose)
-                    .lineToLinearHeading(calibrateHubWallPose)
-                    .now(() -> {
-                        drive.setPoseEstimate(hubWallPose);
-                        intake.in();
-                    })
-                    .lineTo(calibrateWhPose.minus(pos(0, 5)).vec()));
-
         }
     }
     public void park() {
@@ -554,44 +447,28 @@ public abstract class AutonomousMode extends OpMode {
             return;
         }
         // park in warehouse
-        if (justPark) {
-            // Maybe add park spline later
-            return;
-        }
-        if (SCORING_CYCLES == 0) {
+        if (SCORING_CYCLES > 0) {
+            queue(from(hubPose)
+                    .lineToLinearHeading(calibrateHubWallPose)
+                    .now(() -> {
+                        drive.setPoseEstimate(hubWallPose);
+                    })
+                    .lineTo(calibrateWhPose.minus(pos(0, 5)).vec())
+                    .now(() -> drive.setPoseEstimate(whPose.minus(pos(0, 5)))));
+        } else {
             queue(from(hubPose)
                     .now(outtake::dumpIn)
                     .now(() -> outtake.slideToAsync(Barcode.ZERO))
                     .lineToSplineHeading(preHubPose.minus(pos(10, -12)))
                     .splineToLinearHeading(preWhPose.minus(pos(4, 0)), 0)
                     .lineTo(parkPose.minus(pos(10, 0)).vec(), getVelocityConstraint(30, 5, TRACK_WIDTH), getAccelerationConstraint(30)));
-        } else {
-            queue(from(hubPose)
-                    .lineToLinearHeading(calibrateHubWallPose)
-                    .now(() -> {
-                        drive.setPoseEstimate(hubWallPose);
-                    })
-                    .lineTo(calibrateWhPose.minus(pos(0, 10)).vec())
-                    .now(() -> drive.setPoseEstimate(whPose.minus(pos(0, 10))))
-                    //.lineTo(calibrateWhPose.vec(), getVelocityConstraint(40, 5, TRACK_WIDTH), getAccelerationConstraint(40)));
-//                    .lineToLinearHeading(sharedParkPose)
-
-                    .splineToSplineHeading(whPose.plus(pos(20,-3)),deg(-45))
-                    .splineToSplineHeading(sharedParkPose, deg(0))
-                    .forward(10,getVelocityConstraint(20, 5, TRACK_WIDTH),getAccelerationConstraint(20)));
-//            queue(intake::in);
         }
-        //queueWarehouseSensorCalibration(parkPose);
-        queueAllianceHubSensorCalibration(sharedParkPose.minus(pos(10,0)));
+        queueWarehouseSensorCalibration(parkPose);
         queue(shippingArm::resetArm);
     }
     public void getFreight() {
         if (!CYCLE)
             return;
-        if (justPark) {
-            // Maybe add park spline later
-            return;
-        }
         queue(() -> {
             while ( opModeIsActive()) {
                 if (dumpIndicator.update() == EMPTY) {
