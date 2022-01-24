@@ -18,7 +18,6 @@ import androidx.annotation.NonNull;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.control.PIDCoefficients;
-import com.acmerobotics.roadrunner.control.PIDFController;
 import com.acmerobotics.roadrunner.drive.DriveSignal;
 import com.acmerobotics.roadrunner.drive.MecanumDrive;
 import com.acmerobotics.roadrunner.followers.HolonomicPIDVAFollower;
@@ -40,8 +39,8 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.hardware.configuration.typecontainers.MotorConfigurationType;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.wolfcorp.ff.opmode.OpMode;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequence;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequenceBuilder;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequenceRunner;
@@ -82,7 +81,7 @@ public class Drivetrain extends MecanumDrive {
     private final BNO055IMU imu;
     private final VoltageSensor batteryVoltageSensor;
 
-    /** Speed multiplier for {@link #drive(double, double, double, double, double, double)}*/
+    /** Speed multiplier for {@link #drive(double, double, double, double, boolean)}*/
     public double speedMultiplier = 1;
 
     public Drivetrain(HardwareMap hardwareMap) {
@@ -261,6 +260,14 @@ public class Drivetrain extends MecanumDrive {
         return trajectorySequenceRunner.isBusy();
     }
 
+    public boolean motorBusy() {
+        return leftFront.isBusy() || leftBack.isBusy() || rightFront.isBusy() || rightBack.isBusy();
+    }
+
+    public boolean allMotorsBusy() {
+        return leftFront.isBusy() && leftBack.isBusy() && rightFront.isBusy() && rightBack.isBusy();
+    }
+
     public void setMode(DcMotor.RunMode runMode) {
         for (DcMotorEx motor : motors) {
             motor.setMode(runMode);
@@ -399,6 +406,13 @@ public class Drivetrain extends MecanumDrive {
         this.setMotorPowers(v, v, v, v);
     }
 
+    public void setMotorVelocity(double v) {
+        leftFront.setVelocity(v);
+        leftBack.setVelocity(v);
+        rightFront.setVelocity(v);
+        rightBack.setVelocity(v);
+    }
+
     public void drive(double x, double y, double rotation, double slowModeSpeed, boolean slowModeCondition) {
 
         double[] wheelSpeeds = new double[4];
@@ -450,73 +464,31 @@ public class Drivetrain extends MecanumDrive {
      *  1) Move gets to the desired position (unless timeout has been reached)
      *  2) Driver stops the opmode running.
      */
-    public void drive(double speed,
-                      double leftInches, double rightInches,
-                      double leftBackInches, double rightBackInches,
-                      double timeoutSec) {
-        int leftTarget;
-        int rightTarget;
-        int leftBackTarget;
-        int rightBackTarget;
-
-        leftTarget = leftFront.getCurrentPosition() + (int) (leftInches * DriveConstants.TICKS_PER_INCH);
-        rightTarget = rightFront.getCurrentPosition() + (int) (rightInches * DriveConstants.TICKS_PER_INCH);
-        leftBackTarget = leftBack.getCurrentPosition() + (int) (leftBackInches * DriveConstants.TICKS_PER_INCH);
-        rightBackTarget = rightBack.getCurrentPosition() + (int) (rightBackInches * DriveConstants.TICKS_PER_INCH);
-
-        setDriveTargetPos(
-                leftTarget,
-                rightTarget,
-                leftBackTarget,
-                rightBackTarget
-        );
+    public void drive(double speed, double lf, double rf, double lb, double rb) {
+        int lfTarget = leftFront.getCurrentPosition() + (int) (lf * DriveConstants.TICKS_PER_INCH);
+        int rfTarget = rightFront.getCurrentPosition() + (int) (rf * DriveConstants.TICKS_PER_INCH);
+        int lbTarget = leftBack.getCurrentPosition() + (int) (lb * DriveConstants.TICKS_PER_INCH);
+        int rbTarget = rightBack.getCurrentPosition() + (int) (rb * DriveConstants.TICKS_PER_INCH);
+        setDriveTargetPos(lfTarget, rfTarget, lbTarget, rbTarget);
 
         DcMotor.RunMode originalMode = leftFront.getMode();
         setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        setMotorVelocity(Math.abs(speed * MAX_RPM * TICKS_PER_REV / 60));
 
-        ElapsedTime timer = new ElapsedTime();
-        setMotorPowers(Math.abs(speed));
-
-        PIDCoefficients coeffs = new PIDCoefficients(0.05, 0.05, 0.005);
-        PIDFController controller = new PIDFController(coeffs);
-        while ((timeoutSec <= 0 || timer.seconds() < timeoutSec)
-                && leftFront.isBusy()
-                && rightFront.isBusy()
-                && leftBack.isBusy()
-                && rightBack.isBusy()) {
+        while (OpMode.isActive() && allMotorsBusy()) {
             updatePoseEstimate();
         }
 
-        setMotorPowers(0);
+        setMotorVelocity(0);
         setMode(originalMode);
     }
 
-    /** Same params but no timeout */
-    public void drive(double speed,
-                      double leftInches, double rightInches,
-                      double leftBackInches, double rightBackInches) {
-        drive(speed, leftInches, rightInches, leftBackInches, rightBackInches, -1);
-    }
-
-    /** Same params but no timeout nor back motor args */
-    public void drive(double speed, double leftInches, double rightInches, double timeoutSec) {
-        drive(speed, leftInches, rightInches, leftInches, rightInches, timeoutSec);
-    }
-
-    public void forward(double speed, double distance, double timeoutSec) {
-        drive(speed, distance, distance, timeoutSec);
-    }
-
     public void forward(double speed, double distance) {
-        forward(speed, distance, -1);
-    }
-
-    public void backward(double speed, double distance, double timeoutSec) {
-        drive(speed, -distance, -distance, timeoutSec);
+        drive(speed, distance, distance, distance, distance);
     }
 
     public void backward(double speed, double distance) {
-        backward(speed, distance, -1);
+        drive(speed, -distance, -distance, -distance, -distance);
     }
 
     public void turnLeft(double speed, double degrees) {
@@ -527,12 +499,38 @@ public class Drivetrain extends MecanumDrive {
         drive(speed, -degrees, degrees, -degrees, degrees);
     }
 
-    public void sidestepRight(double speed, double distance) {
+    public void strafeRight(double speed, double distance) {
         drive(speed, distance, -distance, -distance, distance);
     }
 
-    public void sidestepLeft(double speed, double distance) {
+    public void strafeLeft(double speed, double distance) {
         drive(speed, -distance, distance, distance, -distance);
+    }
+
+    // speed = 1 versions
+
+    public void forward(double distance) {
+        drive(1, distance, distance, distance, distance);
+    }
+
+    public void backward(double distance) {
+        drive(1, -distance, -distance, -distance, -distance);
+    }
+
+    public void turnLeft(double degrees) {
+        drive(1, degrees, -degrees, degrees, -degrees);
+    }
+
+    public void turnRight(double degrees) {
+        drive(1, -degrees, degrees, -degrees, degrees);
+    }
+
+    public void strafeRight(double distance) {
+        drive(1, distance, -distance, -distance, distance);
+    }
+
+    public void strafeLeft(double distance) {
+        drive(1, -distance, distance, distance, -distance);
     }
 
     public void calibrateX(Pose2d calibratedX) {

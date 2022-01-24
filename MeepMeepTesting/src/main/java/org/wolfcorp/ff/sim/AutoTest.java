@@ -18,6 +18,7 @@ public class AutoTest {
     protected Pose2d elementRightPose; // retrieve the right shipping element
 
     protected Pose2d hubPose; // score freight into hub
+    protected Pose2d cycleHubPose;
     protected Pose2d whPose; // load freight from warehouse
     protected Pose2d parkPose; // where the robot parks
     protected Pose2d preHubPose;
@@ -47,6 +48,7 @@ public class AutoTest {
 
         whPose = pos(-72 + width / 2, 42, 180);
         hubPose = pos(-48.5 + width / 2, -12, 90);
+        cycleHubPose = pos(-48, -11.5, 90);
         preHubPose = pos(-48, -12, 0);
         preWhPose = pos(-72 + width / 2, 12, 0);
 
@@ -71,7 +73,7 @@ public class AutoTest {
 
     public void start() {
         initPoses();
-        initialPose=preWhPose.minus(pos(0,5));
+        initialPose = whPose;
 
         // Declare a MeepMeep instance
         // With a field size of 800 pixels
@@ -87,14 +89,12 @@ public class AutoTest {
                 .setBotDimensions(width,length)
                 .followTrajectorySequence(drive -> drive
                         .trajectorySequenceBuilder(initialPose)
-                        .lineTo(whPose.minus(pos(0,8)).vec())
-                        .splineToSplineHeading(whPose.plus(pos(20,-3)),deg(-45))
-                        .splineToSplineHeading(sharedParkPose, deg(0))
-                        .back(10)
-                        .forward(10)
+                        .lineTo(preWhPose.minus(pos(0, 10)).vec())
+                        .splineToSplineHeading(cycleHubPose, deg(-0))
                         .build()
                 )
                 .start();
+
     }
 
     public Pose2d pos(double x, double y) {

@@ -10,5 +10,6 @@ public enum Barcode {
     /** Corresponds with the middle tier of the hub */
     MID,
     /** Corresponds with the top tier of the hub */
-    TOP
+    TOP,
+    DIRTY
 }
