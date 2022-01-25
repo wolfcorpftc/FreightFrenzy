@@ -59,10 +59,6 @@ public class DumpIndicator {
         rightRed.enable(true);
     }
 
-    protected static double average(int... numbers) {
-        return numbers.length == 0 ? 0 : (double) Arrays.stream(numbers).sum() / numbers.length;
-    }
-
     /**
      * Updates the dump indicator based on distance sensor readings.
      *
@@ -71,11 +67,6 @@ public class DumpIndicator {
     public Status update() {
         boolean overflow = OpMode.upperDumpDistance.getDistance(DistanceUnit.INCH) < Outtake.DUMP_OVERFLOW_DIST;
         boolean full = OpMode.lowerDumpDistance.getDistance(DistanceUnit.INCH) < Outtake.DUMP_FULL_DIST;
-
-//        double overflowRGBAverage = average(OpMode.upperDumpDistance.red(), OpMode.upperDumpDistance.green(), OpMode.upperDumpDistance.blue());
-//        boolean overflow = OpMode.upperDumpDistance.getDistance(DistanceUnit.INCH) < Outtake.DUMP_OVERFLOW_DIST;
-//        double fullRGBAverage = average(OpMode.lowerDumpDistance.red(), OpMode.lowerDumpDistance.green(), OpMode.lowerDumpDistance.blue());
-//        boolean full = OpMode.upperDumpDistance.getDistance(DistanceUnit.INCH) < Outtake.DUMP_FULL_DIST;
 
         if (full && overflow) {
             overflow();

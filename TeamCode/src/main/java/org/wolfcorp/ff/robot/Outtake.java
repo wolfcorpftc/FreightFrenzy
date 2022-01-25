@@ -271,7 +271,7 @@ public class Outtake {
         return motor.isBusy() && getSlideTarget() == barcode;
     }
 
-    public boolean willBeAt(Barcode barcode) {
+    public boolean approaching(Barcode barcode) {
         return getSlidePosition() == barcode || isSlideActiveTarget(barcode);
     }
 }

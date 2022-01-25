@@ -9,7 +9,6 @@ import static org.wolfcorp.ff.robot.Drivetrain.getAccelerationConstraint;
 import static org.wolfcorp.ff.robot.Drivetrain.getVelocityConstraint;
 import static org.wolfcorp.ff.robot.DumpIndicator.Status.EMPTY;
 import static org.wolfcorp.ff.robot.DumpIndicator.Status.FULL;
-import static org.wolfcorp.ff.robot.DumpIndicator.Status.OVERFLOW;
 import static org.wolfcorp.ff.vision.Barcode.EXCESS;
 import static org.wolfcorp.ff.vision.Barcode.ZERO;
 
@@ -18,7 +17,6 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.opencv.core.Mat;
 import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvWebcam;
@@ -26,10 +24,8 @@ import org.wolfcorp.ff.BuildConfig;
 import org.wolfcorp.ff.opmode.util.Match;
 import org.wolfcorp.ff.opmode.util.RobotRunnable;
 import org.wolfcorp.ff.opmode.util.TimedController;
-import org.wolfcorp.ff.robot.CarouselSpinner;
 import org.wolfcorp.ff.robot.DriveConstants;
 import org.wolfcorp.ff.robot.DumpIndicator;
-import org.wolfcorp.ff.robot.Intake;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequence;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequenceBuilder;
 import org.wolfcorp.ff.vision.Barcode;
@@ -40,7 +36,6 @@ import org.wolfcorp.ff.vision.VuforiaNavigator;
 import org.wolfcorp.ff.vision.WarehouseGuide;
 
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.HashMap;
 import java.util.function.Supplier;
 
@@ -441,7 +436,7 @@ public abstract class AutonomousMode extends OpMode {
                     case EMPTY:
                         Match.status("Intake Status = EMPTY");
                         outtake.dumpIn();
-                        if (!outtake.willBeAt(ZERO)) {
+                        if (!outtake.approaching(ZERO)) {
                             outtake.slideToAsync(ZERO);
                         } else {
                             timer.reset();
@@ -456,7 +451,7 @@ public abstract class AutonomousMode extends OpMode {
                     case FULL:
                         Match.status("Intake Status = FULL");
                         outtake.dumpIn();
-                        if (!outtake.willBeAt(ZERO)) {
+                        if (!outtake.approaching(ZERO)) {
                             outtake.slideToAsync(ZERO);
                         } else if (timer.seconds() > 0.7) {
                             break INTAKE_LOOP;
@@ -476,14 +471,14 @@ public abstract class AutonomousMode extends OpMode {
                             drive.abort();
                             drive.setMotorPowers(0);
                             intake.out();
-                            if (!outtake.willBeAt(EXCESS)) {
+                            if (!outtake.approaching(EXCESS)) {
                                 outtake.slideToAsync(EXCESS);
                             }
                             outtake.dumpExcess();
                         } else if (timer.seconds() > 2.5) {
                             intake.out();
                             outtake.dumpIn();
-                            if (!outtake.willBeAt(ZERO)) {
+                            if (!outtake.approaching(ZERO)) {
                                 outtake.slideToAsync(ZERO);
                             }
                         }
@@ -534,7 +529,7 @@ public abstract class AutonomousMode extends OpMode {
         if (!CYCLE)
             return;
         queue(() -> {
-            while ( opModeIsActive()) {
+            while (opModeIsActive()) {
                 if (dumpIndicator.update() == EMPTY) {
                     intake.in();
                 } else {
@@ -548,12 +543,10 @@ public abstract class AutonomousMode extends OpMode {
         Match.status("Initializing: vision");
         try {
             initVisionThread.join();
+            scanner.start();
         } catch (InterruptedException ignored) {
             Match.status("OpMode interrupted");
-            Match.log("OpMode interrupted");
-            return;
         }
-        scanner.start();
     }
     public void scanBarcode() {
         Match.status("Scanning");
@@ -561,9 +554,10 @@ public abstract class AutonomousMode extends OpMode {
             barcode = scanner.getBarcode();
         } catch (InterruptedException ignored) {
             Match.status("OpMode interrupted");
-            return;
+            Thread.currentThread().interrupt();
+        } finally {
+            scanner.stop();
         }
-        scanner.stop();
     }
     public void epilogue() {
         startScanner();
@@ -619,7 +613,7 @@ public abstract class AutonomousMode extends OpMode {
 
     // region Helper
 
-    public class ConditionalTask {
+    public static class ConditionalTask {
         private final Supplier<Boolean> condition;
         private final Object task;
 
@@ -628,7 +622,7 @@ public abstract class AutonomousMode extends OpMode {
             this.task = task;
         }
 
-        public boolean satisfied() {
+        public boolean runnable() {
             return condition.get();
         }
 
@@ -654,7 +648,7 @@ public abstract class AutonomousMode extends OpMode {
                         continue;
                     }
                 } else if (task instanceof ConditionalTask) {
-                    if (((ConditionalTask) task).satisfied()) {
+                    if (((ConditionalTask) task).runnable()) {
                         task = ((ConditionalTask) task).getTask();
                     }
                 }
