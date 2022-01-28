@@ -9,6 +9,7 @@ import static org.wolfcorp.ff.robot.Drivetrain.getAccelerationConstraint;
 import static org.wolfcorp.ff.robot.Drivetrain.getVelocityConstraint;
 import static org.wolfcorp.ff.robot.DumpIndicator.Status.EMPTY;
 import static org.wolfcorp.ff.robot.DumpIndicator.Status.FULL;
+import static org.wolfcorp.ff.robot.DumpIndicator.Status.OVERFLOW;
 import static org.wolfcorp.ff.vision.Barcode.EXCESS;
 import static org.wolfcorp.ff.vision.Barcode.ZERO;
 
@@ -354,6 +355,40 @@ public abstract class AutonomousMode extends OpMode {
     }
     public void intake() {
         queue(() -> {
+            if (dumpIndicator.update() != EMPTY) {
+                //regularIntake();
+                alternativeIntake();
+            }
+            drive.setMotorPowers(0);
+            intake.out();
+            Match.status("Cycling");
+            drive.follow(from(drive.getPoseEstimate()).lineTo(whPose.vec()).build());
+            if (RED) {
+                drive.strafeRight(1, 10);
+            } else {
+                drive.strafeLeft(1, 10);
+            }
+        });
+    }
+
+    public void alternativeIntake() {
+        queue(() -> {
+            while (dumpIndicator.update() != FULL) {
+                drive.updatePoseEstimate();
+                if (dumpIndicator.update() == OVERFLOW) {
+                    drive.setMotorPowers(-0.05);
+                    intake.out();
+                } else {
+                    drive.setMotorPowers(0.03);
+                    intake.in();
+                }
+            }
+            drive.abort();
+        });
+    }
+
+    public void regularIntake() {
+        queue(() -> {
 //                TimedController intakeController = new TimedController(-25, -475, -800);
             Runnable intakeRunnable = () -> {
                 TimedController driveController = new TimedController(0.020, 0.15, 0.35);
@@ -426,6 +461,7 @@ public abstract class AutonomousMode extends OpMode {
             DumpIndicator.Status lastStatus = null;
             DumpIndicator.Status status;
 
+
             INTAKE_LOOP:
             while (isActive()) {
                 status = dumpIndicator.update();
@@ -486,7 +522,6 @@ public abstract class AutonomousMode extends OpMode {
                 }
                 lastStatus = status;
             }
-
             Match.status("Waiting for intake thread to die...");
             drive.setMotorPowers(0);
             // TODO: Check if this causes errors
@@ -495,14 +530,6 @@ public abstract class AutonomousMode extends OpMode {
                 drive.abort();
                 drive.setMotorPowers(0);
                 intake.out();
-            }
-            intake.out();
-            Match.status("Cycling");
-            drive.follow(from(drive.getPoseEstimate()).lineTo(whPose.vec()).build());
-            if (RED) {
-                drive.strafeRight(1, 10);
-            } else {
-                drive.strafeLeft(1, 10);
             }
         });
     }
