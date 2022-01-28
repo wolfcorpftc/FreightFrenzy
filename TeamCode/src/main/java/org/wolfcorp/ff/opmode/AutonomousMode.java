@@ -132,15 +132,6 @@ public abstract class AutonomousMode extends OpMode {
      * @see ConditionalTask
      */
     private final ArrayList<Object> tasks = new ArrayList<>();
-    /**
-     * Where the contents of named tasks are stored (only necessary if the task content is random,
-     * like picking up the shipping element whose position is determined randomly pre-match).
-     * <p>
-     * Named tasks can be added by first calling {@link #queue(Object)} with the name of the task to
-     * define its position in the queue, then inserting the name-task pair into this HashMap using
-     * {@link HashMap#put(Object, Object)} before {@link #runTasks()} is called.
-     */
-    private final HashMap<String, Object> dynamicTasks = new HashMap<>();
     // endregion
 
     // region Robot Logic
@@ -667,9 +658,7 @@ public abstract class AutonomousMode extends OpMode {
             for (Object task : tasks) {
                 // Convert object to actual task, if appropriate
                 if (task instanceof String) {
-                    if (dynamicTasks.containsKey(task)) {
-                        task = dynamicTasks.get(task);
-                    } else if (BuildConfig.DEBUG) {
+                    if (BuildConfig.DEBUG) {
                         throw new IllegalArgumentException("Please initialize the dynamic task `" + task + "`");
                     } else {
                         continue;
