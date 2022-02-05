@@ -41,6 +41,7 @@ import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.hardware.configuration.typecontainers.MotorConfigurationType;
 
 import org.wolfcorp.ff.opmode.OpMode;
+import org.wolfcorp.ff.opmode.util.Match;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequence;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequenceBuilder;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequenceRunner;
@@ -56,8 +57,8 @@ public class Drivetrain extends MecanumDrive {
     public static double SLAM_ERROR = 5;
     public static double SLAM_FORWARD = 18;
 
-    public static PIDCoefficients TRANSLATIONAL_PID = new PIDCoefficients(4, 0, 0);
-    public static PIDCoefficients HEADING_PID = new PIDCoefficients(2, 0, 0);
+    public static PIDCoefficients TRANSLATIONAL_PID = new PIDCoefficients(6, 0, 0);
+    public static PIDCoefficients HEADING_PID = new PIDCoefficients(6, 0, 0);
 
     public static double LATERAL_MULTIPLIER = 1;
 
@@ -469,15 +470,19 @@ public class Drivetrain extends MecanumDrive {
         int rfTarget = rightFront.getCurrentPosition() + (int) (rf * DriveConstants.TICKS_PER_INCH);
         int lbTarget = leftBack.getCurrentPosition() + (int) (lb * DriveConstants.TICKS_PER_INCH);
         int rbTarget = rightBack.getCurrentPosition() + (int) (rb * DriveConstants.TICKS_PER_INCH);
+        Match.log("1");
         setDriveTargetPos(lfTarget, rfTarget, lbTarget, rbTarget);
+        Match.log("2");
 
         DcMotor.RunMode originalMode = leftFront.getMode();
         setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        Match.log("3");
         setMotorVelocity(Math.abs(speed * MAX_RPM * TICKS_PER_REV / 60));
 
         while (OpMode.isActive() && allMotorsBusy()) {
             updatePoseEstimate();
         }
+        Match.log("4");
 
         setMotorVelocity(0);
         setMode(originalMode);

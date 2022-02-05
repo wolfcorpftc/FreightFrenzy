@@ -33,8 +33,8 @@ public class DriveConstants {
      * If using the built-in motor velocity PID, update MOTOR_VELO_PID with the tuned coefficients
      * from {@link org.wolfcorp.ff.robot.opmode.DriveVelocityPIDTuner}.
      */
-    public static PIDFCoefficients MOTOR_VELO_PID = new PIDFCoefficients(0, 10, 5,
-            15);
+    public static PIDFCoefficients MOTOR_VELO_PID = new PIDFCoefficients(14, 0, 0,
+            14);
             // getMotorVelocityF(MAX_RPM / 60 * TICKS_PER_REV));
 
     /*

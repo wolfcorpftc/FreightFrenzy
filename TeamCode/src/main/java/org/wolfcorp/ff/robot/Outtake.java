@@ -23,8 +23,8 @@ import java.util.Objects;
 public class Outtake {
     public static final double SLIDE_TICKS_PER_REV = 1425.1;
     public static final double SLIDE_MAX_SPEED = 117 / 60.0 * SLIDE_TICKS_PER_REV; // ticks/sec
-    public static final double SLIDE_UP_SPEED = 0.9 * SLIDE_MAX_SPEED; // ticks/sec
-    public static final double SLIDE_DOWN_SPEED = -0.9 * SLIDE_MAX_SPEED; // ticks/sec
+    public static final double SLIDE_UP_SPEED = SLIDE_MAX_SPEED; // ticks/sec
+    public static final double SLIDE_DOWN_SPEED = -SLIDE_MAX_SPEED; // ticks/sec
 
     public static final int SLIDE_TOP_POSITION = 1900;
     public static final int SLIDE_MID_POSITION = 1000;
@@ -38,8 +38,8 @@ public class Outtake {
     public static final double DUMP_IN_POSITION = 0.88;
     public static final double DUMP_OUT_POSITION = 0.40;
 
-    public static final double DUMP_OVERFLOW_DIST = 1.6;
-    public static final double DUMP_FULL_DIST = 1.6;
+    public static final double DUMP_OVERFLOW_DIST = 1.69;
+    public static final double DUMP_FULL_DIST = 1.69;
 
     private final DcMotorEx motor; // slide motor
     private final Servo servo; // dump servo

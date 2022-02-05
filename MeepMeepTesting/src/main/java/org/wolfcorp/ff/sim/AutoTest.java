@@ -73,7 +73,7 @@ public class AutoTest {
 
     public void start() {
         initPoses();
-        initialPose = whPose;
+        initialPose = hubPose;
 
         // Declare a MeepMeep instance
         // With a field size of 800 pixels
@@ -89,8 +89,8 @@ public class AutoTest {
                 .setBotDimensions(width,length)
                 .followTrajectorySequence(drive -> drive
                         .trajectorySequenceBuilder(initialPose)
-                        .lineTo(preWhPose.minus(pos(0, 10)).vec())
-                        .splineToSplineHeading(cycleHubPose, deg(-0))
+                        .splineToSplineHeading(preWhPose.plus(pos(-3.5, 4)), deg(0))
+                        .lineTo(whPose.plus(pos(-3.5, 0)).vec())
                         .build()
                 )
                 .start();

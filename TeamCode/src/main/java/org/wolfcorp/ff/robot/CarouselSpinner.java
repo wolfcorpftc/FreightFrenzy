@@ -10,7 +10,7 @@ import org.wolfcorp.ff.opmode.OpMode;
 import java.util.function.Consumer;
 
 public class CarouselSpinner {
-    public static final double SPIN_TIME = 2400; // millis
+    public static final double SPIN_TIME = 2600; // millis
     public static final Long WAIT_TIME = 1000L; // millis
     public static final double TURN_POWER = 1.0;
     public static Thread spinThread = null;
