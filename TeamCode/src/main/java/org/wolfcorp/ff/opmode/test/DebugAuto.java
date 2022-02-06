@@ -39,7 +39,7 @@ public class DebugAuto extends AutonomousMode {
             switch (status) {
                 case EMPTY:
                     outtake.dumpIn();
-                    if (!outtake.approaching(ZERO)) {
+                    if (!outtake.isApproaching(ZERO)) {
                         outtake.slideToAsync(ZERO);
                     } else {
                         Match.status("Intaking...");
@@ -49,7 +49,7 @@ public class DebugAuto extends AutonomousMode {
                     break;
                 case FULL:
                     outtake.dumpIn();
-                    if (!outtake.approaching(ZERO)) {
+                    if (!outtake.isApproaching(ZERO)) {
                         outtake.slideToAsync(ZERO);
                     } else if (timer.seconds() > 0.3) {
                         Match.status("Full!");
@@ -62,14 +62,14 @@ public class DebugAuto extends AutonomousMode {
                     if (timer.seconds() > 0.3 && timer.seconds() < 2.5) {
                         Match.status("Ridding excess freight...");
                         intake.out();
-                        if (!outtake.approaching(EXCESS)) {
+                        if (!outtake.isApproaching(EXCESS)) {
                             outtake.slideToAsync(Barcode.EXCESS);
                         }
                         outtake.dumpExcess();
                     } else if (timer.seconds() > 2.5) {
                         intake.out();
                         outtake.dumpIn();
-                        if (!outtake.approaching(ZERO)) {
+                        if (!outtake.isApproaching(ZERO)) {
                             outtake.slideToAsync(ZERO);
                         }
                     }

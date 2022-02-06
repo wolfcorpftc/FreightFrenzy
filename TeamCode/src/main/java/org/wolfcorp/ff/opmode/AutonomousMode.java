@@ -11,6 +11,7 @@ import static org.wolfcorp.ff.robot.DumpIndicator.Status.EMPTY;
 import static org.wolfcorp.ff.robot.DumpIndicator.Status.FULL;
 import static org.wolfcorp.ff.robot.DumpIndicator.Status.OVERFLOW;
 import static org.wolfcorp.ff.vision.Barcode.EXCESS;
+import static org.wolfcorp.ff.vision.Barcode.TOP;
 import static org.wolfcorp.ff.vision.Barcode.ZERO;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
@@ -28,6 +29,7 @@ import org.wolfcorp.ff.opmode.util.TimedController;
 import org.wolfcorp.ff.robot.DriveConstants;
 import org.wolfcorp.ff.robot.DumpIndicator;
 import org.wolfcorp.ff.robot.Intake;
+import org.wolfcorp.ff.robot.Outtake;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequence;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequenceBuilder;
 import org.wolfcorp.ff.vision.Barcode;
@@ -38,7 +40,6 @@ import org.wolfcorp.ff.vision.VuforiaNavigator;
 import org.wolfcorp.ff.vision.WarehouseGuide;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.function.Supplier;
 
 public abstract class AutonomousMode extends OpMode {
@@ -48,7 +49,7 @@ public abstract class AutonomousMode extends OpMode {
     public final boolean CYCLE = modeNameContains("Cycle");
     public final boolean PARK = !CYCLE;
 
-    public static int SCORING_CYCLES = 2; // varies based on path
+    public final int SCORING_CYCLES = WAREHOUSE ? 3 : 1; // varies based on path
     // endregion
 
     // region Vision Fields
@@ -185,7 +186,8 @@ public abstract class AutonomousMode extends OpMode {
         if (RED && CAROUSEL && CYCLE) {
             hubPose = pos(-45, 0, 90);
             cycleHubPose = pos(-48, -8, 90);
-        } if (RED && CAROUSEL && PARK) {
+        }
+        if (RED && CAROUSEL && PARK) {
             hubPose = pos(-40.5, -5, 90);
             cycleHubPose = pos(-48, -8, 90);
         } else if (BLUE && CAROUSEL && CYCLE) {
@@ -196,7 +198,7 @@ public abstract class AutonomousMode extends OpMode {
             cycleHubPose = pos(-48, -11, 90);
         } else if (RED && WAREHOUSE) {
             hubPose = pos(-42, -12, 90);
-            cycleHubPose = pos(-48, -11, 90);
+            cycleHubPose = pos(-48, -6, 90);
         } else if (BLUE && WAREHOUSE) {
             hubPose = pos(-44, -16, 90);
             cycleHubPose = pos(-48, -10, 90);
@@ -210,9 +212,21 @@ public abstract class AutonomousMode extends OpMode {
         preWhPose = pos(-72 + WIDTH / 2, 12, 0);
         calibratePreWhPose = preWhPose.minus(pos(4, 0));
         trueWhPose = pos(-72 + WIDTH / 2, 30, 0);
-        whPose = trueWhPose.plus(pos(0, 15));
+        if (RED && CAROUSEL && CYCLE) {
+            whPose = trueWhPose.plus(pos(0, 15));
+        } else if (RED && CAROUSEL && PARK) {
+            whPose = trueWhPose.plus(pos(0, 15));
+        } else if (BLUE && CAROUSEL && CYCLE) {
+            whPose = trueWhPose.plus(pos(0, 15));
+        } else if (BLUE && CAROUSEL && PARK) {
+            whPose = trueWhPose.plus(pos(0, 15));
+        } else if (RED && WAREHOUSE) {
+            whPose = trueWhPose.plus(pos(0, 6));
+        } else if (BLUE && WAREHOUSE) {
+            whPose = trueWhPose.plus(pos(0, 15));
+        }
         calibrateWhPose = whPose.minus(pos(8, 0));
-        sharedParkPose = pos(-36,72-WIDTH/2,90);
+        sharedParkPose = pos(-36, 72 - WIDTH / 2, 90);
 
         parkPose = pos(-72 + WIDTH / 2, 40.5 + LENGTH / 2, 0);
 
@@ -232,7 +246,6 @@ public abstract class AutonomousMode extends OpMode {
             elementLeftPose = elementLeftPose.minus(offset);
             elementMidPose = elementMidPose.minus(offset);
             elementRightPose = elementRightPose.minus(offset);
-            SCORING_CYCLES = 1;
         }
     }
 
@@ -267,34 +280,32 @@ public abstract class AutonomousMode extends OpMode {
 
         Match.status("Robot Initialized, preparing task queue");
     }
+
     public void spinCarousel() {
         if (CAROUSEL) {
             Match.status("Initializing: carousel");
             queue(shippingArm::armOutAsync); // necessary to prevent the arm from blocking the spinner
             queue(fromHere().lineTo(calibratePreCarouselPose.vec()));
             queueYCalibration(preCarouselPose);
-            queue(fromHere().lineTo(carouselPose.vec(), getVelocityConstraint(10, 5, TRACK_WIDTH), getAccelerationConstraint(10)));
+            queue(fromHere().lineTo(carouselPose.vec(), getVelocityConstraint(25, 5, TRACK_WIDTH), getAccelerationConstraint(25)));
             queue(spinner::spin);
             queue(shippingArm::armInAsync);
         }
     }
+
     public void deposit() {
         Match.status("Initializing: deposit (preloaded & SE)");
         // move to carousel
         queue(() -> outtake.slideToAsync(barcode));
-        if (CAROUSEL) {
-            // already dealt with end pose branching earlier
-            queue(from(carouselPose).lineTo(hubPose.vec(), getVelocityConstraint(35, 5, TRACK_WIDTH), getAccelerationConstraint(25)));
-        } else {
-            queue(fromHere().lineTo(hubPose.vec()));
-        }
+        queue(fromHere().lineTo(hubPose.vec()));
         queue(() -> {
             outtake.dumpOut();
-            sleep(1200);
+            sleep(Outtake.DUMP_DELAY);
             // slide and dump will be reset in cycle()
         });
         queueHubSensorCalibration(trueHubPose);
     }
+
     public void cycle() {
         if (PARK)
             return;
@@ -310,12 +321,12 @@ public abstract class AutonomousMode extends OpMode {
             queue(() -> intake.getMotor().setVelocity(0.8 * Intake.IN_SPEED));
             queue(from(trueHubPose)
                     .splineToSplineHeading(preWhPose.plus(pos(-3.5, 4)), deg(0))
-                    .lineTo(whPose.plus(pos(-3.5, 2)).vec()));// from 3.5
+                    .splineToConstantHeading(whPose.plus(pos(-9, 2)).vec()));// from 3.5
             queueWarehouseSensorCalibration(whPose);
 
 
             // *** Intake ***
-            intake();
+            intake(i);
             queueWarehouseSensorCalibration(pos(-72 + DriveConstants.WIDTH / 2, 42, 0));
             queue(() -> Match.log("Current Pose: " + drive.getPoseEstimate()));
 
@@ -323,31 +334,35 @@ public abstract class AutonomousMode extends OpMode {
             // *** To hub ***
             queue(fromHere()
                     .lineTo(preWhPose.minus(pos(0, 10)).vec())
-                    .addTemporalMarker(1.5, () -> {
+                    .addTemporalMarker(0.75, () -> {
                         // last-minute check & fix for intake
                         if (dumpIndicator.update() == FULL) {
-                            outtake.slideToAsync(Barcode.TOP);
+                            outtake.slideToAsync(TOP);
                         } else if (dumpIndicator.update() == EMPTY) {
                             intake.in();
                         } else {
-                            outtake.dumpExcess();
                             intake.out();
+                            outtake.slideToAsync(EXCESS);
+                            outtake.dumpExcess();
                         }
-                    }).splineToSplineHeading(cycleHubPose, deg(-90)));
+                    }).splineToSplineHeading(cycleHubPose, deg((BLUE ? -1 : 1) * 90)));
             queueHubSensorCalibration(trueHubPose);
 
             // *** Score ***
             queue(() -> {
                 intake.off();
-                outtake.slideTo(Barcode.TOP);
+                if (!outtake.isApproaching(TOP)) {
+                    outtake.slideTo(TOP);
+                }
                 outtake.dumpOut();
-                sleep(1200);
+                sleep(Outtake.DUMP_DELAY);
                 outtake.dumpIn();
                 outtake.slideToAsync(Barcode.ZERO);
             });
         }
     }
-    public void intake() {
+
+    public void intake(int iteration) {
 //        regularIntake();
         alternativeIntake();
         queue(() -> {
@@ -355,11 +370,13 @@ public abstract class AutonomousMode extends OpMode {
             drive.setMotorPowers(0);
             intake.out();
             Match.status("Cycling");
-            drive.follow(from(drive.getPoseEstimate()).lineTo(whPose.vec()).build());
-            if (RED) {
-                drive.strafeRight(1, 10);
-            } else {
-                drive.strafeLeft(1, 10);
+//            drive.follow(from(drive.getPoseEstimate()).lineTo(whPose.vec()).build());
+            if (iteration == 2) {
+                if (RED) {
+                    drive.strafeRight(1, 10);
+                } else {
+                    drive.strafeLeft(1, 10);
+                }
             }
             Match.log("Post-strafe");
         });
@@ -373,14 +390,14 @@ public abstract class AutonomousMode extends OpMode {
                     Match.log("looping intake -- overflow");
                     drive.setMotorPowers(-0.05);
                     intake.out();
-                    if (!outtake.approaching(EXCESS)) {
+                    if (!outtake.isApproaching(EXCESS)) {
                         outtake.slideToAsync(EXCESS);
                     }
                     outtake.dumpExcess();
                 } else {
                     Match.log("looping intake -- empty");
                     drive.setMotorPowers(0.1);
-                    if (!outtake.approaching(ZERO)) {
+                    if (!outtake.isApproaching(ZERO)) {
                         outtake.slideToAsync(ZERO);
                     }
                     outtake.dumpIn();
@@ -388,67 +405,6 @@ public abstract class AutonomousMode extends OpMode {
                 }
             }
             Match.log("looping exited");
-
-            /*
-            ElapsedTime intakeTimer = new ElapsedTime();
-
-            ElapsedTime timer = new ElapsedTime();
-            DumpIndicator.Status lastStatus = null;
-            DumpIndicator.Status status;
-            INTAKE_LOOP:
-            while (isActive()) {
-                status = dumpIndicator.update();
-                if (lastStatus != status) {
-                    timer.reset();
-                }
-                switch (status) {
-                    case EMPTY:
-                        Match.status("Intake Status = EMPTY");
-                        drive.setMotorPowers(0.07);
-                        outtake.dumpIn();
-                        if (!outtake.approaching(ZERO)) {
-                            intake.off();
-                            outtake.slideToAsync(ZERO);
-                        } else {
-                            intake.getMotor().setVelocity(0.7 * Intake.IN_SPEED);
-                        }
-                        break;
-                    case FULL:
-                        Match.status("Intake Status = FULL");
-                        outtake.dumpIn();
-                        drive.setMotorPowers(-0.05);
-                        if (!outtake.approaching(ZERO)) {
-                            outtake.slideToAsync(ZERO);
-                        } else if (timer.seconds() > 0.7) {
-                            break INTAKE_LOOP;
-                        } else if (timer.seconds() > 0.3) {
-                            Match.status("Full!");
-                            intake.out();
-                        }
-                        break;
-                    case OVERFLOW:
-                        Match.status("Intake Status = OVERFLOW");
-                        drive.setMotorPowers(-0.05);
-                        if (timer.seconds() > 0.3 && timer.seconds() < 2.5) {
-                            Match.status("Ridding excess freight...");
-                            intake.out();
-                            if (!outtake.approaching(EXCESS)) {
-                                outtake.slideToAsync(EXCESS);
-                            }
-                            outtake.dumpExcess();
-                        } else if (timer.seconds() > 2.5) {
-                            intake.out();
-                            outtake.dumpIn();
-                            if (!outtake.approaching(ZERO)) {
-                                outtake.slideToAsync(ZERO);
-                            }
-                        }
-                        break;
-                }
-                lastStatus = status;
-            }
-            */
-            drive.abort();
         });
     }
 
@@ -537,7 +493,7 @@ public abstract class AutonomousMode extends OpMode {
                     case EMPTY:
                         Match.status("Intake Status = EMPTY");
                         outtake.dumpIn();
-                        if (!outtake.approaching(ZERO)) {
+                        if (!outtake.isApproaching(ZERO)) {
                             outtake.slideToAsync(ZERO);
                         } else {
                             timer.reset();
@@ -552,7 +508,7 @@ public abstract class AutonomousMode extends OpMode {
                     case FULL:
                         Match.status("Intake Status = FULL");
                         outtake.dumpIn();
-                        if (!outtake.approaching(ZERO)) {
+                        if (!outtake.isApproaching(ZERO)) {
                             outtake.slideToAsync(ZERO);
                         } else if (timer.seconds() > 0.7) {
                             break INTAKE_LOOP;
@@ -572,14 +528,14 @@ public abstract class AutonomousMode extends OpMode {
                             drive.abort();
                             drive.setMotorPowers(0);
                             intake.out();
-                            if (!outtake.approaching(EXCESS)) {
+                            if (!outtake.isApproaching(EXCESS)) {
                                 outtake.slideToAsync(EXCESS);
                             }
                             outtake.dumpExcess();
                         } else if (timer.seconds() > 2.5) {
                             intake.out();
                             outtake.dumpIn();
-                            if (!outtake.approaching(ZERO)) {
+                            if (!outtake.isApproaching(ZERO)) {
                                 outtake.slideToAsync(ZERO);
                             }
                         }
@@ -598,6 +554,7 @@ public abstract class AutonomousMode extends OpMode {
             }
         });
     }
+
     public void park() {
         Match.status("Initializing: park");
         // park in storage unit
@@ -617,6 +574,7 @@ public abstract class AutonomousMode extends OpMode {
         queueWarehouseSensorCalibration(parkPose);
         queue(shippingArm::resetArm);
     }
+
     public void getFreight() {
         if (!CYCLE)
             return;
@@ -632,6 +590,7 @@ public abstract class AutonomousMode extends OpMode {
             intake.off();
         });
     }
+
     public void startScanner() {
         Match.status("Initializing: vision");
         try {
@@ -641,6 +600,7 @@ public abstract class AutonomousMode extends OpMode {
             Match.status("OpMode interrupted");
         }
     }
+
     public void scanBarcode() {
         Match.status("Scanning");
         try {
@@ -652,6 +612,7 @@ public abstract class AutonomousMode extends OpMode {
             scanner.stop();
         }
     }
+
     public void epilogue() {
         startScanner();
         Match.status("Task queue ready, waiting for start");
@@ -729,6 +690,7 @@ public abstract class AutonomousMode extends OpMode {
      */
     protected void runTasks() {
         Match.status("Running tasks...");
+        Match.log("Scoring Cycles = " + SCORING_CYCLES);
         try {
             for (Object task : tasks) {
                 // Convert object to actual task, if appropriate
@@ -964,7 +926,7 @@ public abstract class AutonomousMode extends OpMode {
             Pose2d currentPose = drive.getPoseEstimate();
             Pose2d correctedPose = new Pose2d(
                     currentPose.getX(),
-                    pos(-72 + rangeSensor.getDistance(DistanceUnit.INCH) + 6.5,0).getY(),
+                    pos(-72 + rangeSensor.getDistance(DistanceUnit.INCH) + 6.5, 0).getY(),
                     currentPose.getHeading()
             );
             drive.setPoseEstimate(correctedPose);
@@ -985,7 +947,7 @@ public abstract class AutonomousMode extends OpMode {
         queue(() -> {
             Pose2d currentPose = drive.getPoseEstimate();
             Pose2d correctedPose = new Pose2d(
-                    pos(0,72 - rangeSensor.getDistance(DistanceUnit.INCH) - 6.5).getX(),
+                    pos(0, 72 - rangeSensor.getDistance(DistanceUnit.INCH) - 6.5).getX(),
                     predictedPose.getY(),
                     currentPose.getHeading()
             );
@@ -993,6 +955,7 @@ public abstract class AutonomousMode extends OpMode {
         });
         queue(predictedPose);
     }
+
     /**
      * Queues a x-coordinates calibration of the robot's pose estimate at the shared alliance park. The new pose
      * estimate will calibrate the alliance-agnostic x-coordinates based on the distance sensor
@@ -1006,8 +969,8 @@ public abstract class AutonomousMode extends OpMode {
         queue(() -> {
             Pose2d currentPose = drive.getPoseEstimate();
             Pose2d correctedPose = new Pose2d(
-                    72-WIDTH/2,
-                    pos(-72 + rangeSensor.getDistance(DistanceUnit.INCH) + 6.5,0).getY(),
+                    72 - WIDTH / 2,
+                    pos(-72 + rangeSensor.getDistance(DistanceUnit.INCH) + 6.5, 0).getY(),
                     currentPose.getHeading()
             );
             drive.setPoseEstimate(correctedPose);

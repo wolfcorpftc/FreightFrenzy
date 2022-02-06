@@ -90,7 +90,7 @@ public class AutoTest {
                 .followTrajectorySequence(drive -> drive
                         .trajectorySequenceBuilder(initialPose)
                         .splineToSplineHeading(preWhPose.plus(pos(-3.5, 4)), deg(0))
-                        .lineTo(whPose.plus(pos(-3.5, 0)).vec())
+                        .splineToConstantHeading(whPose.plus(pos(-6.5, 0)).vec(), deg(0))
                         .build()
                 )
                 .start();

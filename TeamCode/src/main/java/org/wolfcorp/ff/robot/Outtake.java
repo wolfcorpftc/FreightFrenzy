@@ -41,6 +41,9 @@ public class Outtake {
     public static final double DUMP_OVERFLOW_DIST = 1.69;
     public static final double DUMP_FULL_DIST = 1.69;
 
+    /** Milliseconds to wait for after running dumpOut. */
+    public static final int DUMP_DELAY = 800;
+
     private final DcMotorEx motor; // slide motor
     private final Servo servo; // dump servo
 
@@ -221,6 +224,10 @@ public class Outtake {
         }
     }
 
+    public boolean isDumpOut() {
+        return isDumpOut;
+    }
+
     /**
      * Asynchronously turns the dump inward.
      */
@@ -271,7 +278,7 @@ public class Outtake {
         return motor.isBusy() && getSlideTarget() == barcode;
     }
 
-    public boolean approaching(Barcode barcode) {
+    public boolean isApproaching(Barcode barcode) {
         return getSlidePosition() == barcode || isSlideActiveTarget(barcode);
     }
 }

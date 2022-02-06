@@ -40,6 +40,7 @@ import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.hardware.configuration.typecontainers.MotorConfigurationType;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.wolfcorp.ff.opmode.OpMode;
 import org.wolfcorp.ff.opmode.util.Match;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequence;
@@ -465,7 +466,7 @@ public class Drivetrain extends MecanumDrive {
      *  1) Move gets to the desired position (unless timeout has been reached)
      *  2) Driver stops the opmode running.
      */
-    public void drive(double speed, double lf, double rf, double lb, double rb) {
+    public void drive(double speed, double lf, double rf, double lb, double rb, double timeout) {
         int lfTarget = leftFront.getCurrentPosition() + (int) (lf * DriveConstants.TICKS_PER_INCH);
         int rfTarget = rightFront.getCurrentPosition() + (int) (rf * DriveConstants.TICKS_PER_INCH);
         int lbTarget = leftBack.getCurrentPosition() + (int) (lb * DriveConstants.TICKS_PER_INCH);
@@ -478,14 +479,32 @@ public class Drivetrain extends MecanumDrive {
         setMode(DcMotor.RunMode.RUN_TO_POSITION);
         Match.log("3");
         setMotorVelocity(Math.abs(speed * MAX_RPM * TICKS_PER_REV / 60));
-
+        Match.log("3.5");
+        Telemetry.Item lfItem = Match.createLogItem("lf", 0);
+        Telemetry.Item lbItem = Match.createLogItem("lb", 0);
+        Telemetry.Item rfItem = Match.createLogItem("rf", 0);
+        Telemetry.Item rbItem = Match.createLogItem("rb", 0);
+        Match.update();
         while (OpMode.isActive() && allMotorsBusy()) {
             updatePoseEstimate();
+            lfItem.setValue(leftFront.getCurrentPosition());
+            lbItem.setValue(leftBack.getCurrentPosition());
+            rfItem.setValue(rightFront.getCurrentPosition());
+            rbItem.setValue(rightBack.getCurrentPosition());
+            Match.update();
         }
+        Match.removeLogItem(lfItem);
+        Match.removeLogItem(lbItem);
+        Match.removeLogItem(rfItem);
+        Match.removeLogItem(rbItem);
         Match.log("4");
 
         setMotorVelocity(0);
         setMode(originalMode);
+    }
+
+    public void drive(double speed, double lf, double rf, double lb, double rb) {
+
     }
 
     public void forward(double speed, double distance) {
