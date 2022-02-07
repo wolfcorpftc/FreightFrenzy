@@ -310,16 +310,10 @@ public abstract class AutonomousMode extends OpMode {
 
     public void deposit() {
         Match.status("Initializing: deposit (preloaded & SE)");
-        // move to carousel
         queue(() -> outtake.slideToAsync(barcode));
         queue(fromHere()
                 .addTemporalMarker((CAROUSEL ? 1.2 : 0.6), outtake::dumpOut)
                 .lineTo(hubPose.vec()));
-
-        queue(() -> {
-            // TODO: dec
-            // slide and dump will be reset in cycle()
-        });
         queueHubSensorCalibration(trueHubPose);
     }
 
