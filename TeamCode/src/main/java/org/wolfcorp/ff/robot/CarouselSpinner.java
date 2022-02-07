@@ -35,7 +35,7 @@ public class CarouselSpinner {
      * @return whether the carousel spinner is on
      */
     public boolean isOn() {
-        return servo.getPower() != 0 || spinThread.isAlive();
+        return servo.getPower() != 0 || spinThread != null && spinThread.isAlive();
     }
 
     /**
