@@ -126,9 +126,9 @@ public abstract class TeleOpMode extends OpMode {
             // *** Manual Carousel Spinner ***
             if (gamepad2.left_trigger > 0.8 && !maskManualSpinner) {
                 maskManualSpinner = true;
-                if (spinner.isOn()) {
-                    spinner.off();
-                } else {
+                boolean isOn = spinner.isOn();
+                spinner.stopSpin();
+                if (!isOn) {
                     spinner.on();
                 }
             }

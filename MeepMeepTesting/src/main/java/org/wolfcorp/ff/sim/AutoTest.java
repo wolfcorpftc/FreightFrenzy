@@ -1,8 +1,16 @@
 package org.wolfcorp.ff.sim;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.acmerobotics.roadrunner.trajectory.constraints.AngularVelocityConstraint;
+import com.acmerobotics.roadrunner.trajectory.constraints.MecanumVelocityConstraint;
+import com.acmerobotics.roadrunner.trajectory.constraints.MinVelocityConstraint;
+import com.acmerobotics.roadrunner.trajectory.constraints.ProfileAccelerationConstraint;
+import com.acmerobotics.roadrunner.trajectory.constraints.TrajectoryAccelerationConstraint;
+import com.acmerobotics.roadrunner.trajectory.constraints.TrajectoryVelocityConstraint;
 import com.noahbres.meepmeep.MeepMeep;
 import com.noahbres.meepmeep.core.colorscheme.scheme.ColorSchemeRedDark;
+
+import java.util.Arrays;
 
 public class AutoTest {
     protected Pose2d initialPose; // where the robot starts
@@ -34,7 +42,11 @@ public class AutoTest {
     protected Pose2d sharedParkPose;
 
     public void initPoses() {
-        initialPose = pos(-72 + width / 2, 12, 180);
+        if (isRed) {
+            initialPose = pos(-72 + length / 2 + 1 /* gap */, width / 2, 90);
+        } else {
+            initialPose = pos(-72 + length / 2 + 1 /* gap */, 24 - width / 2, 90);
+        }
         fakeInitialPose = initialPose.minus(pos(3, 0));
 
         carouselPose = pos(-50.5, -72 + width / 2, 90);
@@ -71,9 +83,22 @@ public class AutoTest {
 
     }
 
+
+    public static TrajectoryVelocityConstraint getVelocityConstraint(double maxVel, double maxAngularVel, double trackWidth) {
+        return new MinVelocityConstraint(Arrays.asList(
+                new AngularVelocityConstraint(maxAngularVel),
+                new MecanumVelocityConstraint(maxVel, trackWidth)
+        ));
+    }
+
+    public static TrajectoryAccelerationConstraint getAccelerationConstraint(double maxAccel) {
+        return new ProfileAccelerationConstraint(maxAccel);
+    }
+
+
     public void start() {
         initPoses();
-        initialPose = hubPose;
+        initialPose = whPose;
 
         // Declare a MeepMeep instance
         // With a field size of 800 pixels
@@ -89,8 +114,8 @@ public class AutoTest {
                 .setBotDimensions(width,length)
                 .followTrajectorySequence(drive -> drive
                         .trajectorySequenceBuilder(initialPose)
-                        .splineToSplineHeading(preWhPose.plus(pos(-3.5, 4)), deg(0))
-                        .splineToConstantHeading(whPose.plus(pos(-6.5, 0)).vec(), deg(0))
+                        .splineToConstantHeading(preWhPose.minus(pos(2, 10)).vec(), deg(180))
+                        .splineToSplineHeading(cycleHubPose, deg((isRed ? 1 : -1) * 90))
                         .build()
                 )
                 .start();

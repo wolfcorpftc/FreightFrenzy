@@ -10,7 +10,7 @@ import org.wolfcorp.ff.opmode.OpMode;
 import java.util.function.Consumer;
 
 public class CarouselSpinner {
-    public static final double SPIN_TIME = 2600; // millis
+    public static final double SPIN_TIME = 2400; // millis
     public static final Long WAIT_TIME = 1000L; // millis
     public static final double TURN_POWER = 1.0;
     public static Thread spinThread = null;
@@ -35,7 +35,7 @@ public class CarouselSpinner {
      * @return whether the carousel spinner is on
      */
     public boolean isOn() {
-        return servo.getPower() != 0;
+        return servo.getPower() != 0 || spinThread.isAlive();
     }
 
     /**
@@ -62,14 +62,14 @@ public class CarouselSpinner {
      */
     public Thread spinAsync(int times, double spinTime, long waitTime) {
         Runnable runnable = () -> {
-            for (int i = times; i >= 1 && !Thread.interrupted(); i--) {
+            for (int i = times; i >= 1 && !Thread.currentThread().isInterrupted(); i--) {
                 spinTimer.reset();
                 on();
                 OpMode.dumpIndicator.full();
                 while (spinTimer.milliseconds() < spinTime && !Thread.currentThread().isInterrupted());
                 off();
                 OpMode.dumpIndicator.overflow();
-                if (i != 1) {
+                if (i != 1 && !Thread.currentThread().isInterrupted()) {
                     sleep.accept(waitTime);
                 }
             }
@@ -98,6 +98,7 @@ public class CarouselSpinner {
         if (spinThread != null && !spinThread.isInterrupted()) {
             spinThread.interrupt();
         }
+        off();
     }
 
     public CRServo getServo() {

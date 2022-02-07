@@ -28,7 +28,7 @@ public class Outtake {
 
     public static final int SLIDE_TOP_POSITION = 1900;
     public static final int SLIDE_MID_POSITION = 1000;
-    public static final int SLIDE_EXCESS_POSITION = 390;
+    public static final int SLIDE_EXCESS_POSITION = 250;
     public static final int SLIDE_BOT_POSITION = 400;
 
     public static final int SLIDE_MIN_POSITION = -100;
@@ -38,11 +38,11 @@ public class Outtake {
     public static final double DUMP_IN_POSITION = 0.88;
     public static final double DUMP_OUT_POSITION = 0.40;
 
-    public static final double DUMP_OVERFLOW_DIST = 1.69;
-    public static final double DUMP_FULL_DIST = 1.69;
+    public static final double DUMP_OVERFLOW_DIST = 1.60;
+    public static final double DUMP_FULL_DIST = 1.60;
 
     /** Milliseconds to wait for after running dumpOut. */
-    public static final int DUMP_DELAY = 800;
+    public static final int DUMP_DELAY = 0;
 
     private final DcMotorEx motor; // slide motor
     private final Servo servo; // dump servo

@@ -2,6 +2,8 @@ package org.wolfcorp.ff.opmode;
 
 import static org.wolfcorp.ff.opmode.util.Match.BLUE;
 import static org.wolfcorp.ff.opmode.util.Match.RED;
+import static org.wolfcorp.ff.robot.CarouselSpinner.SPIN_TIME;
+import static org.wolfcorp.ff.robot.CarouselSpinner.WAIT_TIME;
 import static org.wolfcorp.ff.robot.DriveConstants.LENGTH;
 import static org.wolfcorp.ff.robot.DriveConstants.TRACK_WIDTH;
 import static org.wolfcorp.ff.robot.DriveConstants.WIDTH;
@@ -49,7 +51,7 @@ public abstract class AutonomousMode extends OpMode {
     public final boolean CYCLE = modeNameContains("Cycle");
     public final boolean PARK = !CYCLE;
 
-    public final int SCORING_CYCLES = WAREHOUSE ? 3 : 1; // varies based on path
+    public final int SCORING_CYCLES = WAREHOUSE ? 4 : 2; // varies based on path
     // endregion
 
     // region Vision Fields
@@ -198,7 +200,7 @@ public abstract class AutonomousMode extends OpMode {
             cycleHubPose = pos(-48, -11, 90);
         } else if (RED && WAREHOUSE) {
             hubPose = pos(-42, -12, 90);
-            cycleHubPose = pos(-48, -6, 90);
+            cycleHubPose = pos(-48, -9, 90);
         } else if (BLUE && WAREHOUSE) {
             hubPose = pos(-44, -16, 90);
             cycleHubPose = pos(-48, -10, 90);
@@ -221,7 +223,7 @@ public abstract class AutonomousMode extends OpMode {
         } else if (BLUE && CAROUSEL && PARK) {
             whPose = trueWhPose.plus(pos(0, 15));
         } else if (RED && WAREHOUSE) {
-            whPose = trueWhPose.plus(pos(0, 6));
+            whPose = trueWhPose.plus(pos(0, 8));
         } else if (BLUE && WAREHOUSE) {
             whPose = trueWhPose.plus(pos(0, 15));
         }
@@ -285,11 +287,24 @@ public abstract class AutonomousMode extends OpMode {
         if (CAROUSEL) {
             Match.status("Initializing: carousel");
             queue(shippingArm::armOutAsync); // necessary to prevent the arm from blocking the spinner
-            queue(fromHere().lineTo(calibratePreCarouselPose.vec()));
-            queueYCalibration(preCarouselPose);
-            queue(fromHere().lineTo(carouselPose.vec(), getVelocityConstraint(25, 5, TRACK_WIDTH), getAccelerationConstraint(25)));
-            queue(spinner::spin);
-            queue(shippingArm::armInAsync);
+            queue(fromHere()
+                    .lineTo(calibratePreCarouselPose.vec())
+                    .lineTo(carouselPose.minus(pos(0, 10)).vec(), getVelocityConstraint(25, 5, TRACK_WIDTH), getAccelerationConstraint(25)));
+            queue(() -> {
+                // Spin asynchronously
+                Thread spin = spinner.spinAsync(1, 1.2 * SPIN_TIME, WAIT_TIME);
+                // Calibrate y-coordinate; see queueYCalibration
+                Pose2d currentPose = drive.getPoseEstimate();
+                Pose2d correctedPose = new Pose2d(
+                        carouselPose.getX(),
+                        currentPose.getY(),
+                        carouselPose.getHeading()
+                );
+                drive.setPoseEstimate(correctedPose);
+                spin.join();
+                // Bring arm in
+                shippingArm.armInAsync(0.7);
+            });
         }
     }
 
@@ -297,10 +312,12 @@ public abstract class AutonomousMode extends OpMode {
         Match.status("Initializing: deposit (preloaded & SE)");
         // move to carousel
         queue(() -> outtake.slideToAsync(barcode));
-        queue(fromHere().lineTo(hubPose.vec()));
+        queue(fromHere()
+                .addTemporalMarker((CAROUSEL ? 1.2 : 0.6), outtake::dumpOut)
+                .lineTo(hubPose.vec()));
+
         queue(() -> {
-            outtake.dumpOut();
-            sleep(Outtake.DUMP_DELAY);
+            // TODO: dec
             // slide and dump will be reset in cycle()
         });
         queueHubSensorCalibration(trueHubPose);
@@ -311,30 +328,31 @@ public abstract class AutonomousMode extends OpMode {
             return;
         for (int i = 1; i <= SCORING_CYCLES; i++) {
             Match.status("Initializing: cycle " + i);
-            if (i == 1) {
-                queue(outtake::dumpIn);
-                queue(() -> outtake.slideToAsync(Barcode.ZERO));
-            }
 
 
             // *** To warehouse ***
             queue(() -> intake.getMotor().setVelocity(0.8 * Intake.IN_SPEED));
+            Pose2d moddedWhPose = whPose.plus(pos(0, i == 1 ? -2 : 7));
             queue(from(trueHubPose)
+                    .addTemporalMarker(0.5, () -> {
+                        outtake.dumpIn();
+                        outtake.slideToAsync(Barcode.ZERO);
+                    })
                     .splineToSplineHeading(preWhPose.plus(pos(-3.5, 4)), deg(0))
-                    .splineToConstantHeading(whPose.plus(pos(-9, 2)).vec()));// from 3.5
-            queueWarehouseSensorCalibration(whPose);
+                    .splineToConstantHeading(moddedWhPose.minus(pos(9, 0)).vec()));// from 3.5
+            queueWarehouseSensorCalibration(moddedWhPose);
 
 
             // *** Intake ***
             intake(i);
             queueWarehouseSensorCalibration(pos(-72 + DriveConstants.WIDTH / 2, 42, 0));
-            queue(() -> Match.log("Current Pose: " + drive.getPoseEstimate()));
 
 
             // *** To hub ***
-            queue(fromHere()
-                    .lineTo(preWhPose.minus(pos(0, 10)).vec())
-                    .addTemporalMarker(0.75, () -> {
+            double angleOffset = RED ? -5 : 5;
+            queue(from(moddedWhPose.plus(pos(0, 0, angleOffset)))
+                    .lineToLinearHeading(preWhPose.plus(pos(0, -4, angleOffset)))
+                    .addTemporalMarker(1.15, () -> {
                         // last-minute check & fix for intake
                         if (dumpIndicator.update() == FULL) {
                             outtake.slideToAsync(TOP);
@@ -345,8 +363,11 @@ public abstract class AutonomousMode extends OpMode {
                             outtake.slideToAsync(EXCESS);
                             outtake.dumpExcess();
                         }
-                    }).splineToSplineHeading(cycleHubPose, deg((BLUE ? -1 : 1) * 90)));
+                    })
+                    .addTemporalMarker(1.0, -0.55, outtake::dumpOut)
+                    .splineToSplineHeading(cycleHubPose, deg((BLUE ? -1 : 1) * 90)));
             queueHubSensorCalibration(trueHubPose);
+
 
             // *** Score ***
             queue(() -> {
@@ -354,203 +375,50 @@ public abstract class AutonomousMode extends OpMode {
                 if (!outtake.isApproaching(TOP)) {
                     outtake.slideTo(TOP);
                 }
-                outtake.dumpOut();
-                sleep(Outtake.DUMP_DELAY);
-                outtake.dumpIn();
-                outtake.slideToAsync(Barcode.ZERO);
             });
         }
     }
 
     public void intake(int iteration) {
 //        regularIntake();
-        alternativeIntake();
+        alternativeIntake(iteration);
         queue(() -> {
-            Match.log("Post-intake");
             drive.setMotorPowers(0);
             intake.out();
-            Match.status("Cycling");
 //            drive.follow(from(drive.getPoseEstimate()).lineTo(whPose.vec()).build());
-            if (iteration == 2) {
-                if (RED) {
-                    drive.strafeRight(1, 10);
-                } else {
-                    drive.strafeLeft(1, 10);
-                }
-            }
-            Match.log("Post-strafe");
+//            if (iteration == 2) {
+//                if (RED) {
+//                    drive.strafeRight(1, 10);
+//                } else {
+//                    drive.strafeLeft(1, 10);
+//                }
+//            }
         });
     }
 
-    public void alternativeIntake() {
+    public void alternativeIntake(int i) {
         queue(() -> {
+            // TODO: or i == 3
             while (dumpIndicator.update() != FULL) {
                 drive.updatePoseEstimate();
-                if (dumpIndicator.update() == OVERFLOW) {
-                    Match.log("looping intake -- overflow");
-                    drive.setMotorPowers(-0.05);
-                    intake.out();
+                if (dumpIndicator.update() == EMPTY) {
+                    drive.setMotorPowers(0.15);
+                    if (!outtake.isApproaching(ZERO)) {
+                        outtake.slideToAsync(ZERO);
+                    }
+                    outtake.dumpIn();
+                    intake.getMotor().setVelocity(0.7 * Intake.IN_SPEED);
+                } else if (dumpIndicator.update() == OVERFLOW) {
+                    drive.setMotorPowers(0); // -0.05
+                    intake.getMotor().setVelocity(0.75 * Intake.OUT_SPEED);
                     if (!outtake.isApproaching(EXCESS)) {
                         outtake.slideToAsync(EXCESS);
                     }
                     outtake.dumpExcess();
                 } else {
-                    Match.log("looping intake -- empty");
-                    drive.setMotorPowers(0.1);
-                    if (!outtake.isApproaching(ZERO)) {
-                        outtake.slideToAsync(ZERO);
-                    }
-                    outtake.dumpIn();
-                    intake.getMotor().setVelocity(0.8 * Intake.IN_SPEED);
+                    drive.setMotorPowers(0); // -0.05
+                    intake.out();
                 }
-            }
-            Match.log("looping exited");
-        });
-    }
-
-    public void regularIntake() {
-        queue(() -> {
-//                TimedController intakeController = new TimedController(-25, -475, -800);
-            Runnable intakeRunnable = () -> {
-                TimedController driveController = new TimedController(0.02, 0.05, 0.10);
-                for (int k = 27; k > 25 && dumpIndicator.update() == EMPTY && !Thread.currentThread().isInterrupted(); k -= 3) {
-                    Match.log("ASYNC: loop i");
-                    while (dumpIndicator.update() == EMPTY && rangeSensor.getDistance(DistanceUnit.INCH) > k && !Thread.currentThread().isInterrupted()) {
-                        Match.log("ASYNC:      loop j");
-                        drive.updatePoseEstimate();
-                        drive.setMotorPowers(driveController.update());
-//                        intake.setVelocityRPM(intakeController.update());
-                        if (Thread.currentThread().isInterrupted()) {
-                            return;
-                        }
-                    }
-                    for (int j = 0; j < 3 && dumpIndicator.update() == EMPTY && !Thread.currentThread().isInterrupted(); j++) {
-                        Match.log("ASYNC:      loop j");
-                        if (dumpIndicator.update() == EMPTY && !Thread.currentThread().isInterrupted()) {
-                            if (Thread.currentThread().isInterrupted()) {
-                                return;
-                            }
-                            drive.forward(0.85, 7 + 1.25 * k);
-                            if (Thread.currentThread().isInterrupted()) {
-                                return;
-                            }
-                            drive.turnDeg(-10);
-                            if (Thread.currentThread().isInterrupted()) {
-                                return;
-                            }
-                            sleep(250);
-                            if (Thread.currentThread().isInterrupted()) {
-                                return;
-                            }
-                            drive.turnDeg(20);
-                            if (Thread.currentThread().isInterrupted()) {
-                                return;
-                            }
-                            sleep(250);
-                            if (Thread.currentThread().isInterrupted()) {
-                                return;
-                            }
-                            drive.turnDeg(-10);
-                            if (Thread.currentThread().isInterrupted()) {
-                                return;
-                            }
-                            sleep(250);
-                            if (Thread.currentThread().isInterrupted()) {
-                                return;
-                            }
-                            drive.backward(0.85, 6.5 - 0.5 * k);
-                            if (Thread.currentThread().isInterrupted()) {
-                                return;
-                            }
-                            drive.turnDeg(-10);
-                            if (Thread.currentThread().isInterrupted()) {
-                                return;
-                            }
-                        }
-                        if (Thread.currentThread().isInterrupted()) {
-                            return;
-                        }
-                    }
-                }
-            };
-            Thread intakeThread = new Thread(intakeRunnable);
-
-            intakeThread.start();
-            ElapsedTime intakeTimer = new ElapsedTime();
-
-            ElapsedTime timer = new ElapsedTime();
-            DumpIndicator.Status lastStatus = null;
-            DumpIndicator.Status status;
-
-
-            INTAKE_LOOP:
-            while (isActive()) {
-                status = dumpIndicator.update();
-                if (lastStatus != status) {
-                    timer.reset();
-                }
-                switch (status) {
-                    case EMPTY:
-                        Match.status("Intake Status = EMPTY");
-                        outtake.dumpIn();
-                        if (!outtake.isApproaching(ZERO)) {
-                            outtake.slideToAsync(ZERO);
-                        } else {
-                            timer.reset();
-                            intake.in();
-                        }
-                        if (!intakeThread.isAlive()) {
-                            Match.log("Intake thread restarted!");
-                            intakeThread = new Thread(intakeRunnable);
-                            intakeThread.start();
-                        }
-                        break;
-                    case FULL:
-                        Match.status("Intake Status = FULL");
-                        outtake.dumpIn();
-                        if (!outtake.isApproaching(ZERO)) {
-                            outtake.slideToAsync(ZERO);
-                        } else if (timer.seconds() > 0.7) {
-                            break INTAKE_LOOP;
-                        } else if (timer.seconds() > 0.3) {
-                            intakeThread.interrupt();
-                            drive.abort();
-                            drive.setMotorPowers(0);
-                            Match.status("Full!");
-                            intake.out();
-                        }
-                        break;
-                    case OVERFLOW:
-                        Match.status("Intake Status = OVERFLOW");
-                        if (timer.seconds() > 0.3 && timer.seconds() < 2.5) {
-                            Match.status("Ridding excess freight...");
-                            intakeThread.interrupt();
-                            drive.abort();
-                            drive.setMotorPowers(0);
-                            intake.out();
-                            if (!outtake.isApproaching(EXCESS)) {
-                                outtake.slideToAsync(EXCESS);
-                            }
-                            outtake.dumpExcess();
-                        } else if (timer.seconds() > 2.5) {
-                            intake.out();
-                            outtake.dumpIn();
-                            if (!outtake.isApproaching(ZERO)) {
-                                outtake.slideToAsync(ZERO);
-                            }
-                        }
-                        break;
-                }
-                lastStatus = status;
-            }
-            Match.status("Waiting for intake thread to die...");
-            drive.setMotorPowers(0);
-            // TODO: Check if this causes errors
-            while (intakeThread.isAlive()) {
-                intakeThread.interrupt();
-                drive.abort();
-                drive.setMotorPowers(0);
-                intake.out();
             }
         });
     }
@@ -558,18 +426,26 @@ public abstract class AutonomousMode extends OpMode {
     public void park() {
         Match.status("Initializing: park");
         // park in storage unit
+        queue(() -> {
+        });
         if (CAROUSEL && PARK) {
             queue(from(trueHubPose)
-                    .now(outtake::dumpIn)
-                    .now(() -> outtake.slideToAsync(Barcode.ZERO))
+                    .addTemporalMarker(0.5, () -> {
+                        outtake.dumpIn();
+                        outtake.slideToAsync(Barcode.ZERO);
+                    })
                     .lineTo(storageUnitParkPose.vec()));
             return;
         }
         if (CYCLE) {
             // park in warehouse
             queue(from(trueHubPose)
+                    .addTemporalMarker(0.5, () -> {
+                        outtake.dumpIn();
+                        outtake.slideToAsync(Barcode.ZERO);
+                    })
                     .splineToSplineHeading(preWhPose.plus(pos(-3.5, 4)), deg(0))
-                    .lineTo(whPose.minus(pos(3.5, 0)).vec()));
+                    .lineTo(whPose.minus(pos(3.5, -4)).vec()));
         }
         queueWarehouseSensorCalibration(parkPose);
         queue(shippingArm::resetArm);
