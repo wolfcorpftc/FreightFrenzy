@@ -1,8 +1,14 @@
 package org.wolfcorp.ff.sim;
 
+import static java.lang.Thread.sleep;
+
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.noahbres.meepmeep.MeepMeep;
+import com.noahbres.meepmeep.core.colorscheme.scheme.ColorSchemeBlueDark;
 import com.noahbres.meepmeep.core.colorscheme.scheme.ColorSchemeRedDark;
+import com.noahbres.meepmeep.core.colorscheme.scheme.ColorSchemeRedLight;
+import com.noahbres.meepmeep.roadrunner.DefaultBotBuilder;
+import com.noahbres.meepmeep.roadrunner.entity.RoadRunnerBotEntity;
 
 public class AutoTest {
     protected Pose2d initialPose; // where the robot starts
@@ -29,6 +35,8 @@ public class AutoTest {
     protected boolean isRed = true;
     protected boolean isWallRunner = true;
     protected boolean isNearCarousel = false;
+
+    protected MeepMeep mm;
 
     public void initPoses() {
         initialPose = pos(-72 + width / 2, 12, 180);
@@ -70,25 +78,78 @@ public class AutoTest {
 
         // Declare a MeepMeep instance
         // With a field size of 800 pixels
-        MeepMeep mm = new MeepMeep(600)
-                // Set field image
-                .setBackground(MeepMeep.Background.FIELD_FREIGHT_FRENZY)
-                // Set theme
-                .setTheme(new ColorSchemeRedDark())
-                // Background opacity from 0-1
-                .setBackgroundAlpha(1f)
+
+        mm = new MeepMeep(600);
+        /*RoadRunnerBotEntity bot1 = new DefaultBotBuilder(mm)
+                .setColorScheme(new ColorSchemeRedDark())
                 // Set constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
                 .setConstraints(60, 60, Math.toRadians(180), Math.toRadians(180), 15)
-                .setBotDimensions(width,length)
-                .followTrajectorySequence(drive -> drive
-                        .trajectorySequenceBuilder(hubPose)
+                .setDimensions(width,length)
+                .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(hubPose)
                         .lineToSplineHeading(preHubPose.minus(pos(10,-12)))
                         //.splineToSplineHeading(preHubPose.minus(pos(15,-15)),0)
                         .splineToLinearHeading(preWhPose,0)
                         .lineTo(whPose.vec())
                         .build()
-                )
+                );
+
+        mm.setBackground(MeepMeep.Background.FIELD_FREIGHTFRENZY_ADI_DARK)
+                .setDarkMode(true)
+                .setBackgroundAlpha(1f)
+                .addEntity(bot1)
                 .start();
+         */
+        mm.setBackground(MeepMeep.Background.FIELD_FREIGHTFRENZY_ADI_DARK)
+                .setDarkMode(true)
+                .setBackgroundAlpha(1f);
+
+        RoadRunnerBotEntity allianceBot = otherBot(4);
+        mm.addEntity(allianceBot);
+
+        // Create array of RoadRunnerBotEntity objects
+        RoadRunnerBotEntity[] bots = new RoadRunnerBotEntity[30];
+        for(double i=0; i<30; i++){
+            bots[(int)i] = newBot(i/5);
+            mm.addEntity(bots[(int)i]);
+            int finalI = (int)i;
+            new Thread(() -> {
+                try {
+                    sleep(3000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                while(!bots[finalI].getTrajectoryPaused()){
+                    Pose2d p = bots[finalI].getPose();
+                    Pose2d p2 = allianceBot.getPose();
+                    if (Math.abs(p.getX()-p2.getX()) < 15 && Math.abs(p.getY()-p2.getY()) < 15){
+                        bots[finalI].pause();
+                        bots[finalI].setListenToSwitchThemeRequest(true);
+                        bots[finalI].switchScheme(new ColorSchemeBlueDark());
+                    }
+                    try {
+                        sleep(100);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
+
+        }
+        mm.start();
+/*
+        while(true) {
+            // delete all bots
+            for (int i = 0; i < bots.length; i += 2) {
+                Pose2d p = bots[i].getPose();
+                if (p.getX() > 20) {
+                    bots[i].pause();
+                    bots[i].setListenToSwitchThemeRequest(true);
+                    bots[i].switchScheme(new ColorSchemeBlueDark());
+                }
+            }
+        }
+
+ */
     }
 
     public Pose2d pos(double x, double y) {
@@ -104,5 +165,33 @@ public class AutoTest {
 
     public static double deg(double degrees) {
         return Math.toRadians(degrees);
+    }
+
+    public RoadRunnerBotEntity newBot(double delay){
+        return new DefaultBotBuilder(mm)
+                .setColorScheme(new ColorSchemeRedDark())
+                // Set constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
+                .setConstraints(60, 60, Math.toRadians(180), Math.toRadians(180), 15)
+                .setDimensions(width,length)
+                .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(hubPose)
+                        .waitSeconds(delay)
+                        .lineToSplineHeading(preHubPose.minus(pos(10,-12)))
+                        //.splineToSplineHeading(preHubPose.minus(pos(15,-15)),0)
+                        .splineToLinearHeading(preWhPose,0)
+                        .lineTo(whPose.vec())
+                        .build()
+                );
+    }
+    public RoadRunnerBotEntity otherBot(double delay){
+        return new DefaultBotBuilder(mm)
+                .setColorScheme(new ColorSchemeBlueDark())
+                // Set constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
+                .setConstraints(60, 60, Math.toRadians(180), Math.toRadians(180), 15)
+                .setDimensions(width,length)
+                .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(pos(0,20))
+                        .waitSeconds(delay)
+                        .lineTo(pos(-100,20).vec())
+                        .build()
+                );
     }
 }

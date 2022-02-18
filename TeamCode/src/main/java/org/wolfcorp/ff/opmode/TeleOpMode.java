@@ -1,5 +1,7 @@
 package org.wolfcorp.ff.opmode;
 
+import static org.wolfcorp.ff.opmode.util.Match.telemetry;
+
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
@@ -222,6 +224,7 @@ public abstract class TeleOpMode extends OpMode {
 
             // *** Telemetry ***
 
+            /*
             telemetry.addData("Spinner is On", spinner.isOn());
             telemetry.addData("Spinner Masked", maskSpinner);
             telemetry.addData("Spinner Power", spinner.getServo().getPower());
@@ -260,7 +263,12 @@ public abstract class TeleOpMode extends OpMode {
             telemetry.addData("RB Position", drive.rightBack.getCurrentPosition());
 
             telemetry.update();
+*/
 
+
+            telemetry.addData("Pivot angle", outtake.getServo2().getPosition());
+            telemetry.addData("Dump angle", outtake.getServo().getPosition());
+            telemetry.update();
         }
         resetHardware();
     }

@@ -1,5 +1,7 @@
 package org.wolfcorp.ff.robot;
 
+import static org.wolfcorp.ff.opmode.util.Match.telemetry;
+
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -14,8 +16,8 @@ import java.util.Objects;
 public class Outtake {
     public static final double SLIDE_TICKS_PER_REV = 1425.1;
     public static final double SLIDE_MAX_SPEED = 117 / 60.0 * SLIDE_TICKS_PER_REV; // ticks/sec
-    public static final double SLIDE_UP_SPEED = 0.9 * SLIDE_MAX_SPEED; // ticks/sec
-    public static final double SLIDE_DOWN_SPEED = -0.9 * SLIDE_MAX_SPEED; // ticks/sec
+    public static final double SLIDE_UP_SPEED = 1 * SLIDE_MAX_SPEED; // ticks/sec
+    public static final double SLIDE_DOWN_SPEED = -1 * SLIDE_MAX_SPEED; // ticks/sec
 
     public static final int SLIDE_TOP_POSITION = 1900;
     public static final int SLIDE_MID_POSITION = 1000;
@@ -26,20 +28,22 @@ public class Outtake {
     public static final int SLIDE_MAX_POSITION = 2100;
 
     public static final double DUMP_EXCESS_POSITION = 0.99;
-    public static final double DUMP_IN_POSITION = 0.88;
-    public static final double DUMP_OUT_POSITION = 0.40;
+    public static final double DUMP_IN_POSITION = 0.6;
+    public static final double DUMP_OUT_POSITION = 0.025;
 
     public static final double DUMP_OVERFLOW_DIST = 1.6;
     public static final double DUMP_FULL_DIST = 1.6;
 
     private final DcMotorEx motor; // slide motor
     private final Servo servo; // dump servo
+    private final Servo pivservo; // dump servo
 
     private final Object motorModeLock = new Object();
     private boolean isDumpOut = false;
 
     public Outtake(HardwareMap hwMap) {
         motor = hwMap.get(DcMotorEx.class, "outtake");
+        pivservo = hwMap.get(Servo.class, "outtakePivot");
         servo = hwMap.get(Servo.class, "dump");
 
         motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -180,6 +184,9 @@ public class Outtake {
     public Servo getServo() {
         return servo;
     }
+    public Servo getServo2() {
+        return pivservo;
+    }
 
     /**
      * Asynchronously toggles the position of the dump (in/out). This method is oblivious to the
@@ -187,6 +194,8 @@ public class Outtake {
      * internal state (defaults to closed at initialization).
      */
     public void toggleDump() {
+
+
         if (isDumpOut) {
             dumpIn();
         }
@@ -200,7 +209,8 @@ public class Outtake {
      */
     public void dumpIn() {
         isDumpOut = false;
-        servo.setPosition(DUMP_IN_POSITION);
+        pivservo.setPosition(DUMP_IN_POSITION);
+        servo.setPosition(1.025-DUMP_IN_POSITION*2/3);
     }
 
     /**
@@ -208,7 +218,8 @@ public class Outtake {
      */
     public void dumpOut() {
         isDumpOut = true;
-        servo.setPosition(DUMP_OUT_POSITION);
+        pivservo.setPosition(DUMP_OUT_POSITION);
+        servo.setPosition(1.025-DUMP_OUT_POSITION*2/3);
     }
 
     /**
