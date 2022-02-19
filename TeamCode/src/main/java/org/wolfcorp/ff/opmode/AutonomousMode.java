@@ -199,8 +199,8 @@ public abstract class AutonomousMode extends OpMode {
             hubPose = pos(-40, -8, 90);
             cycleHubPose = pos(-48, -11, 90);
         } else if (RED && WAREHOUSE) {
-            hubPose = pos(-42, -12, 90);
-            cycleHubPose = pos(-48, -9, 90);
+            hubPose = pos(-40, -12, 90);
+            cycleHubPose = pos(-45, -9, 90);
         } else if (BLUE && WAREHOUSE) {
             hubPose = pos(-44, -16, 90);
             cycleHubPose = pos(-48, -10, 90);
@@ -223,7 +223,7 @@ public abstract class AutonomousMode extends OpMode {
         } else if (BLUE && CAROUSEL && PARK) {
             whPose = trueWhPose.plus(pos(0, 15));
         } else if (RED && WAREHOUSE) {
-            whPose = trueWhPose.plus(pos(0, 8));
+            whPose = trueWhPose.plus(pos(0, 9));
         } else if (BLUE && WAREHOUSE) {
             whPose = trueWhPose.plus(pos(0, 15));
         }
@@ -326,7 +326,7 @@ public abstract class AutonomousMode extends OpMode {
 
             // *** To warehouse ***
             queue(() -> intake.getMotor().setVelocity(0.8 * Intake.IN_SPEED));
-            Pose2d moddedWhPose = whPose.plus(pos(0, i == 1 ? -2 : 7));
+            Pose2d moddedWhPose = whPose.plus(pos(0, i == 1 ? 0 : 2 + i * 1.8));
             queue(from(trueHubPose)
                     .addTemporalMarker(0.5, () -> {
                         outtake.dumpIn();
@@ -393,10 +393,12 @@ public abstract class AutonomousMode extends OpMode {
     public void alternativeIntake(int i) {
         queue(() -> {
             // TODO: or i == 3
+            ElapsedTime time = new ElapsedTime();
+            time.reset();
             while (dumpIndicator.update() != FULL) {
                 drive.updatePoseEstimate();
                 if (dumpIndicator.update() == EMPTY) {
-                    drive.setMotorPowers(0.15);
+                    drive.setMotorPowers(i == SCORING_CYCLES && time.milliseconds() > 1250 ? -0.1 : 0.15);
                     if (!outtake.isApproaching(ZERO)) {
                         outtake.slideToAsync(ZERO);
                     }

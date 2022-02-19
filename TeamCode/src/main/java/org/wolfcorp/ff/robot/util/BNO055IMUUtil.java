@@ -3,6 +3,7 @@ package org.wolfcorp.ff.robot.util;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.teamcode.util.AxisDirection;
 
 /**
  * Various utility functions for the BNO055 IMU.

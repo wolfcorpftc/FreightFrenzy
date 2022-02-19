@@ -97,9 +97,9 @@ public class DriveConstants {
 
      */
     /** Maximum velocity */
-    public static double MAX_VEL = 50;
+    public static double MAX_VEL = 55;
     /** Maximum acceleration */
-    public static double MAX_ACCEL = 40;
+    public static double MAX_ACCEL = 45;
     /** Maximum angular velocity */
     public static double MAX_ANG_VEL = 5.5;
     /** Maximum angular acceleration */
