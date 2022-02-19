@@ -54,7 +54,7 @@ public class DriveConstants {
     /** Width of the robot from the center of wheel to wheel */
     public static double TRACK_WIDTH = 11.25; // in
     /** Total width of the robot. The distance between the points that collides with the wall. */
-    public static double WIDTH = 13.5;
+    public static double WIDTH = 12.8;
     /** Total length of the robot. The distance between the points that collides with the wall. */
     public static double LENGTH = 15;
 
