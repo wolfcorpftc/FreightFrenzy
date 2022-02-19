@@ -51,11 +51,11 @@ public class DriveConstants {
     /** output (wheel) speed / input (motor) speed */
     public static double GEAR_RATIO = 1;
     /** Width of the robot from the center of wheel to wheel */
-    public static double TRACK_WIDTH = 11.25; // in
+    public static double TRACK_WIDTH = 9.75; // in
     /** Total width of the robot. The distance between the points that collides with the wall. */
-    public static double WIDTH = 13.5;
+    public static double WIDTH = 11.25;
     /** Total length of the robot. The distance between the points that collides with the wall. */
-    public static double LENGTH = 15;
+    public static double LENGTH = 15.25;
 
     /*
      * These are the feedforward parameters used to model the drive motor behavior. If you are using
