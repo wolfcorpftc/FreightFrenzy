@@ -34,6 +34,8 @@ public class MotorTest extends LinearOpMode {
         while (opModeIsActive()) {
             // Drivetrain
             drive.setMotorPowers(0, 0, 0, 0.5);
+            sleep(5000);
+            drive.setMotorPowers(0, 0, 0, -0.5);
             drive.update(); // odometry update
             telemetry.addData("LF Power", drive.leftFront.getPower());
             telemetry.addData("LF Current", drive.leftFront.getCurrent(CurrentUnit.MILLIAMPS));

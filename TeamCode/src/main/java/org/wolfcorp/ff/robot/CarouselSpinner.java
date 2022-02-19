@@ -37,7 +37,7 @@ public class CarouselSpinner {
      * @return whether the carousel spinner is on
      */
     public boolean isOn() {
-        return servo.getPower() != 0;
+        return servo.getPower() != 0 || spinThread != null && spinThread.isAlive();
     }
 
     /**
@@ -64,12 +64,13 @@ public class CarouselSpinner {
      */
     public Thread spinAsync(int times, double spinTime, long waitTime) {
         Runnable runnable = () -> {
-            for (int i = times; i >= 1 && !Thread.interrupted(); i--) {
+            for (int i = times; i >= 1 && !Thread.currentThread().isInterrupted(); i--) {
                 spinTimer.reset();
                 on();
                 while (spinTimer.milliseconds() < spinTime && !Thread.currentThread().isInterrupted());
                 off();
-                if (i != 1) {
+                OpMode.dumpIndicator.overflow();
+                if (i != 1 && !Thread.currentThread().isInterrupted()) {
                     sleep.accept(waitTime);
                 }
             }
@@ -87,15 +88,18 @@ public class CarouselSpinner {
      */
 
     public void spin() throws InterruptedException {
-        spin(1);
+        spinAsync(1, 1.2 * SPIN_TIME, WAIT_TIME).join();
     }
 
-    public void spin(int time) throws InterruptedException { spinAsync(time, SPIN_TIME, WAIT_TIME).join(); }
+    public void spin(int time) throws InterruptedException {
+        spinAsync(time, SPIN_TIME, WAIT_TIME).join();
+    }
 
     public void stopSpin() {
         if (spinThread != null && !spinThread.isInterrupted()) {
             spinThread.interrupt();
         }
+        off();
     }
 
     public CRServo getServo() {

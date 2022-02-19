@@ -3,6 +3,7 @@ package org.wolfcorp.ff.opmode;
 import static org.wolfcorp.ff.opmode.util.Match.telemetry;
 
 import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
@@ -55,17 +56,17 @@ public abstract class TeleOpMode extends OpMode {
 
         Match.status("Start!");
         while (opModeIsActive()) {
+            // *** Outtake: dump ***
+            if (gamepad2.right_bumper && !maskDump) {
+                maskDump = true;
+                outtake.toggleDump();
+            }
+
+            if (!gamepad2.right_bumper) {
+                maskDump = false;
+            }
+
             // *** Drivetrain ***
-
-            // *** Slow Mode ***
-            if (gamepad1.right_bumper && !maskSlowMode) {
-                slowMode = !slowMode;
-                maskSlowMode = true;
-            }
-            if (!gamepad1.right_bumper) {
-                maskSlowMode = false;
-            }
-
             if (!drive.isBusy() && drive.leftFront.getMode() != DcMotor.RunMode.RUN_TO_POSITION
                     && !maskGyroReset && !maskSlamForward && !maskSnapTurn) {
 
@@ -75,7 +76,7 @@ public abstract class TeleOpMode extends OpMode {
                             -gamepad1.right_stick_x,
                             -gamepad1.right_stick_y,
                             gamepad1.left_stick_x,
-                            0.2,
+                            0.32,
                             true
                     );
                 } else {
@@ -89,36 +90,49 @@ public abstract class TeleOpMode extends OpMode {
                 }
             }
 
-            // *** Snap Robot *** //
-            if (gamepad1.left_bumper) {
-                maskSnapTurn = true;
-                // TODO: talk with kevin
-                drive.turnToDegAsync(Math.round(drive.getExternalHeadingDeg() / 90.0) * 90);
-            } else {
-                maskSnapTurn = false;
+            // *** Slow Mode ***
+            if (gamepad1.right_bumper && !maskSlowMode) {
+                slowMode = !slowMode;
+                maskSlowMode = true;
+            }
+            if (!gamepad1.right_bumper) {
+                maskSlowMode = false;
             }
 
-            // *** Reset Gyro *** //
-            if (gamepad1.dpad_left && !maskGyroReset) {
-                maskGyroReset = true;
-                // TODO: Talk with kevin about reset
-                drive.setExternalHeadingDeg((Math.round(drive.getExternalHeadingDeg() / 90.0) * 90) % 360);
-            } else if (!gamepad1.dpad_left) {
-                maskGyroReset = false;
+            // *** Outtake: slide - manual ***
+            if (gamepad2.y && !maskSlide) {
+                if (outtake.getMotor().getMode() == DcMotor.RunMode.RUN_TO_POSITION) {
+                    outtake.resetSlide();
+                }
+                outtake.extend(gamepad2.back);
+            } else if (gamepad2.a && !maskSlide) {
+                if (outtake.getMotor().getMode() == DcMotor.RunMode.RUN_TO_POSITION) {
+                    outtake.resetSlide();
+                }
+                outtake.retract(gamepad2.back);
+            } else if (outtake.getMotor().getMode() != DcMotor.RunMode.RUN_TO_POSITION && !maskSlide) {
+                outtake.getMotor().setVelocity(0);
             }
 
-            // *** Slam and Forward *** //
-            if (gamepad1.dpad_up && !maskSlamForward) {
-                maskSlamForward = true;
-                drive.backward(1, 24);
-            } else if (!gamepad1.dpad_up) {
-                maskSlamForward = false;
+            // *** Intake ***
+            if (gamepad2.b && !gamepad2.start && !maskIntake) {
+                maskIntake = true;
+                intake.toggleOut();
+            } else if (gamepad2.x && !maskIntake) {
+                maskIntake = true;
+                // the dump must be at the bottom-most position when intake is on
+                outtake.slideToAsync(Barcode.ZERO);
+                intake.toggleIn();
+            }
+
+            if (!gamepad2.b && !gamepad2.x) {
+                maskIntake = false;
             }
 
             // *** Automatic Carousel Spinner ***
             if (gamepad2.left_bumper && !maskSpinner) {
                 maskSpinner = true;
-                spinner.spinAsync(8, CarouselSpinner.SPIN_TIME, 250);
+                spinner.spinAsync(10, CarouselSpinner.SPIN_TIME, 50);
             }
 
             if (!gamepad2.left_bumper) {
@@ -128,9 +142,9 @@ public abstract class TeleOpMode extends OpMode {
             // *** Manual Carousel Spinner ***
             if (gamepad2.left_trigger > 0.8 && !maskManualSpinner) {
                 maskManualSpinner = true;
-                if (spinner.isOn()) {
-                    spinner.off();
-                } else {
+                boolean isOn = spinner.isOn();
+                spinner.stopSpin();
+                if (!isOn) {
                     spinner.on();
                 }
             }
@@ -149,125 +163,48 @@ public abstract class TeleOpMode extends OpMode {
                 maskSpinnerOverride = false;
             }
 
-            // *** Intake ***
-            if (gamepad2.b && !gamepad2.start && !maskIntake) {
-                maskIntake = true;
-                intake.toggleOut();
-            } else if (gamepad2.x && !maskIntake) {
-                maskIntake = true;
-                // the dump must be at the bottom-most position when intake is on
-                outtake.slideToAsync(Barcode.ZERO);
-                intake.toggleIn();
-            }
-
-            if (!gamepad2.b && !gamepad2.x) {
-                maskIntake = false;
-            }
-
-            // *** Outtake: slide - manual ***
-            if (gamepad2.y && !maskSlide) {
-                if (outtake.getMotor().getMode() == DcMotor.RunMode.RUN_TO_POSITION) {
-                    outtake.resetSlide();
-                }
-                outtake.extend(gamepad2.back);
-            } else if (gamepad2.a && !maskSlide) {
-                if (outtake.getMotor().getMode() == DcMotor.RunMode.RUN_TO_POSITION) {
-                    outtake.resetSlide();
-                }
-                outtake.retract(gamepad2.back);
-            } else if (outtake.getMotor().getMode() != DcMotor.RunMode.RUN_TO_POSITION && !maskSlide) {
-                outtake.getMotor().setVelocity(0);
-            }
-
-            // *** Outtake: slide - snap ***
-            if (gamepad2.dpad_up && !maskSlide) {
-                maskSlide = true;
-                outtake.slideToAsync(Barcode.TOP);
-            } else if (gamepad2.dpad_right && !maskSlide) {
-                maskSlide = true;
-                outtake.slideToAsync(Barcode.MID);
-            } else if (gamepad2.dpad_down && !maskSlide) {
-                maskSlide = true;
-                outtake.slideToAsync(Barcode.BOT);
-            } else if (outtake.getMotor().getMode() == DcMotor.RunMode.RUN_TO_POSITION
-                    && outtake.reachedTargetPosition()) {
-                outtake.resetSlide();
-            }
-
             if (!(gamepad2.dpad_up || gamepad2.dpad_right || gamepad2.dpad_down || gamepad2.a || gamepad2.y)) {
                 maskSlide = false;
             }
 
+            // *** Shipping Element Arm: claw ***
+            if (gamepad2.right_trigger > 0.8 && !maskToggleClaw) {
+                maskToggleClaw = true;
+                shippingArm.toggleClaw();
+            }
+
+            if (gamepad2.right_trigger < 0.8) {
+                maskToggleClaw = false;
+            }
+
+            // *** Shipping Element Arm: claw ***
+            double armMultiplier = Math.abs(gamepad2.left_stick_y)
+                    * (gamepad2.right_stick_button ? 0.4 : 1);
+            if (gamepad2.left_stick_y < -0.02) {
+                shippingArm.setArmVelocity(armMultiplier * ShippingArm.ARM_OUT_SPEED);
+            } else if (gamepad2.left_stick_y > 0.02) {
+                shippingArm.setArmVelocity(armMultiplier * ShippingArm.ARM_IN_SPEED);
+            } else {
+                shippingArm.holdPosition();
+            }
+
             // *** Outtake : reset ***
-            if (gamepad2.left_trigger > 0.8 && gamepad2.right_trigger > 0.8 && !maskOuttakeReset) {
+            if (gamepad1.dpad_right && !maskOuttakeReset) {
                 outtake.getMotor().setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                 outtake.getMotor().setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                 maskOuttakeReset = true;
             }
 
-            if (gamepad2.left_trigger < 0.8 || gamepad2.right_trigger < 0.8) {
+            if (!gamepad1.dpad_right) {
                 maskOuttakeReset = false;
             }
 
-            // *** Outtake: dump ***
-            if (gamepad2.right_bumper && !maskDump) {
-                maskDump = true;
-                outtake.toggleDump();
-            }
-
-            if (!gamepad2.right_bumper) {
-                maskDump = false;
-            }
+            // *** Outtake: dump status ***
+            dumpIndicator.update();
 
             // *** Odometry update ***
             drive.update();
 
-            // *** Telemetry ***
-
-            /*
-            telemetry.addData("Spinner is On", spinner.isOn());
-            telemetry.addData("Spinner Masked", maskSpinner);
-            telemetry.addData("Spinner Power", spinner.getServo().getPower());
-            telemetry.addData("Slow Mode", slowMode);
-            telemetry.addData("Mask Slow Mode", maskSlowMode);
-
-            telemetry.addData("Robot Pose", drive.getPoseEstimate().toString());
-            telemetry.addData("Snap To Angle", Math.round(drive.getExternalHeadingDeg() / 90.0) * 90);
-
-            telemetry.addData("Intake Current Speed", intake.getMotor().getVelocity());
-            telemetry.addData("Intake Current Power", intake.getMotor().getPower());
-            telemetry.addData("Intake Current Current", intake.getMotor().getCurrent(CurrentUnit.MILLIAMPS));
-
-            telemetry.addData("Intaake Current Speed", intake.getMotor2().getVelocity());
-            telemetry.addData("Intaake Current Power", intake.getMotor2().getPower());
-            telemetry.addData("Intaake Current Current", intake.getMotor2().getCurrent(CurrentUnit.MILLIAMPS));
-
-            telemetry.addData("Outtake Current Pos", outtake.getMotor().getCurrentPosition());
-            telemetry.addData("Outtake Target Pos", outtake.getMotor().getTargetPosition());
-            telemetry.addData("Outtake Dump Pos", outtake.getServo().getPosition());
-
-            telemetry.addData("LF Power", drive.leftFront.getPower());
-            telemetry.addData("LF Current", drive.leftFront.getCurrent(CurrentUnit.MILLIAMPS));
-            telemetry.addData("LF Position", drive.leftFront.getCurrentPosition());
-
-            telemetry.addData("LB Power", drive.leftBack.getPower());
-            telemetry.addData("LB Current", drive.leftBack.getCurrent(CurrentUnit.MILLIAMPS));
-            telemetry.addData("LB Position", drive.leftBack.getCurrentPosition());
-
-            telemetry.addData("RF Power", drive.rightFront.getPower());
-            telemetry.addData("RF Current", drive.rightFront.getCurrent(CurrentUnit.MILLIAMPS));
-            telemetry.addData("RF Position", drive.rightFront.getCurrentPosition());
-
-            telemetry.addData("RB Power", drive.rightBack.getPower());
-            telemetry.addData("RB Current", drive.rightBack.getCurrent(CurrentUnit.MILLIAMPS));
-            telemetry.addData("RB Position", drive.rightBack.getCurrentPosition());
-
-            telemetry.update();
-*/
-
-
-            telemetry.addData("Pivot angle", outtake.getServo2().getPosition());
-            telemetry.addData("Dump angle", outtake.getServo().getPosition());
             telemetry.update();
         }
         resetHardware();

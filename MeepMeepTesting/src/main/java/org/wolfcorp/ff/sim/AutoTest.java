@@ -3,12 +3,20 @@ package org.wolfcorp.ff.sim;
 import static java.lang.Thread.sleep;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.acmerobotics.roadrunner.trajectory.constraints.AngularVelocityConstraint;
+import com.acmerobotics.roadrunner.trajectory.constraints.MecanumVelocityConstraint;
+import com.acmerobotics.roadrunner.trajectory.constraints.MinVelocityConstraint;
+import com.acmerobotics.roadrunner.trajectory.constraints.ProfileAccelerationConstraint;
+import com.acmerobotics.roadrunner.trajectory.constraints.TrajectoryAccelerationConstraint;
+import com.acmerobotics.roadrunner.trajectory.constraints.TrajectoryVelocityConstraint;
 import com.noahbres.meepmeep.MeepMeep;
 import com.noahbres.meepmeep.core.colorscheme.scheme.ColorSchemeBlueDark;
 import com.noahbres.meepmeep.core.colorscheme.scheme.ColorSchemeRedDark;
 import com.noahbres.meepmeep.core.colorscheme.scheme.ColorSchemeRedLight;
 import com.noahbres.meepmeep.roadrunner.DefaultBotBuilder;
 import com.noahbres.meepmeep.roadrunner.entity.RoadRunnerBotEntity;
+
+import java.util.Arrays;
 
 public class AutoTest {
     protected Pose2d initialPose; // where the robot starts
@@ -24,6 +32,7 @@ public class AutoTest {
     protected Pose2d elementRightPose; // retrieve the right shipping element
 
     protected Pose2d hubPose; // score freight into hub
+    protected Pose2d cycleHubPose;
     protected Pose2d whPose; // load freight from warehouse
     protected Pose2d parkPose; // where the robot parks
     protected Pose2d preHubPose;
@@ -32,14 +41,18 @@ public class AutoTest {
     protected double length = 15;
     protected double width = 13;
 
-    protected boolean isRed = true;
+    protected boolean isRed = false;
     protected boolean isWallRunner = true;
     protected boolean isNearCarousel = false;
 
     protected MeepMeep mm;
 
     public void initPoses() {
-        initialPose = pos(-72 + width / 2, 12, 180);
+        if (isRed) {
+            initialPose = pos(-72 + length / 2 + 1 /* gap */, width / 2, 90);
+        } else {
+            initialPose = pos(-72 + length / 2 + 1 /* gap */, 24 - width / 2, 90);
+        }
         fakeInitialPose = initialPose.minus(pos(3, 0));
 
         carouselPose = pos(-50.5, -72 + width / 2, 90);
@@ -53,8 +66,11 @@ public class AutoTest {
 
         whPose = pos(-72 + width / 2, 42, 180);
         hubPose = pos(-48.5 + width / 2, -12, 90);
+        cycleHubPose = pos(-48, -11.5, 90);
         preHubPose = pos(-48, -12, 0);
         preWhPose = pos(-72 + width / 2, 12, 0);
+
+        sharedParkPose = pos(-36,72-width/2,90);
 
         if (isWallRunner) {
             parkPose = pos(-72 + width / 2, 37, 180);
@@ -73,8 +89,22 @@ public class AutoTest {
 
     }
 
+
+    public static TrajectoryVelocityConstraint getVelocityConstraint(double maxVel, double maxAngularVel, double trackWidth) {
+        return new MinVelocityConstraint(Arrays.asList(
+                new AngularVelocityConstraint(maxAngularVel),
+                new MecanumVelocityConstraint(maxVel, trackWidth)
+        ));
+    }
+
+    public static TrajectoryAccelerationConstraint getAccelerationConstraint(double maxAccel) {
+        return new ProfileAccelerationConstraint(maxAccel);
+    }
+
+
     public void start() {
         initPoses();
+        initialPose = whPose;
 
         // Declare a MeepMeep instance
         // With a field size of 800 pixels

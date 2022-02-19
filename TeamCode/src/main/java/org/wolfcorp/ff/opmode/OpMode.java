@@ -86,6 +86,6 @@ public abstract class OpMode extends LinearOpMode {
     }
 
     public static boolean isActive() {
-        return instance != null && instance.opModeIsActive();
+        return instance != null && instance.opModeIsActive() && !Thread.currentThread().isInterrupted();
     }
 }

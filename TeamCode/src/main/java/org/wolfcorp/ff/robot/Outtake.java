@@ -1,13 +1,20 @@
 package org.wolfcorp.ff.robot;
 
-import static org.wolfcorp.ff.opmode.util.Match.telemetry;
+import static org.wolfcorp.ff.vision.Barcode.BOT;
+import static org.wolfcorp.ff.vision.Barcode.DIRTY;
+import static org.wolfcorp.ff.vision.Barcode.EXCESS;
+import static org.wolfcorp.ff.vision.Barcode.MID;
+import static org.wolfcorp.ff.vision.Barcode.TOP;
+import static org.wolfcorp.ff.vision.Barcode.ZERO;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.robotcore.external.Function;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.wolfcorp.ff.opmode.OpMode;
 import org.wolfcorp.ff.opmode.util.Match;
 import org.wolfcorp.ff.vision.Barcode;
 
@@ -16,12 +23,12 @@ import java.util.Objects;
 public class Outtake {
     public static final double SLIDE_TICKS_PER_REV = 1425.1;
     public static final double SLIDE_MAX_SPEED = 117 / 60.0 * SLIDE_TICKS_PER_REV; // ticks/sec
-    public static final double SLIDE_UP_SPEED = 1 * SLIDE_MAX_SPEED; // ticks/sec
-    public static final double SLIDE_DOWN_SPEED = -1 * SLIDE_MAX_SPEED; // ticks/sec
+    public static final double SLIDE_UP_SPEED = SLIDE_MAX_SPEED; // ticks/sec
+    public static final double SLIDE_DOWN_SPEED = -SLIDE_MAX_SPEED; // ticks/sec
 
     public static final int SLIDE_TOP_POSITION = 1900;
     public static final int SLIDE_MID_POSITION = 1000;
-    public static final int SLIDE_EXCESS_POSITION = 400;
+    public static final int SLIDE_EXCESS_POSITION = 250;
     public static final int SLIDE_BOT_POSITION = 400;
 
     public static final int SLIDE_MIN_POSITION = -100;
@@ -31,8 +38,11 @@ public class Outtake {
     public static final double DUMP_IN_POSITION = 0.6;
     public static final double DUMP_OUT_POSITION = 0.025;
 
-    public static final double DUMP_OVERFLOW_DIST = 1.6;
-    public static final double DUMP_FULL_DIST = 1.6;
+    public static final double DUMP_OVERFLOW_DIST = 1.60;
+    public static final double DUMP_FULL_DIST = 1.60;
+
+    /** Milliseconds to wait for after running dumpOut. */
+    public static final int DUMP_DELAY = 0;
 
     private final DcMotorEx motor; // slide motor
     private final Servo servo; // dump servo
@@ -104,23 +114,40 @@ public class Outtake {
      */
     public void slideToAsync(Barcode barcode) {
         resetSlide();
+        slideToPositionAsync(barcodeToPosition(barcode));
+    }
+
+    public static int barcodeToPosition(Barcode barcode) {
         switch (barcode) {
             case TOP:
-                slideToPositionAsync(SLIDE_TOP_POSITION);
-                break;
+                return SLIDE_TOP_POSITION;
             case MID:
-                slideToPositionAsync(SLIDE_MID_POSITION);
-                break;
+                return SLIDE_MID_POSITION;
             case EXCESS:
-                slideToPositionAsync(SLIDE_EXCESS_POSITION);
-                break;
-            default:
+                return SLIDE_EXCESS_POSITION;
             case BOT:
-                slideToPositionAsync(SLIDE_BOT_POSITION);
-                break;
+                return SLIDE_BOT_POSITION;
             case ZERO:
-                slideToPositionAsync(0);
-                break;
+                return 0;
+            default:
+                return Integer.MIN_VALUE;
+        }
+    }
+
+    public static Barcode positionToBarcode(int pos) {
+        switch (pos) {
+            case SLIDE_TOP_POSITION:
+                return TOP;
+            case SLIDE_MID_POSITION:
+                return MID;
+            case SLIDE_EXCESS_POSITION:
+                return EXCESS;
+            case SLIDE_BOT_POSITION:
+                return BOT;
+            case 0:
+                return ZERO;
+            default:
+                return DIRTY;
         }
     }
 
@@ -133,7 +160,7 @@ public class Outtake {
         Telemetry.Item currentPositionItem = Match.createLogItem("Outtake - current position", motor.getCurrentPosition());
         Telemetry.Item targetPositionItem = Match.createLogItem("Outtake - target position", motor.getTargetPosition());
         Match.log("Outtake slideTo() loop begins");
-        while (motor.isBusy() && !Thread.currentThread().isInterrupted()) {
+        while (motor.isBusy() && OpMode.isActive()) {
             Match.status("Outtake looping");
             Objects.requireNonNull(currentPositionItem).setValue(motor.getCurrentPosition());
             Match.update();
@@ -204,6 +231,10 @@ public class Outtake {
         }
     }
 
+    public boolean isDumpOut() {
+        return isDumpOut;
+    }
+
     /**
      * Asynchronously turns the dump inward.
      */
@@ -236,5 +267,27 @@ public class Outtake {
      */
     public boolean reachedTargetPosition() {
         return Math.abs(motor.getCurrentPosition() - motor.getTargetPosition()) < motor.getTargetPositionTolerance();
+    }
+
+    public Barcode getSlidePosition() {
+        int pos = motor.getCurrentPosition();
+        Function<Integer, Boolean> inRange = (Integer expectedPos) -> Math.abs(pos - expectedPos) < 10;
+        for (Barcode barcode : Barcode.values()) {
+            if (inRange.apply(barcodeToPosition(barcode)))
+                return barcode;
+        }
+        return DIRTY;
+    }
+
+    public Barcode getSlideTarget() {
+        return positionToBarcode(motor.getTargetPosition());
+    }
+
+    public boolean isSlideActiveTarget(Barcode barcode) {
+        return motor.isBusy() && getSlideTarget() == barcode;
+    }
+
+    public boolean isApproaching(Barcode barcode) {
+        return getSlidePosition() == barcode || isSlideActiveTarget(barcode);
     }
 }
