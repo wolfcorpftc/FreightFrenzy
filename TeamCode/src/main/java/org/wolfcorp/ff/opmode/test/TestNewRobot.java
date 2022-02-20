@@ -35,6 +35,9 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.wolfcorp.ff.robot.Outtake;
+import org.wolfcorp.ff.vision.Barcode;
+
 /**
  * This file illustrates the concept of driving a path based on time.
  * It uses the common Pushbot hardware class to define the drive on the robot.
@@ -56,26 +59,22 @@ import com.qualcomm.robotcore.util.ElapsedTime;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@Autonomous(name="Pushbot: Auto Drive By Time", group="Pushbot")
+@Autonomous(name="Robot Test", group="Pushbot")
 public class TestNewRobot extends LinearOpMode {
-    public DcMotor intake1 = null;
-    public DcMotor  intake2  = null;
     private ElapsedTime     runtime = new ElapsedTime();
-
 
     static final double     FORWARD_SPEED = 0.6;
     static final double     TURN_SPEED    = 0.5;
 
     @Override
     public void runOpMode() {
-
-        intake1 = hardwareMap.get(DcMotorEx.class, "intake1");
-        intake2 = hardwareMap.get(DcMotorEx.class, "intake2");
-
         waitForStart();
-
-        intake1.setPower(-0.5);
-        intake2.setPower(-0.5);
-        sleep(30000);
+        Outtake outtake = new Outtake(hardwareMap);
+        outtake.cycleOuttake(Barcode.TOP);
+        while (opModeIsActive()) {
+            telemetry.addData("", outtake.getMotor().getCurrentPosition());
+            telemetry.update();
+            sleep(50);
+        }
     }
 }

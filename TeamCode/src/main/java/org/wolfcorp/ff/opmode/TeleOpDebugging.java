@@ -51,7 +51,7 @@ public abstract class TeleOpDebugging extends OpMode {
         drive.setPoseEstimate(Match.teleOpInitialPose);
 
         Match.status("Robot initialized, waiting for start");
-        outtake.getServo().setPosition(Outtake.DUMP_IN_POSITION);
+        outtake.getDumpServo().setPosition(Outtake.DUMP_IN_POSITION);
 
         if (Match.RED) {
             drive.setExternalHeadingDeg(180);
@@ -296,7 +296,7 @@ public abstract class TeleOpDebugging extends OpMode {
 
             telemetry.addData("Outtake Current Pos", outtake.getMotor().getCurrentPosition());
             telemetry.addData("Outtake Target Pos", outtake.getMotor().getTargetPosition());
-            telemetry.addData("Outtake Dump Pos", outtake.getServo().getPosition());
+            telemetry.addData("Outtake Dump Pos", outtake.getDumpServo().getPosition());
 
             telemetry.addData("LF Power", drive.leftFront.getPower());
             telemetry.addData("LF Current", drive.leftFront.getCurrent(CurrentUnit.MILLIAMPS));

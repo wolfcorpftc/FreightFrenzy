@@ -24,7 +24,7 @@ public class DebugAuto extends AutonomousMode {
     public void runOpMode2() {
         Match.setupTelemetry();
         initHardware();
-        Match.log("Position: " + outtake.getServo().getPosition());
+        Match.log("Position: " + outtake.getDumpServo().getPosition());
         waitForStart();
 
         ElapsedTime timer = new ElapsedTime();

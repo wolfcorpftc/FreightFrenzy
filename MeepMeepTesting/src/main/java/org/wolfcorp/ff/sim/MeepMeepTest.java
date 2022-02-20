@@ -1,3 +1,4 @@
+/*
 package org.wolfcorp.ff.sim;
 
 public class MeepMeepTest extends AutoTest {
@@ -8,4 +9,4 @@ public class MeepMeepTest extends AutoTest {
         MeepMeepTest test = new MeepMeepTest();
         test.start();
     }
-}
+}*/

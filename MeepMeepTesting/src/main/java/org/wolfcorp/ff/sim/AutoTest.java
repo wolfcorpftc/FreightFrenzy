@@ -1,3 +1,4 @@
+/*
 package org.wolfcorp.ff.sim;
 
 import static java.lang.Thread.sleep;
@@ -49,9 +50,13 @@ public class AutoTest {
 
     public void initPoses() {
         if (isRed) {
-            initialPose = pos(-72 + length / 2 + 1 /* gap */, width / 2, 90);
+            initialPose = pos(-72 + length / 2 + 1 */
+/* gap *//*
+, width / 2, 90);
         } else {
-            initialPose = pos(-72 + length / 2 + 1 /* gap */, 24 - width / 2, 90);
+            initialPose = pos(-72 + length / 2 + 1 */
+/* gap *//*
+, 24 - width / 2, 90);
         }
         fakeInitialPose = initialPose.minus(pos(3, 0));
 
@@ -110,7 +115,8 @@ public class AutoTest {
         // With a field size of 800 pixels
 
         mm = new MeepMeep(600);
-        /*RoadRunnerBotEntity bot1 = new DefaultBotBuilder(mm)
+        */
+/*RoadRunnerBotEntity bot1 = new DefaultBotBuilder(mm)
                 .setColorScheme(new ColorSchemeRedDark())
                 // Set constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
                 .setConstraints(60, 60, Math.toRadians(180), Math.toRadians(180), 15)
@@ -128,7 +134,8 @@ public class AutoTest {
                 .setBackgroundAlpha(1f)
                 .addEntity(bot1)
                 .start();
-         */
+         *//*
+
         mm.setBackground(MeepMeep.Background.FIELD_FREIGHTFRENZY_ADI_DARK)
                 .setDarkMode(true)
                 .setBackgroundAlpha(1f);
@@ -166,6 +173,7 @@ public class AutoTest {
 
         }
         mm.start();
+*/
 /*
         while(true) {
             // delete all bots
@@ -179,7 +187,8 @@ public class AutoTest {
             }
         }
 
- */
+ *//*
+
     }
 
     public Pose2d pos(double x, double y) {
@@ -225,3 +234,4 @@ public class AutoTest {
                 );
     }
 }
+*/

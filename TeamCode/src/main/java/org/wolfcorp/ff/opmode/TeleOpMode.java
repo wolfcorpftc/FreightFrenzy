@@ -46,7 +46,7 @@ public abstract class TeleOpMode extends OpMode {
         drive.setPoseEstimate(Match.teleOpInitialPose);
 
         Match.status("Robot initialized, waiting for start");
-        outtake.getServo().setPosition(Outtake.DUMP_IN_POSITION);
+        outtake.getDumpServo().setPosition(Outtake.DUMP_IN_POSITION);
 
         if (Match.RED) {
             drive.setExternalHeadingDeg(180);

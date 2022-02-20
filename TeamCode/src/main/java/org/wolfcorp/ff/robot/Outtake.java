@@ -2,7 +2,6 @@ package org.wolfcorp.ff.robot;
 
 import static org.wolfcorp.ff.vision.Barcode.BOT;
 import static org.wolfcorp.ff.vision.Barcode.DIRTY;
-import static org.wolfcorp.ff.vision.Barcode.EXCESS;
 import static org.wolfcorp.ff.vision.Barcode.MID;
 import static org.wolfcorp.ff.vision.Barcode.TOP;
 import static org.wolfcorp.ff.vision.Barcode.ZERO;
@@ -28,15 +27,21 @@ public class Outtake {
 
     public static final int SLIDE_TOP_POSITION = 1900;
     public static final int SLIDE_MID_POSITION = 1000;
-    public static final int SLIDE_EXCESS_POSITION = 250;
     public static final int SLIDE_BOT_POSITION = 400;
+    public static final int SLIDE_INTAKE_POSITION = 0;
 
     public static final int SLIDE_MIN_POSITION = -100;
     public static final int SLIDE_MAX_POSITION = 2100;
 
+    public static final double PIVOT_IN_POSITION = 0;
+    public static final double PIVOT_OUT_TOP_POSITION = 0;
+    public static final double PIVOT_OUT_MID_POSITION = 0;
+    public static final double PIVOT_OUT_BOT_POSITION = 0;
+
     public static final double DUMP_EXCESS_POSITION = 0.99;
-    public static final double DUMP_IN_POSITION = 0.6;
-    public static final double DUMP_OUT_POSITION = 0.025;
+    public static final double DUMP_OUT_POSITION = 0.6;
+    public static final double DUMP_IN_POSITION = 0.025;
+    public static final double DUMP_DROP_POSITION = 0.6;
 
     public static final double DUMP_OVERFLOW_DIST = 1.60;
     public static final double DUMP_FULL_DIST = 1.60;
@@ -45,16 +50,16 @@ public class Outtake {
     public static final int DUMP_DELAY = 0;
 
     private final DcMotorEx motor; // slide motor
-    private final Servo servo; // dump servo
-    private final Servo pivservo; // dump servo
+    private final Servo dumpServo; // dump servo
+    private final Servo pivotServo; // dump servo
 
     private final Object motorModeLock = new Object();
-    private boolean isDumpOut = false;
+    private boolean isDumpIn = true;
 
     public Outtake(HardwareMap hwMap) {
         motor = hwMap.get(DcMotorEx.class, "outtake");
-        pivservo = hwMap.get(Servo.class, "outtakePivot");
-        servo = hwMap.get(Servo.class, "dump");
+        pivotServo = hwMap.get(Servo.class, "pivot");
+        dumpServo = hwMap.get(Servo.class, "dump");
 
         motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         motor.setPower(0);
@@ -123,8 +128,6 @@ public class Outtake {
                 return SLIDE_TOP_POSITION;
             case MID:
                 return SLIDE_MID_POSITION;
-            case EXCESS:
-                return SLIDE_EXCESS_POSITION;
             case BOT:
                 return SLIDE_BOT_POSITION;
             case ZERO:
@@ -140,8 +143,6 @@ public class Outtake {
                 return TOP;
             case SLIDE_MID_POSITION:
                 return MID;
-            case SLIDE_EXCESS_POSITION:
-                return EXCESS;
             case SLIDE_BOT_POSITION:
                 return BOT;
             case 0:
@@ -208,11 +209,11 @@ public class Outtake {
     /**
      * @return the {@link Servo} object that corresponds to the servo motor.
      */
-    public Servo getServo() {
-        return servo;
+    public Servo getDumpServo() {
+        return dumpServo;
     }
-    public Servo getServo2() {
-        return pivservo;
+    public Servo getPivotServo() {
+        return pivotServo;
     }
 
     /**
@@ -221,9 +222,7 @@ public class Outtake {
      * internal state (defaults to closed at initialization).
      */
     public void toggleDump() {
-
-
-        if (isDumpOut) {
+        if (isDumpIn) {
             dumpIn();
         }
         else {
@@ -231,34 +230,41 @@ public class Outtake {
         }
     }
 
-    public boolean isDumpOut() {
-        return isDumpOut;
-    }
-
-    /**
-     * Asynchronously turns the dump inward.
-     */
-    public void dumpIn() {
-        isDumpOut = false;
-        pivservo.setPosition(DUMP_IN_POSITION);
-        servo.setPosition(1.025-DUMP_IN_POSITION*2/3);
+    public boolean isDumpIn() {
+        return isDumpIn;
     }
 
     /**
      * Asynchronously turns the dump outward.
      */
     public void dumpOut() {
-        isDumpOut = true;
-        pivservo.setPosition(DUMP_OUT_POSITION);
-        servo.setPosition(1.025-DUMP_OUT_POSITION*2/3);
+        isDumpIn = false;
+        pivotServo.setPosition(DUMP_IN_POSITION);
+        dumpServo.setPosition(1.025-DUMP_IN_POSITION*2/3);
+    }
+
+    // TODO: Make dumpOut for each level
+    /**
+     * Asynchronously turns the dump inward.
+     */
+    public void dumpIn() {
+        isDumpIn = true;
+        pivotServo.setPosition(DUMP_OUT_POSITION);
+        dumpServo.setPosition(1.025-DUMP_OUT_POSITION*2/3);
+    }
+
+    /** Async final stage of dump - dropping element **/
+    public void dumpDrop() {
+        pivotServo.setPosition(DUMP_DROP_POSITION);
+        dumpServo.setPosition(0);
     }
 
     /**
      * Asynchronously turns the dump inward to dispose of the extra game element.
      */
     public void dumpExcess() {
-        isDumpOut = false;
-        servo.setPosition(DUMP_EXCESS_POSITION);
+        isDumpIn = false;
+        pivotServo.setPosition(DUMP_EXCESS_POSITION);
     }
 
     /**
@@ -289,5 +295,35 @@ public class Outtake {
 
     public boolean isApproaching(Barcode barcode) {
         return getSlidePosition() == barcode || isSlideActiveTarget(barcode);
+    }
+
+
+    public void cycleOuttake(Barcode barcode) {
+        slideToPositionAsync(barcodeToPosition(barcode));
+        dumpOut();
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        dumpIn();
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        dumpDrop();
+        try {
+            Thread.sleep(1450);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        dumpOut();
+        slideToPositionAsync(SLIDE_INTAKE_POSITION);
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }
