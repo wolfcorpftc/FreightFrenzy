@@ -25,7 +25,7 @@ public class Outtake {
     public static final double SLIDE_UP_SPEED = SLIDE_MAX_SPEED; // ticks/sec
     public static final double SLIDE_DOWN_SPEED = -SLIDE_MAX_SPEED; // ticks/sec
 
-    public static final int SLIDE_TOP_POSITION = 1900;
+    public static final int SLIDE_TOP_POSITION = 1550;
     public static final int SLIDE_MID_POSITION = 1000;
     public static final int SLIDE_BOT_POSITION = 400;
     public static final int SLIDE_INTAKE_POSITION = 0;
@@ -318,8 +318,13 @@ public class Outtake {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        dumpOut();
         slideToPositionAsync(SLIDE_INTAKE_POSITION);
+        try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        dumpOut();
         try {
             Thread.sleep(2000);
         } catch (InterruptedException e) {
