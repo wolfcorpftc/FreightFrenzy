@@ -58,11 +58,6 @@ import org.wolfcorp.ff.robot.Outtake;
 
 @TeleOp(name="Outtake Test", group="^testing")
 public class OuttakeSpoolTest extends LinearOpMode {
-    private ElapsedTime     runtime = new ElapsedTime();
-
-    static final double     FORWARD_SPEED = 0.6;
-    static final double     TURN_SPEED    = 0.5;
-
     @Override
     public void runOpMode() {
         Outtake outtake = new Outtake(hardwareMap);
@@ -71,13 +66,13 @@ public class OuttakeSpoolTest extends LinearOpMode {
         // y for up, a for down
         while (opModeIsActive()) {
             if (gamepad1.y) {
-                if (Math.abs(outtake.getMotor().getVelocity() - Outtake.SLIDE_MAX_SPEED) < 5) {
+                if (Math.abs(outtake.getMotor().getVelocity() - Outtake.SLIDE_MAX_SPEED) > 5) {
                     outtake.getMotor().setVelocity(0);
                 } else {
                     outtake.getMotor().setVelocity(Outtake.SLIDE_MAX_SPEED);
                 }
-            } else if (gamepad1.a) {
-                if (Math.abs(outtake.getMotor().getVelocity() + Outtake.SLIDE_MAX_SPEED) < 5) {
+            } else if (gamepad1.a && !gamepad1.start && !gamepad2.start) {
+                if (Math.abs(outtake.getMotor().getVelocity() + Outtake.SLIDE_MAX_SPEED) > 5) {
                     outtake.getMotor().setVelocity(0);
                 } else {
                     outtake.getMotor().setVelocity(-Outtake.SLIDE_MAX_SPEED);
