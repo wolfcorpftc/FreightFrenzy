@@ -29,14 +29,11 @@
 
 package org.wolfcorp.ff.opmode.test;
 
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.wolfcorp.ff.robot.Outtake;
-import org.wolfcorp.ff.vision.Barcode;
 
 /**
  * This file illustrates the concept of driving a path based on time.
@@ -59,8 +56,8 @@ import org.wolfcorp.ff.vision.Barcode;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@Autonomous(name="Robot Test", group="Pushbot")
-public class TestNewRobot extends LinearOpMode {
+@TeleOp(name="Outtake Test", group="^testing")
+public class OuttakeSpoolTest extends LinearOpMode {
     private ElapsedTime     runtime = new ElapsedTime();
 
     static final double     FORWARD_SPEED = 0.6;
@@ -68,13 +65,24 @@ public class TestNewRobot extends LinearOpMode {
 
     @Override
     public void runOpMode() {
-        waitForStart();
         Outtake outtake = new Outtake(hardwareMap);
-        outtake.cycleOuttake(Barcode.TOP);
+//        outtake.cycleOuttake(Barcode.TOP);
+        waitForStart();
+        // y for up, a for down
         while (opModeIsActive()) {
-            telemetry.addData("", outtake.getMotor().getCurrentPosition());
-            telemetry.update();
-            sleep(50);
+            if (gamepad1.y) {
+                if (Math.abs(outtake.getMotor().getVelocity() - Outtake.SLIDE_MAX_SPEED) < 5) {
+                    outtake.getMotor().setVelocity(0);
+                } else {
+                    outtake.getMotor().setVelocity(Outtake.SLIDE_MAX_SPEED);
+                }
+            } else if (gamepad1.a) {
+                if (Math.abs(outtake.getMotor().getVelocity() + Outtake.SLIDE_MAX_SPEED) < 5) {
+                    outtake.getMotor().setVelocity(0);
+                } else {
+                    outtake.getMotor().setVelocity(-Outtake.SLIDE_MAX_SPEED);
+                }
+            }
         }
     }
 }
