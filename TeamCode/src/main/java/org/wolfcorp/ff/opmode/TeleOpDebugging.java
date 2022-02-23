@@ -290,9 +290,9 @@ public abstract class TeleOpDebugging extends OpMode {
             telemetry.addData("Robot Pose", drive.getPoseEstimate().toString());
             telemetry.addData("Snap To Angle", Math.round(drive.getExternalHeadingDeg() / 90.0) * 90);
 
-            telemetry.addData("Intake Current Speed", intake.getMotor().getVelocity());
-            telemetry.addData("Intake Current Power", intake.getMotor().getPower());
-            telemetry.addData("Intake Current Current", intake.getMotor().getCurrent(CurrentUnit.MILLIAMPS));
+            telemetry.addData("Intake Current Speed", intake.getFront().getVelocity());
+            telemetry.addData("Intake Current Power", intake.getFront().getPower());
+            telemetry.addData("Intake Current Current", intake.getFront().getCurrent(CurrentUnit.MILLIAMPS));
 
             telemetry.addData("Outtake Current Pos", outtake.getMotor().getCurrentPosition());
             telemetry.addData("Outtake Target Pos", outtake.getMotor().getTargetPosition());

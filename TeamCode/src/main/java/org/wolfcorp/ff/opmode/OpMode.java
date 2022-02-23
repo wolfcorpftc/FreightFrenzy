@@ -88,4 +88,16 @@ public abstract class OpMode extends LinearOpMode {
     public static boolean isActive() {
         return instance != null && instance.opModeIsActive() && !Thread.currentThread().isInterrupted();
     }
+
+    /**
+     * non blocking sleep
+     * @param millis duration
+     */
+    public static void nbSleep(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
 }

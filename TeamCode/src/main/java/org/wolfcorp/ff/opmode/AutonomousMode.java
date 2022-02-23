@@ -2,13 +2,8 @@ package org.wolfcorp.ff.opmode;
 
 import static org.wolfcorp.ff.opmode.util.Match.BLUE;
 import static org.wolfcorp.ff.opmode.util.Match.RED;
-import static org.wolfcorp.ff.robot.CarouselSpinner.SPIN_TIME;
-import static org.wolfcorp.ff.robot.CarouselSpinner.WAIT_TIME;
 import static org.wolfcorp.ff.robot.DriveConstants.LENGTH;
-import static org.wolfcorp.ff.robot.DriveConstants.TRACK_WIDTH;
 import static org.wolfcorp.ff.robot.DriveConstants.WIDTH;
-import static org.wolfcorp.ff.robot.Drivetrain.getAccelerationConstraint;
-import static org.wolfcorp.ff.robot.Drivetrain.getVelocityConstraint;
 import static org.wolfcorp.ff.robot.DumpIndicator.Status.EMPTY;
 import static org.wolfcorp.ff.robot.DumpIndicator.Status.FULL;
 import static org.wolfcorp.ff.robot.DumpIndicator.Status.OVERFLOW;
@@ -106,19 +101,19 @@ public abstract class AutonomousMode extends OpMode {
         trueHubPose = pos(-72 + LENGTH / 2, -12, heading);
 
         if (RED) {
-            hubPose = pos(-72 + LENGTH / 2, -12, heading);
-            cycleHubPose = pos(-72 + LENGTH / 2, -12, heading);
+            hubPose = pos(-72 + LENGTH / 2 - 3, -12, heading);
+            cycleHubPose = pos(-72 + LENGTH / 2 - 3, -12, heading);
         } else {
-            hubPose = pos(-72 + LENGTH / 2, -12, heading);
-            cycleHubPose = pos(-72 + LENGTH / 2, -12, heading);
+            hubPose = pos(-72 + LENGTH / 2 - 3, -12, heading);
+            cycleHubPose = pos(-72 + LENGTH / 2 - 3, -12, heading);
         }
         calibrateHubPose = hubPose.minus(pos(6, 0));
 
         trueWhPose = pos(-72 + WIDTH / 2, 48 - LENGTH, 0);
         if (RED) {
-            whPose = trueWhPose.plus(pos(0, 0));
+            whPose = trueWhPose.plus(pos(-3, 0));
         } else {
-            whPose = trueWhPose.plus(pos(0, 0));
+            whPose = trueWhPose.plus(pos(-3, 0));
         }
         calibrateWhPose = whPose.minus(pos(8, 0));
 
@@ -158,44 +153,39 @@ public abstract class AutonomousMode extends OpMode {
 
     public void deposit() {
         Match.status("Initializing: deposit (preloaded & SE)");
-        queue(outtake::cycle);
         queue(fromHere()
-                .addTemporalMarker(0.6, outtake::dumpOut)
+                .addTemporalMarker(0, () -> outtake.cycleAsync(barcode))
                 .lineTo(hubPose.vec()));
-        queueHubSensorCalibration(trueHubPose);
+        queueXCalibration(trueHubPose);
     }
 
     public void cycle() {
         for (int i = 1; i <= SCORING_CYCLES; i++) {
             Match.status("Initializing: cycle " + i);
 
-
             // *** To warehouse ***
-            queue(() -> intake.getMotor().setVelocity(0.8 * Intake.IN_SPEED));
+            queue(() -> intake.in(0.8, -0.8));
             Pose2d moddedWhPose = whPose.plus(pos(0, i == 1 ? 0 : 2 + i * 1.8));
             queue(from(trueHubPose)
                     .addTemporalMarker(0.5, () -> {
                         outtake.dumpIn();
                         outtake.slideToAsync(Barcode.ZERO);
                     })
-                    .splineToSplineHeading(preWhPose.plus(pos(-3.5, 4)), deg(0))
-                    .splineToConstantHeading(moddedWhPose.minus(pos(9, 0)).vec()));// from 3.5
-            queueWarehouseSensorCalibration(moddedWhPose);
-
+                    .splineToSplineHeading(whPose));
+            queueWarehouseSensorCalibration(trueWhPose);
 
             // *** Intake ***
             intake(i);
-            queueWarehouseSensorCalibration(pos(-72 + DriveConstants.WIDTH / 2, 42, 0));
-
+            queueWarehouseSensorCalibration(trueWhPose);
 
             // *** To hub ***
             double angleOffset = RED ? -5 : 5;
-            queue(from(moddedWhPose.plus(pos(0, 0, angleOffset)))
-                    .lineToLinearHeading(preWhPose.plus(pos(0, -4, angleOffset)))
+            queue(from(trueWhPose.plus(pos(0, 0, angleOffset)))
                     .addTemporalMarker(1.15, () -> {
                         // last-minute check & fix for intake
                         if (dumpIndicator.update() == FULL) {
-                            outtake.slideToAsync(TOP);
+                            intake.out();
+                            outtake.cycleOutAsync(TOP);
                         } else if (dumpIndicator.update() == EMPTY) {
                             intake.in();
                         } else {
@@ -204,21 +194,19 @@ public abstract class AutonomousMode extends OpMode {
                             outtake.dumpExcess();
                         }
                     })
-                    .addTemporalMarker(1.0, -0.55, outtake::dumpOut)
-                    .splineToSplineHeading(cycleHubPose, deg((BLUE ? -1 : 1) * 90)));
+                    .addTemporalMarker(1.0, -0.55, () -> {
+                        outtake.dumpDrop();
+                        // FIXME: most likely buggy
+                        outtake.cycleInAsync(barcode);
+                    })
+                    .splineToSplineHeading(cycleHubPose));
             queueHubSensorCalibration(trueHubPose);
 
-
-            // *** Score ***
-            queue(() -> {
-                intake.off();
-                if (!outtake.isApproaching(TOP)) {
-                    outtake.slideTo(TOP);
-                }
-            });
+            queue(intake::off);
         }
     }
 
+    // FIXME: CONTINUE ADAPTING AUTO HERE
     public void intake(int iteration) {
         alternativeIntake(iteration);
         queue(() -> {
@@ -240,10 +228,10 @@ public abstract class AutonomousMode extends OpMode {
                         outtake.slideToAsync(ZERO);
                     }
                     outtake.dumpIn();
-                    intake.getMotor().setVelocity(0.7 * Intake.IN_SPEED);
+                    intake.getFront().setVelocity(0.7 * Intake.IN_SPEED);
                 } else if (dumpIndicator.update() == OVERFLOW) {
                     drive.setMotorPowers(0); // -0.05
-                    intake.getMotor().setVelocity(0.75 * Intake.OUT_SPEED);
+                    intake.getFront().setVelocity(0.75 * Intake.OUT_SPEED);
                     if (!outtake.isApproaching(EXCESS)) {
                         outtake.slideToAsync(EXCESS);
                     }
@@ -264,8 +252,7 @@ public abstract class AutonomousMode extends OpMode {
                     outtake.dumpIn();
                     outtake.slideToAsync(Barcode.ZERO);
                 })
-                .splineToSplineHeading(preWhPose.plus(pos(-3.5, 4)), deg(0))
-                .lineTo(whPose.minus(pos(3.5, -4)).vec()));
+                .splineToSplineHeading(parkPose));
         queueWarehouseSensorCalibration(parkPose);
         queue(shippingArm::resetArm);
     }

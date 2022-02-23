@@ -298,34 +298,55 @@ public class Outtake {
         return getSlidePosition() == barcode || isSlideActiveTarget(barcode);
     }
 
-
     public Thread cycleAsync(Barcode barcode) {
         Runnable task = () -> {
-            Consumer<Integer> sleep = (Integer millis) -> {
-                try {
-                    Thread.sleep(millis);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            };
-            slideToPositionAsync(barcodeToPosition(barcode));
-            dumpOut();
-            sleep.accept(100);
-            dumpIn();
-            sleep.accept(100);
+            try {
+                cycleOut(barcode);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             dumpDrop();
-            sleep.accept(1450);
-            slideToPositionAsync(SLIDE_INTAKE_POSITION);
-            sleep.accept(200);
-            dumpOut();
-            sleep.accept(2000);
+            try {
+                cycleIn(barcode);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         };
         Thread t = new Thread(task);
         t.start();
         return t;
     }
 
-    public void cycle(Barcode barcode) throws InterruptedException {
-        cycleAsync(barcode).join();
+    public Thread cycleInAsync(Barcode barcode) {
+        Runnable task = () -> {
+            slideToPositionAsync(SLIDE_INTAKE_POSITION);
+            OpMode.nbSleep(2000);
+            dumpOut();
+            OpMode.nbSleep(2000);
+        };
+        Thread t = new Thread(task);
+        t.start();
+        return t;
+    }
+
+    public void cycleIn(Barcode barcode) throws InterruptedException {
+        cycleInAsync(barcode).join();
+    }
+
+    public Thread cycleOutAsync(Barcode barcode) {
+        Runnable task = () -> {
+            slideToPositionAsync(barcodeToPosition(barcode));
+            dumpOut();
+            OpMode.nbSleep(100);
+            dumpIn();
+            OpMode.nbSleep(100);
+        };
+        Thread t = new Thread(task);
+        t.start();
+        return t;
+    }
+
+    public void cycleOut(Barcode barcode) throws InterruptedException {
+        cycleOutAsync(barcode).join();
     }
 }
