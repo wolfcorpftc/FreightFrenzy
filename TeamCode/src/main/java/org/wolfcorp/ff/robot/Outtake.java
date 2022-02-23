@@ -18,6 +18,7 @@ import org.wolfcorp.ff.opmode.util.Match;
 import org.wolfcorp.ff.vision.Barcode;
 
 import java.util.Objects;
+import java.util.function.Consumer;
 
 public class Outtake {
     public static final double SLIDE_TICKS_PER_REV = 1425.1;
@@ -298,37 +299,33 @@ public class Outtake {
     }
 
 
-    public void cycleOuttake(Barcode barcode) {
-        slideToPositionAsync(barcodeToPosition(barcode));
-        dumpOut();
-        try {
-            Thread.sleep(100);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        dumpIn();
-        try {
-            Thread.sleep(100);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        dumpDrop();
-        try {
-            Thread.sleep(1450);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        slideToPositionAsync(SLIDE_INTAKE_POSITION);
-        try {
-            Thread.sleep(200);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        dumpOut();
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+    public Thread cycleAsync(Barcode barcode) {
+        Runnable task = () -> {
+            Consumer<Integer> sleep = (Integer millis) -> {
+                try {
+                    Thread.sleep(millis);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            };
+            slideToPositionAsync(barcodeToPosition(barcode));
+            dumpOut();
+            sleep.accept(100);
+            dumpIn();
+            sleep.accept(100);
+            dumpDrop();
+            sleep.accept(1450);
+            slideToPositionAsync(SLIDE_INTAKE_POSITION);
+            sleep.accept(200);
+            dumpOut();
+            sleep.accept(2000);
+        };
+        Thread t = new Thread(task);
+        t.start();
+        return t;
+    }
+
+    public void cycle(Barcode barcode) throws InterruptedException {
+        cycleAsync(barcode).join();
     }
 }

@@ -1,6 +1,5 @@
 package org.wolfcorp.ff.vision;
 
-import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
@@ -10,33 +9,21 @@ import org.opencv.imgproc.Imgproc;
 import org.openftc.easyopencv.OpenCvCamera;
 import org.wolfcorp.ff.opmode.util.Match;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-
-// TODO: rename to Decoder
-public class BarcodeScanner extends Detector {
-    protected final Mat mat = new Mat();
-    protected Rect leftROI, midROI, rightROI;
-    protected volatile Barcode barcode = null;
-    protected final CountDownLatch latch = new CountDownLatch(1);
-
-    protected Telemetry.Item leftItem;
-    protected Telemetry.Item midItem;
-    protected Telemetry.Item rightItem;
-    protected Telemetry.Item barcodeItem;
-    protected Telemetry.Item targetLevelItem;
-
-    public BarcodeScanner(OpenCvCamera cam) {
+/**
+ * Scans barcode by looking for obscured barcode tape.
+ */
+public class BarcodeTapeScanner extends BarcodeScanner {
+    public BarcodeTapeScanner(OpenCvCamera cam) {
         super(cam);
     }
 
     @Override
     public Mat processFrame(Mat input) {
-        Imgproc.cvtColor(input, mat, Imgproc.COLOR_RGBA2RGB);
-        Imgproc.cvtColor(mat, mat, Imgproc.COLOR_RGB2HSV);
-
-        Core.inRange(mat, new Scalar(30,100,100), new Scalar(80,255,255), mat);
+        if (Match.RED) {
+            Imgproc.cvtColor(input, mat, Imgproc.COLOR_RGBA2RGB);
+        } else {
+            Imgproc.cvtColor(input, mat, Imgproc.COLOR_RGBA2BGR);
+        }
 
         if (leftROI == null) {
             int third = mat.width() / 3;
@@ -62,18 +49,18 @@ public class BarcodeScanner extends Detector {
         rightMat.release();
         mat.release();
 
-        double max = Math.max(leftValue, Math.max(midValue, rightValue));
+        double min = Math.min(leftValue, Math.min(midValue, rightValue));
         Scalar matchColor = new Scalar(0, 255, 0);
         Scalar mismatchColor = new Scalar(255, 0, 0);
         Scalar leftColor, midColor, rightColor;
-        if (max == leftValue) {
+        if (min == leftValue) {
             barcode = Barcode.BOT;
             barcodeItem.setValue("left");
             targetLevelItem.setValue("bottom");
             leftColor = matchColor;
             midColor = rightColor = mismatchColor;
         }
-        else if (max == midValue) {
+        else if (min == midValue) {
             barcode = Barcode.MID;
             barcodeItem.setValue("middle");
             targetLevelItem.setValue("middle");
@@ -97,30 +84,4 @@ public class BarcodeScanner extends Detector {
         return input;
     }
 
-    public Barcode getBarcode() throws InterruptedException {
-        if (barcode == null) {
-            latch.await();
-        }
-        return barcode;
-    }
-
-    public void start() {
-        Match.log("Barcode Scanner started");
-        leftItem = Match.createLogItem("Barcode - Left Value", 0);
-        midItem = Match.createLogItem("Barcode - Mid Value", 0);
-        rightItem = Match.createLogItem("Barcode - Right Value", 0);
-        barcodeItem = Match.createLogItem("Barcode - Barcode", "awaiting result");
-        targetLevelItem = Match.createLogItem("Barcode - Target Level", "awaiting result");
-        super.start();
-    }
-
-    public void stop() {
-        super.stop();
-        Match.log("Barcode Scanner stopped");
-        Match.removeLogItem(leftItem);
-        Match.removeLogItem(midItem);
-        Match.removeLogItem(rightItem);
-        Match.removeLogItem(barcodeItem);
-        Match.removeLogItem(targetLevelItem);
-    }
 }
