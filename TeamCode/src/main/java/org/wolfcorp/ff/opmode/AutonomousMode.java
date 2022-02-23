@@ -46,12 +46,7 @@ import java.util.function.Supplier;
 
 public abstract class AutonomousMode extends OpMode {
     // region Configuration
-    public final boolean CAROUSEL = modeNameContains("Carousel");
-    public final boolean WAREHOUSE = !CAROUSEL;
-    public final boolean CYCLE = modeNameContains("Cycle");
-    public final boolean PARK = !CYCLE;
-
-    public final int SCORING_CYCLES = WAREHOUSE ? 4 : 2; // varies based on path
+    public final int SCORING_CYCLES = 5;
     // endregion
 
     // region Vision Fields
@@ -73,42 +68,14 @@ public abstract class AutonomousMode extends OpMode {
 
     /** Where the robot starts on the field. */
     protected Pose2d initialPose;
-
-    /** For y-coordinate calibration while scoring carousel (beyond the wall). */
-    protected Pose2d calibratePreCarouselPose;
-    /** For y-coordinate calibration while scoring carousel (real pose). */
-    protected Pose2d preCarouselPose;
-    /** Where the robot turns the carousel. */
-    protected Pose2d carouselPose;
-
-    /** Where the robot retrieves the left shipping element. */
-    protected Pose2d elementLeftPose;
-    /** Where the robot retrieves the middle shipping element. */
-    protected Pose2d elementMidPose;
-    /** Where the robot retrieves the right shipping element. */
-    protected Pose2d elementRightPose;
-
-    /**
-     * Robot's pose between hub and wall; for heading adjustment w/o hitting SE or the wall
-     * (depending on where the robot came from).
-     */
-    protected Pose2d preHubPose;
     /** Where the robot scores freight into hub (perfect pose). */
     protected Pose2d trueHubPose;
     /** Where the robot scores freight into hub (takes robot error into account). */
     protected Pose2d hubPose;
-    /** Where the robot scores the shipping element. */
-    protected Pose2d capPose;
-    /** Where the robot scores freight during cyclign **/
+    /** Where the robot scores freight during cycling **/
     protected Pose2d cycleHubPose;
     /** For x-coordinate calibration while cycling (beyond the wall). */
-    protected Pose2d calibrateHubWallPose;
-    /** For x-coordinate calibration while cycling (real pose). */
-    protected Pose2d hubWallPose;
-    /** x-coordinate calibration (beyond the wall) */
-    protected Pose2d calibratePreWhPose;
-    /** Used to avoid driving on the barrier / triangles & to start vision. */
-    protected Pose2d preWhPose;
+    protected Pose2d calibrateHubPose;
     /** x-coordinate calibration (beyond the wall) */
     protected Pose2d calibrateWhPose;
     /** Where the robot loads freight from warehouses (perfect pose). */
@@ -117,16 +84,6 @@ public abstract class AutonomousMode extends OpMode {
     protected Pose2d whPose;
     /** Where the robot parks in the warehouse. */
     protected Pose2d parkPose;
-    /** x-coordinate calibration */
-    protected Pose2d calibratePreDuckPose;
-    /** Where the robot moves to prior to picking up duck. Hub wall pose but opposite direction. */
-    protected Pose2d preDuckPose;
-    /** Where the robot moves to in order to pick up duck */
-    protected Pose2d duckPose;
-    /** Where the robot parks in the storage unit. */
-    protected Pose2d storageUnitParkPose;
-    /** Where the robot parks on the shared alliance wall */
-    protected Pose2d sharedParkPose;
     // endregion
 
     // region Task Queue
@@ -146,109 +103,29 @@ public abstract class AutonomousMode extends OpMode {
      */
     public AutonomousMode() {
         // NOTE: All poses are defined assuming we start at blue warehouse!
-        if (RED) {
-            initialPose = pos(-72 + LENGTH / 2 + 1 /* gap */, WIDTH / 2, 90);
-        } else if (BLUE) {
-            initialPose = pos(-72 + LENGTH / 2 + 1 /* gap */, 24 - WIDTH / 2, 90);
-        }
-        if (BLUE && WAREHOUSE) {
-            initialPose = initialPose.minus(pos(0, 2));
-        }
+        double heading = RED ? 180 : 0;
+        initialPose = pos(-72 + WIDTH / 2, 12, heading);
 
-        if (RED && CAROUSEL) {
-            elementLeftPose = pos(-52, WIDTH / 2, 90); // originally x = -54, y = 20.4
-            elementMidPose = pos(-52, 7.25 + 8.25, 90); // y-difference was supposed to be 8.4
-            elementRightPose = pos(-52, 11 + 15, 90);
-        } else if (BLUE && CAROUSEL) {
-            elementLeftPose = pos(-52, 17, 90); // originally x = -54, y = 20.4
-            elementMidPose = pos(-52, 8.25, 90); // y-difference was supposed to be 8.4
-            elementRightPose = pos(-52, -1.8, 90);
-        } else if (RED && WAREHOUSE) {
-            // TODO: tune
-            elementLeftPose = pos(-52, WIDTH / 2, 90); // originally x = -54, y = 20.4
-            elementMidPose = pos(-52, 7.25 + 8.25, 90); // y-difference was supposed to be 8.4
-            elementRightPose = pos(-52, 11 + 15, 90);
-        } else if (BLUE && WAREHOUSE) {
-            // TODO: tune
-            // everything is the same except right / top
-            elementLeftPose = pos(-52, 17, 90); // originally x = -54, y = 20.4
-            elementMidPose = pos(-52, 8.25, 90); // y-difference was supposed to be 8.4
-            elementRightPose = pos(-52, -1.8, 90); // FIXME: fix pose; make sure no collision w/ wall
-        }
+        trueHubPose = pos(-72 + LENGTH / 2, -12, heading);
 
         if (RED) {
-            carouselPose = pos(-52, -72 + WIDTH / 2, 90);
+            hubPose = pos(-72 + LENGTH / 2, -12, heading);
+            cycleHubPose = pos(-72 + LENGTH / 2, -12, heading);
         } else {
-            carouselPose = pos(-56, -72 + WIDTH / 2, 90);
+            hubPose = pos(-72 + LENGTH / 2, -12, heading);
+            cycleHubPose = pos(-72 + LENGTH / 2, -12, heading);
         }
-        preCarouselPose = carouselPose.plus(pos(3, 0));
-        calibratePreCarouselPose = preCarouselPose.minus(pos(0, 8));
+        calibrateHubPose = hubPose.minus(pos(6, 0));
 
-        trueHubPose = pos(-48.5, -12, 90);
-        if (RED && CAROUSEL && CYCLE) {
-            hubPose = pos(-45, 0, 90);
-            cycleHubPose = pos(-48, -8, 90);
-        }
-        if (RED && CAROUSEL && PARK) {
-            hubPose = pos(-40.5, -5, 90);
-            cycleHubPose = pos(-48, -8, 90);
-        } else if (BLUE && CAROUSEL && CYCLE) {
-            hubPose = pos(-43.5, -8, 90);
-            cycleHubPose = pos(-48, -11, 90);
-        } else if (BLUE && CAROUSEL && PARK) {
-            hubPose = pos(-40, -8, 90);
-            cycleHubPose = pos(-48, -11, 90);
-        } else if (RED && WAREHOUSE) {
-            hubPose = pos(-40, -12, 90);
-            cycleHubPose = pos(-45, -9, 90);
-        } else if (BLUE && WAREHOUSE) {
-            hubPose = pos(-44, -16, 90);
-            cycleHubPose = pos(-48, -10, 90);
-        }
-        capPose = hubPose.minus(pos(2, WIDTH / 2));
-        preHubPose = pos(-48, -12, 0);
-        // FIXME: may need to align x-coordinate with hubPose?
-        hubWallPose = pos(-72 + WIDTH / 2, -12, 0);
-        calibrateHubWallPose = hubWallPose.minus(pos(6, 0));
-
-        preWhPose = pos(-72 + WIDTH / 2, 12, 0);
-        calibratePreWhPose = preWhPose.minus(pos(4, 0));
-        trueWhPose = pos(-72 + WIDTH / 2, 30, 0);
-        if (RED && CAROUSEL && CYCLE) {
-            whPose = trueWhPose.plus(pos(0, 15));
-        } else if (RED && CAROUSEL && PARK) {
-            whPose = trueWhPose.plus(pos(0, 15));
-        } else if (BLUE && CAROUSEL && CYCLE) {
-            whPose = trueWhPose.plus(pos(0, 15));
-        } else if (BLUE && CAROUSEL && PARK) {
-            whPose = trueWhPose.plus(pos(0, 15));
-        } else if (RED && WAREHOUSE) {
-            whPose = trueWhPose.plus(pos(0, 9));
-        } else if (BLUE && WAREHOUSE) {
-            whPose = trueWhPose.plus(pos(0, 15));
+        trueWhPose = pos(-72 + WIDTH / 2, 48 - LENGTH, 0);
+        if (RED) {
+            whPose = trueWhPose.plus(pos(0, 0));
+        } else {
+            whPose = trueWhPose.plus(pos(0, 0));
         }
         calibrateWhPose = whPose.minus(pos(8, 0));
-        sharedParkPose = pos(-36, 72 - WIDTH / 2, 90);
 
-        parkPose = pos(-72 + WIDTH / 2, 40.5 + LENGTH / 2, 0);
-
-        preDuckPose = pos(-72 + WIDTH / 2, -12, 180);
-        calibratePreDuckPose = preDuckPose.minus(pos(3, 0));
-        duckPose = preDuckPose.minus(pos(0, 48)); // FIXME: fix the y value
-        if (RED) {
-            storageUnitParkPose = pos(-36 + 1, -72 + WIDTH / 2 - 2.5, 90);
-        } else {
-            storageUnitParkPose = pos(-36 + 1, -72 + WIDTH / 2 - 2.5, 90);
-        }
-
-        // Carousel path's initial pose is two tiles over from warehouse.
-        if (CAROUSEL) {
-            Pose2d offset = pos(0, 48);
-            initialPose = initialPose.minus(offset);
-            elementLeftPose = elementLeftPose.minus(offset);
-            elementMidPose = elementMidPose.minus(offset);
-            elementRightPose = elementRightPose.minus(offset);
-        }
+        parkPose = pos(-72 + WIDTH / 2, 48, 0);
     }
 
     /**
@@ -259,7 +136,6 @@ public abstract class AutonomousMode extends OpMode {
     public void runOpMode() {
         prologue();
 
-        spinCarousel(); // CAROUSEL only
         deposit();
         cycle(); // CYCLE only
         park();
@@ -283,43 +159,16 @@ public abstract class AutonomousMode extends OpMode {
         Match.status("Robot Initialized, preparing task queue");
     }
 
-    public void spinCarousel() {
-        if (CAROUSEL) {
-            Match.status("Initializing: carousel");
-            queue(shippingArm::armOutAsync); // necessary to prevent the arm from blocking the spinner
-            queue(fromHere()
-                    .lineTo(calibratePreCarouselPose.vec())
-                    .lineTo(carouselPose.minus(pos(0, 10)).vec(), getVelocityConstraint(25, 5, TRACK_WIDTH), getAccelerationConstraint(25)));
-            queue(() -> {
-                // Spin asynchronously
-                Thread spin = spinner.spinAsync(1, 1.2 * SPIN_TIME, WAIT_TIME);
-                // Calibrate y-coordinate; see queueYCalibration
-                Pose2d currentPose = drive.getPoseEstimate();
-                Pose2d correctedPose = new Pose2d(
-                        carouselPose.getX(),
-                        currentPose.getY(),
-                        carouselPose.getHeading()
-                );
-                drive.setPoseEstimate(correctedPose);
-                spin.join();
-                // Bring arm in
-                shippingArm.armInAsync(0.7);
-            });
-        }
-    }
-
     public void deposit() {
         Match.status("Initializing: deposit (preloaded & SE)");
-        queue(() -> outtake.slideToAsync(barcode));
+        queue(outtake::cycle);
         queue(fromHere()
-                .addTemporalMarker((CAROUSEL ? 1.2 : 0.6), outtake::dumpOut)
+                .addTemporalMarker(0.6, outtake::dumpOut)
                 .lineTo(hubPose.vec()));
         queueHubSensorCalibration(trueHubPose);
     }
 
     public void cycle() {
-        if (PARK)
-            return;
         for (int i = 1; i <= SCORING_CYCLES; i++) {
             Match.status("Initializing: cycle " + i);
 
@@ -374,19 +223,10 @@ public abstract class AutonomousMode extends OpMode {
     }
 
     public void intake(int iteration) {
-//        regularIntake();
         alternativeIntake(iteration);
         queue(() -> {
             drive.setMotorPowers(0);
             intake.out();
-//            drive.follow(from(drive.getPoseEstimate()).lineTo(whPose.vec()).build());
-//            if (iteration == 2) {
-//                if (RED) {
-//                    drive.strafeRight(1, 10);
-//                } else {
-//                    drive.strafeLeft(1, 10);
-//                }
-//            }
         });
     }
 
@@ -421,35 +261,19 @@ public abstract class AutonomousMode extends OpMode {
 
     public void park() {
         Match.status("Initializing: park");
-        // park in storage unit
-        queue(() -> {
-        });
-        if (CAROUSEL && PARK) {
-            queue(from(trueHubPose)
-                    .addTemporalMarker(0.5, () -> {
-                        outtake.dumpIn();
-                        outtake.slideToAsync(Barcode.ZERO);
-                    })
-                    .lineTo(storageUnitParkPose.vec()));
-            return;
-        }
-        if (CYCLE) {
-            // park in warehouse
-            queue(from(trueHubPose)
-                    .addTemporalMarker(0.5, () -> {
-                        outtake.dumpIn();
-                        outtake.slideToAsync(Barcode.ZERO);
-                    })
-                    .splineToSplineHeading(preWhPose.plus(pos(-3.5, 4)), deg(0))
-                    .lineTo(whPose.minus(pos(3.5, -4)).vec()));
-        }
+        // park in warehouse
+        queue(from(trueHubPose)
+                .addTemporalMarker(0.5, () -> {
+                    outtake.dumpIn();
+                    outtake.slideToAsync(Barcode.ZERO);
+                })
+                .splineToSplineHeading(preWhPose.plus(pos(-3.5, 4)), deg(0))
+                .lineTo(whPose.minus(pos(3.5, -4)).vec()));
         queueWarehouseSensorCalibration(parkPose);
         queue(shippingArm::resetArm);
     }
 
     public void getFreight() {
-        if (!CYCLE)
-            return;
         queue(() -> {
             Match.status("getting additional freight");
             while (opModeIsActive()) {
