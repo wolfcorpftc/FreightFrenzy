@@ -26,7 +26,7 @@ public class Outtake {
     public static final double SLIDE_UP_SPEED = SLIDE_MAX_SPEED; // ticks/sec
     public static final double SLIDE_DOWN_SPEED = -SLIDE_MAX_SPEED; // ticks/sec
 
-    public static final int SLIDE_TOP_POSITION = 1550;
+    public static final int SLIDE_TOP_POSITION = 1200;
     public static final int SLIDE_MID_POSITION = 1000;
     public static final int SLIDE_BOT_POSITION = 400;
     public static final int SLIDE_INTAKE_POSITION = 0;
@@ -195,7 +195,7 @@ public class Outtake {
             if (motor.getCurrentPosition() < position) {
                 motor.setVelocity(SLIDE_UP_SPEED);
             } else {
-                motor.setVelocity(SLIDE_DOWN_SPEED);
+                motor.setVelocity(Math.abs(SLIDE_DOWN_SPEED));
             }
         }
     }
