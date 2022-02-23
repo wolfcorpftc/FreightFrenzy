@@ -34,11 +34,13 @@ public class Outtake {
     public static final int SLIDE_MIN_POSITION = -100;
     public static final int SLIDE_MAX_POSITION = 2100;
 
+    // FIXME: tune
     public static final double PIVOT_IN_POSITION = 0;
     public static final double PIVOT_OUT_TOP_POSITION = 0;
     public static final double PIVOT_OUT_MID_POSITION = 0;
     public static final double PIVOT_OUT_BOT_POSITION = 0;
 
+    // FIXME: tune
     public static final double DUMP_EXCESS_POSITION = 0.99;
     public static final double DUMP_OUT_POSITION = 0.6;
     public static final double DUMP_IN_POSITION = 0.025;
@@ -238,6 +240,7 @@ public class Outtake {
     /**
      * Asynchronously turns the dump outward.
      */
+    // FIXME: tune position
     public void dumpOut() {
         isDumpIn = false;
         pivotServo.setPosition(DUMP_IN_POSITION);
@@ -248,6 +251,7 @@ public class Outtake {
     /**
      * Asynchronously turns the dump inward.
      */
+    // FIXME: tune position
     public void dumpIn() {
         isDumpIn = true;
         pivotServo.setPosition(DUMP_OUT_POSITION);
@@ -255,6 +259,7 @@ public class Outtake {
     }
 
     /** Async final stage of dump - dropping element **/
+    // FIXME: tune position
     public void dumpDrop() {
         pivotServo.setPosition(DUMP_DROP_POSITION);
         dumpServo.setPosition(0);
@@ -263,6 +268,7 @@ public class Outtake {
     /**
      * Asynchronously turns the dump inward to dispose of the extra game element.
      */
+    // FIXME: tune position
     public void dumpExcess() {
         isDumpIn = false;
         pivotServo.setPosition(DUMP_EXCESS_POSITION);
@@ -298,31 +304,19 @@ public class Outtake {
         return getSlidePosition() == barcode || isSlideActiveTarget(barcode);
     }
 
-    public Thread cycleAsync(Barcode barcode) {
-        Runnable task = () -> {
-            try {
-                cycleOut(barcode);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            dumpDrop();
-            try {
-                cycleIn(barcode);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        };
-        Thread t = new Thread(task);
-        t.start();
-        return t;
+    // FIXME: probably doesn't work, rewrite
+    public void cycleAsync(Barcode barcode) throws InterruptedException {
+        cycleOutAsync(barcode);
+        dumpDrop();
+        cycleInAsync(barcode);
     }
 
     public Thread cycleInAsync(Barcode barcode) {
         Runnable task = () -> {
             slideToPositionAsync(SLIDE_INTAKE_POSITION);
+            // FIXME: tune
             OpMode.nbSleep(2000);
             dumpOut();
-            OpMode.nbSleep(2000);
         };
         Thread t = new Thread(task);
         t.start();
@@ -337,9 +331,9 @@ public class Outtake {
         Runnable task = () -> {
             slideToPositionAsync(barcodeToPosition(barcode));
             dumpOut();
+            // FIXME: tune
             OpMode.nbSleep(100);
             dumpIn();
-            OpMode.nbSleep(100);
         };
         Thread t = new Thread(task);
         t.start();
