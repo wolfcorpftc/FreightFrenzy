@@ -26,6 +26,7 @@ public class Outtake {
     public static final double SLIDE_UP_SPEED = SLIDE_MAX_SPEED; // ticks/sec
     public static final double SLIDE_DOWN_SPEED = -SLIDE_MAX_SPEED; // ticks/sec
 
+    // FIXME: off
     public static final int SLIDE_TOP_POSITION = 1200;
     public static final int SLIDE_MID_POSITION = 1000;
     public static final int SLIDE_BOT_POSITION = 400;
