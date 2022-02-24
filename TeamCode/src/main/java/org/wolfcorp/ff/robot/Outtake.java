@@ -18,7 +18,6 @@ import org.wolfcorp.ff.opmode.util.Match;
 import org.wolfcorp.ff.vision.Barcode;
 
 import java.util.Objects;
-import java.util.function.Consumer;
 
 public class Outtake {
     public static final double SLIDE_TICKS_PER_REV = 1425.1;
@@ -27,24 +26,26 @@ public class Outtake {
     public static final double SLIDE_DOWN_SPEED = -SLIDE_MAX_SPEED; // ticks/sec
 
     // FIXME: off
-    public static final int SLIDE_TOP_POSITION = 1200;
-    public static final int SLIDE_MID_POSITION = 1000;
-    public static final int SLIDE_BOT_POSITION = 400;
-    public static final int SLIDE_INTAKE_POSITION = 0;
+    public static final int SLIDE_TOP_POSITION = 3 * 600;
+    public static final int SLIDE_MID_POSITION = 3 * 500;
+    public static final int SLIDE_BOT_POSITION = 3 * 200;
+//    public static final int SLIDE_INTAKE_POSITION = 0;
 
     public static final int SLIDE_MIN_POSITION = -100;
     public static final int SLIDE_MAX_POSITION = 2100;
 
     // FIXME: tune
-    public static final double PIVOT_IN_POSITION = 0;
-    public static final double PIVOT_OUT_TOP_POSITION = 0;
+    public static final double PIVOT_IN_POSITION = 0.04;
+    public static final double PIVOT_OUT_TOP_POSITION = 0.6;
     public static final double PIVOT_OUT_MID_POSITION = 0;
     public static final double PIVOT_OUT_BOT_POSITION = 0;
 
     // FIXME: tune
     public static final double DUMP_EXCESS_POSITION = 0.99;
-    public static final double DUMP_OUT_POSITION = 0.6;
-    public static final double DUMP_IN_POSITION = 0.025;
+    public static final double DUMP_OUT_TOP_POSITION = 1 - PIVOT_OUT_TOP_POSITION;
+    public static final double DUMP_OUT_MID_POSITION = 1 - PIVOT_OUT_MID_POSITION;
+    public static final double DUMP_OUT_BOT_POSITION = 1 - PIVOT_OUT_BOT_POSITION;
+    public static final double DUMP_IN_POSITION = 1.03 - PIVOT_IN_POSITION;
     public static final double DUMP_DROP_POSITION = 0.6;
 
     public static final double DUMP_OVERFLOW_DIST = 1.60;
@@ -58,6 +59,7 @@ public class Outtake {
     private final Servo pivotServo; // dump servo
 
     private final Object motorModeLock = new Object();
+    private final Object cycleLock = new Object(); // TODO: actually use
     private boolean isDumpIn = true;
 
     public Outtake(HardwareMap hwMap) {
@@ -75,6 +77,7 @@ public class Outtake {
 
     /**
      * Sets the slide to move. Intended for TeleOp.
+     *
      * @param extend whether to extend or retract the slide
      */
     public void slide(boolean extend, boolean overextend) {
@@ -82,8 +85,7 @@ public class Outtake {
                 || (!extend && motor.getCurrentPosition() <= SLIDE_MIN_POSITION);
         if (!isOverextension || overextend) {
             motor.setVelocity(extend ? SLIDE_UP_SPEED : SLIDE_DOWN_SPEED);
-        }
-        else {
+        } else {
             Match.status("Overextension");
             motor.setPower(0);
         }
@@ -103,6 +105,11 @@ public class Outtake {
         slide(false, overextend);
     }
 
+    public void waitForSlide() {
+        while (motor.isBusy()) ;
+        resetSlide();
+    }
+
     /**
      * Sets the run mode to {@code RUN_USING_ENCODER} and stop the motor.
      * This method can stop {@code RUN_TO_POSITION}.
@@ -119,6 +126,7 @@ public class Outtake {
      * Sets the slide to run to a position asynchronously. <b>Warning: </b> This does not reset the
      * run mode to {@code RUN_USING_ENCODER}. To interrupt or get out of {@code RUN_TO_POSITION}, use
      * {@link Outtake#resetSlide()}.
+     *
      * @param barcode target level to slide to / barcode scan result
      */
     public void slideToAsync(Barcode barcode) {
@@ -158,6 +166,7 @@ public class Outtake {
 
     /**
      * Moves the slide to a hub level / tier synchronously
+     *
      * @param barcode destination hub level / tier
      */
     public void slideTo(Barcode barcode) {
@@ -188,7 +197,8 @@ public class Outtake {
     }
 
     /**
-     * Synchronously move the slide to an encoder position. Interrupt-aware.
+     * Asynchronously move the slide to an encoder position.
+     *
      * @param position destination encoder position
      */
     public void slideToPositionAsync(int position) {
@@ -203,6 +213,7 @@ public class Outtake {
         }
     }
 
+
     /**
      * @return the {@link DcMotorEx} object that corresponds to the slide motor.
      */
@@ -216,6 +227,7 @@ public class Outtake {
     public Servo getDumpServo() {
         return dumpServo;
     }
+
     public Servo getPivotServo() {
         return pivotServo;
     }
@@ -228,8 +240,7 @@ public class Outtake {
     public void toggleDump() {
         if (isDumpIn) {
             dumpIn();
-        }
-        else {
+        } else {
             dumpOut();
         }
     }
@@ -239,30 +250,30 @@ public class Outtake {
     }
 
     /**
-     * Asynchronously turns the dump outward.
-     */
-    // FIXME: tune position
-    public void dumpOut() {
-        isDumpIn = false;
-        pivotServo.setPosition(DUMP_IN_POSITION);
-        dumpServo.setPosition(1.025-DUMP_IN_POSITION*2/3);
-    }
-
-    // TODO: Make dumpOut for each level
-    /**
-     * Asynchronously turns the dump inward.
+     * Asynchronously turns the dump inward to the state ready for intake.
      */
     // FIXME: tune position
     public void dumpIn() {
-        isDumpIn = true;
-        pivotServo.setPosition(DUMP_OUT_POSITION);
-        dumpServo.setPosition(1.025-DUMP_OUT_POSITION*2/3);
+        isDumpIn = false;
+        pivotServo.setPosition(PIVOT_IN_POSITION);
+        dumpServo.setPosition(DUMP_IN_POSITION);
     }
 
-    /** Async final stage of dump - dropping element **/
+    // TODO: Make dumpOut for each level
+
+    /**
+     * Asynchronously turns the dump outward to the state before depositing cargo.
+     */
+    // FIXME: tune position
+    public void dumpOut() {
+        isDumpIn = true;
+        pivotServo.setPosition(PIVOT_OUT_TOP_POSITION);
+        dumpServo.setPosition(DUMP_OUT_TOP_POSITION);
+    }
+
+    /** Async final stage of dump - dropping cargo **/
     // FIXME: tune position
     public void dumpDrop() {
-        pivotServo.setPosition(DUMP_DROP_POSITION);
         dumpServo.setPosition(0);
     }
 
@@ -277,6 +288,7 @@ public class Outtake {
 
     /**
      * Returns whether the motor has reached its target position.
+     *
      * @return whether the motor has reached its target position
      */
     public boolean reachedTargetPosition() {
@@ -306,42 +318,46 @@ public class Outtake {
     }
 
     // FIXME: probably doesn't work, rewrite
-    public void cycleAsync(Barcode barcode) throws InterruptedException {
-        cycleOutAsync(barcode);
+    public void cycle(Barcode barcode) {
+        cycleOut(barcode);
         dumpDrop();
-        cycleInAsync(barcode);
+        cycleIn();
+    }
+
+    public void cycleIn() {
+        synchronized (cycleLock) {
+            slideToAsync(ZERO);
+            // FIXME: tune
+            OpMode.waitFor(2000);
+            dumpOut();
+        }
+    }
+
+    public void cycleOut(Barcode barcode) {
+        synchronized (cycleLock) {
+            slideToAsync(barcode);
+            dumpOut();
+            // FIXME: tune
+            OpMode.waitFor(100);
+            dumpIn();
+        }
+    }
+
+    public Thread cycleAsync(Barcode barcode) {
+        Thread t = new Thread(() -> cycle(barcode));
+        t.start();
+        return t;
     }
 
     public Thread cycleInAsync(Barcode barcode) {
-        Runnable task = () -> {
-            slideToPositionAsync(SLIDE_INTAKE_POSITION);
-            // FIXME: tune
-            OpMode.nbSleep(2000);
-            dumpOut();
-        };
-        Thread t = new Thread(task);
+        Thread t = new Thread(this::cycleIn);
         t.start();
         return t;
-    }
-
-    public void cycleIn(Barcode barcode) throws InterruptedException {
-        cycleInAsync(barcode).join();
     }
 
     public Thread cycleOutAsync(Barcode barcode) {
-        Runnable task = () -> {
-            slideToPositionAsync(barcodeToPosition(barcode));
-            dumpOut();
-            // FIXME: tune
-            OpMode.nbSleep(100);
-            dumpIn();
-        };
-        Thread t = new Thread(task);
+        Thread t = new Thread(() -> cycleOut(barcode));
         t.start();
         return t;
-    }
-
-    public void cycleOut(Barcode barcode) throws InterruptedException {
-        cycleOutAsync(barcode).join();
     }
 }

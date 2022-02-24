@@ -20,7 +20,7 @@ public class DumpTest extends LinearOpMode {
         for (int i = 0; i < 1; i++) {
             servo.setPosition(Outtake.DUMP_IN_POSITION);
             waitFor(1);
-            servo.setPosition(Outtake.DUMP_OUT_POSITION);
+            servo.setPosition(Outtake.DUMP_OUT_TOP_POSITION);
             waitFor(1);
         }
     }

@@ -11,7 +11,7 @@ public class Intake {
     public static final double TICKS_PER_REV = 103.8;
     public static final int INTAKE_REVS = 20;
     public static final double MAX_SPEED = 1620 / 60.0 * TICKS_PER_REV; // ticks/sec
-    public static final double IN_SPEED = -0.365 * MAX_SPEED; // ticks/sec
+    public static final double IN_SPEED = -0.5 * MAX_SPEED; // ticks/sec
     public static final double OUT_SPEED = 0.4 * MAX_SPEED; // ticks/sec;
 
     private final DcMotorEx front;
@@ -49,7 +49,7 @@ public class Intake {
     }
 
     public void in() {
-        in(IN_SPEED);
+        in(1.0);
     }
 
     /**

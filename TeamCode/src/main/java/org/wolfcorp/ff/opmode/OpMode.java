@@ -3,6 +3,7 @@ package org.wolfcorp.ff.opmode;
 import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.wolfcorp.ff.opmode.util.Match;
 import org.wolfcorp.ff.robot.CarouselSpinner;
@@ -37,6 +38,20 @@ public abstract class OpMode extends LinearOpMode {
         Match.RED = modeNameContains("Red");
         Match.BLUE = !Match.RED;
         instance = this;
+    }
+
+    /**
+     * Pauses thread for a give duration.
+     * @param millis duration in millseconds
+     */
+    public static void waitFor(long millis) {
+//        try {
+//            Thread.sleep(millis);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+        ElapsedTime timer = new ElapsedTime();
+        while (timer.milliseconds() < millis);
     }
 
     /**
@@ -89,15 +104,4 @@ public abstract class OpMode extends LinearOpMode {
         return instance != null && instance.opModeIsActive() && !Thread.currentThread().isInterrupted();
     }
 
-    /**
-     * non blocking sleep
-     * @param millis duration
-     */
-    public static void nbSleep(long millis) {
-        try {
-            Thread.sleep(millis);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
 }
