@@ -6,7 +6,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.wolfcorp.ff.opmode.util.Match;
 import org.wolfcorp.ff.robot.CarouselSpinner;
 
-@TeleOp(name = "Carousel Spinner Test", group = "^testing")
+@TeleOp(name = "Carousel Spinner Test", group = "!!testing")
 public class CarouselSpinnerTest extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {

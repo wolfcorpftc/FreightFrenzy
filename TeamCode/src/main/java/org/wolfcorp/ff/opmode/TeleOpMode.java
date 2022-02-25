@@ -1,13 +1,8 @@
 package org.wolfcorp.ff.opmode;
 
-import static org.wolfcorp.ff.opmode.util.Match.telemetry;
-
 import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
-import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.wolfcorp.ff.opmode.util.Match;
 import org.wolfcorp.ff.robot.CarouselSpinner;
 import org.wolfcorp.ff.robot.Outtake;
@@ -46,7 +41,7 @@ public abstract class TeleOpMode extends OpMode {
         drive.setPoseEstimate(Match.teleOpInitialPose);
 
         Match.status("Robot initialized, waiting for start");
-        outtake.getDumpServo().setPosition(Outtake.DUMP_IN_POSITION);
+        outtake.getDump().setPosition(Outtake.DUMP_IN_POSITION);
 
         if (Match.RED) {
             drive.setExternalHeadingDeg(180);
@@ -59,7 +54,8 @@ public abstract class TeleOpMode extends OpMode {
             // *** Outtake: dump ***
             if (gamepad2.right_bumper && !maskDump) {
                 maskDump = true;
-                outtake.toggleDump();
+                // FIXME
+//                outtake.toggleDump();
             }
 
             if (!gamepad2.right_bumper) {
@@ -101,17 +97,17 @@ public abstract class TeleOpMode extends OpMode {
 
             // *** Outtake: slide - manual ***
             if (gamepad2.y && !maskSlide) {
-                if (outtake.getMotor().getMode() == DcMotor.RunMode.RUN_TO_POSITION) {
-                    outtake.resetSlide();
+                if (outtake.getSlide().getMode() == DcMotor.RunMode.RUN_TO_POSITION) {
+                    outtake.resetSlideMode();
                 }
                 outtake.extend(gamepad2.back);
             } else if (gamepad2.a && !maskSlide) {
-                if (outtake.getMotor().getMode() == DcMotor.RunMode.RUN_TO_POSITION) {
-                    outtake.resetSlide();
+                if (outtake.getSlide().getMode() == DcMotor.RunMode.RUN_TO_POSITION) {
+                    outtake.resetSlideMode();
                 }
                 outtake.retract(gamepad2.back);
-            } else if (outtake.getMotor().getMode() != DcMotor.RunMode.RUN_TO_POSITION && !maskSlide) {
-                outtake.getMotor().setVelocity(0);
+            } else if (outtake.getSlide().getMode() != DcMotor.RunMode.RUN_TO_POSITION && !maskSlide) {
+                outtake.getSlide().setVelocity(0);
             }
 
             // *** Intake ***
@@ -190,8 +186,8 @@ public abstract class TeleOpMode extends OpMode {
 
             // *** Outtake : reset ***
             if (gamepad1.dpad_right && !maskOuttakeReset) {
-                outtake.getMotor().setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-                outtake.getMotor().setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                outtake.getSlide().setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                outtake.getSlide().setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                 maskOuttakeReset = true;
             }
 

@@ -59,7 +59,7 @@ public final class Match {
             telemetry.setMsTransmissionInterval(50); // faster telemetry
             telemetry.setAutoClear(false);
             telemetry.update();
-            statusItem = createLogItem("OpMode - Status", "set up telemetry");
+            statusItem = createLogItem("OpMode - Status", "telemetry setup complete");
         }
     }
 

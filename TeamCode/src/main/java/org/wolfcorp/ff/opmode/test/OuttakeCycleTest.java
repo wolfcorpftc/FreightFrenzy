@@ -1,13 +1,20 @@
 package org.wolfcorp.ff.opmode.test;
 
+import static org.wolfcorp.ff.robot.Outtake.DUMP_IN_POSITION;
+import static org.wolfcorp.ff.robot.Outtake.DUMP_OUT_TOP_POSITION;
+import static org.wolfcorp.ff.robot.Outtake.PIVOT_IN_POSITION;
+import static org.wolfcorp.ff.robot.Outtake.PIVOT_OUT_TOP_POSITION;
+import static org.wolfcorp.ff.vision.Barcode.TOP;
+import static org.wolfcorp.ff.vision.Barcode.ZERO;
+
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.wolfcorp.ff.opmode.OpMode;
 import org.wolfcorp.ff.opmode.util.Match;
 import org.wolfcorp.ff.robot.Outtake;
-import org.wolfcorp.ff.vision.Barcode;
 
-@TeleOp(name = "Outtake Cycle Test", group = "^testing")
+@TeleOp(name = "Outtake Cycle Test", group = "!!testing")
 public class OuttakeCycleTest extends OpMode {
     @Override
     public void runOpMode() throws InterruptedException {
@@ -37,21 +44,20 @@ public class OuttakeCycleTest extends OpMode {
 //        outtake.dumpIn();
 
         while (opModeIsActive()) {
-            outtake.getDumpServo().setPosition(0.7);
-            sleep(100);
-            outtake.slideToAsync(Barcode.TOP);
-            sleep(100);
-            outtake.dumpOut();
-            outtake.waitForSlide();
-            sleep(500);
-            outtake.dumpDrop();
-            sleep(1000);
-//            outtake.dumpOut();
-            sleep(500);
-            outtake.dumpIn();
-            outtake.slideToAsync(Barcode.ZERO);
-            outtake.waitForSlide();
-            sleep(2000);
+            ElapsedTime timer = new ElapsedTime();
+            double time;
+//            outtake.cycle(TOP);
+            {
+                outtake.out(TOP);
+                OpMode.waitFor(600);
+                outtake.drop();//1.636
+                OpMode.waitFor(800);
+                time = timer.seconds();
+                outtake.in();
+            }
+            telemetry.addData("Cycling Time", time);
+            telemetry.update();
+            sleep(4000);
         }
     }
 }

@@ -1,13 +1,10 @@
 package org.wolfcorp.ff.robot;
 
-import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.LED;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.wolfcorp.ff.opmode.OpMode;
-
-import java.util.Arrays;
 
 public class DumpIndicator {
     private final LED leftGreen;

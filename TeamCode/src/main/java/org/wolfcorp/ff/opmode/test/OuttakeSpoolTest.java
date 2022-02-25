@@ -31,7 +31,6 @@ package org.wolfcorp.ff.opmode.test;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.wolfcorp.ff.robot.Outtake;
 
@@ -56,7 +55,7 @@ import org.wolfcorp.ff.robot.Outtake;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="Outtake Test", group="^testing")
+@TeleOp(name="Outtake Spool Test", group="!!testing")
 public class OuttakeSpoolTest extends LinearOpMode {
     @Override
     public void runOpMode() {
@@ -66,16 +65,16 @@ public class OuttakeSpoolTest extends LinearOpMode {
         // y for up, a for down
         while (opModeIsActive()) {
             if (gamepad1.y) {
-                if (Math.abs(outtake.getMotor().getVelocity() - Outtake.SLIDE_MAX_SPEED) > 5) {
-                    outtake.getMotor().setVelocity(0);
+                if (Math.abs(outtake.getSlide().getVelocity() - Outtake.SLIDE_MAX_SPEED) > 5) {
+                    outtake.getSlide().setVelocity(0);
                 } else {
-                    outtake.getMotor().setVelocity(Outtake.SLIDE_MAX_SPEED);
+                    outtake.getSlide().setVelocity(Outtake.SLIDE_MAX_SPEED);
                 }
             } else if (gamepad1.a && !gamepad1.start && !gamepad2.start) {
-                if (Math.abs(outtake.getMotor().getVelocity() + Outtake.SLIDE_MAX_SPEED) > 5) {
-                    outtake.getMotor().setVelocity(0);
+                if (Math.abs(outtake.getSlide().getVelocity() + Outtake.SLIDE_MAX_SPEED) > 5) {
+                    outtake.getSlide().setVelocity(0);
                 } else {
-                    outtake.getMotor().setVelocity(-Outtake.SLIDE_MAX_SPEED);
+                    outtake.getSlide().setVelocity(-Outtake.SLIDE_MAX_SPEED);
                 }
             }
         }

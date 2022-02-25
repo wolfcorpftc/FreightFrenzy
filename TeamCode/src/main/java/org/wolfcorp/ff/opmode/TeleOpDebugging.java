@@ -51,7 +51,7 @@ public abstract class TeleOpDebugging extends OpMode {
         drive.setPoseEstimate(Match.teleOpInitialPose);
 
         Match.status("Robot initialized, waiting for start");
-        outtake.getDumpServo().setPosition(Outtake.DUMP_IN_POSITION);
+        outtake.getDump().setPosition(Outtake.DUMP_IN_POSITION);
 
         if (Match.RED) {
             drive.setExternalHeadingDeg(180);
@@ -197,17 +197,17 @@ public abstract class TeleOpDebugging extends OpMode {
 
             // *** Outtake: slide - manual ***
             if (gamepad2.y && !maskSlide) {
-                if (outtake.getMotor().getMode() == DcMotor.RunMode.RUN_TO_POSITION) {
-                    outtake.resetSlide();
+                if (outtake.getSlide().getMode() == DcMotor.RunMode.RUN_TO_POSITION) {
+                    outtake.resetSlideMode();
                 }
                 outtake.extend(gamepad2.back);
             } else if (gamepad2.a && !maskSlide) {
-                if (outtake.getMotor().getMode() == DcMotor.RunMode.RUN_TO_POSITION) {
-                    outtake.resetSlide();
+                if (outtake.getSlide().getMode() == DcMotor.RunMode.RUN_TO_POSITION) {
+                    outtake.resetSlideMode();
                 }
                 outtake.retract(gamepad2.back);
-            } else if (outtake.getMotor().getMode() != DcMotor.RunMode.RUN_TO_POSITION && !maskSlide) {
-                outtake.getMotor().setVelocity(0);
+            } else if (outtake.getSlide().getMode() != DcMotor.RunMode.RUN_TO_POSITION && !maskSlide) {
+                outtake.getSlide().setVelocity(0);
             }
 
             // *** Outtake: slide - snap ***
@@ -220,9 +220,9 @@ public abstract class TeleOpDebugging extends OpMode {
             } else if (gamepad2.dpad_down && !maskSlide) {
                 maskSlide = true;
                 outtake.slideToAsync(Barcode.BOT);
-            } else if (outtake.getMotor().getMode() == DcMotor.RunMode.RUN_TO_POSITION
-                    && outtake.reachedTargetPosition()) {
-                outtake.resetSlide();
+            } else if (outtake.getSlide().getMode() == DcMotor.RunMode.RUN_TO_POSITION
+                    && outtake.isAtTargetPosition()) {
+                outtake.resetSlideMode();
             }
 
             if (!(gamepad2.dpad_up || gamepad2.dpad_right || gamepad2.dpad_down || gamepad2.a || gamepad2.y)) {
@@ -231,8 +231,8 @@ public abstract class TeleOpDebugging extends OpMode {
 
             // *** Outtake : reset ***
             if (gamepad1.dpad_right && !maskOuttakeReset) {
-                outtake.getMotor().setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-                outtake.getMotor().setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                outtake.getSlide().setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                outtake.getSlide().setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                 maskOuttakeReset = true;
             }
 
@@ -241,11 +241,6 @@ public abstract class TeleOpDebugging extends OpMode {
             }
 
             // *** Outtake: dump ***
-            if (gamepad2.right_bumper && !maskDump) {
-                maskDump = true;
-                outtake.toggleDump();
-            }
-
             if (!gamepad2.right_bumper) {
                 maskDump = false;
             }
@@ -294,9 +289,9 @@ public abstract class TeleOpDebugging extends OpMode {
             telemetry.addData("Intake Current Power", intake.getFront().getPower());
             telemetry.addData("Intake Current Current", intake.getFront().getCurrent(CurrentUnit.MILLIAMPS));
 
-            telemetry.addData("Outtake Current Pos", outtake.getMotor().getCurrentPosition());
-            telemetry.addData("Outtake Target Pos", outtake.getMotor().getTargetPosition());
-            telemetry.addData("Outtake Dump Pos", outtake.getDumpServo().getPosition());
+            telemetry.addData("Outtake Current Pos", outtake.getSlide().getCurrentPosition());
+            telemetry.addData("Outtake Target Pos", outtake.getSlide().getTargetPosition());
+            telemetry.addData("Outtake Dump Pos", outtake.getDump().getPosition());
 
             telemetry.addData("LF Power", drive.leftFront.getPower());
             telemetry.addData("LF Current", drive.leftFront.getCurrent(CurrentUnit.MILLIAMPS));

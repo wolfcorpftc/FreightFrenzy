@@ -1,6 +1,5 @@
 package org.wolfcorp.ff.opmode;
 
-import static org.wolfcorp.ff.opmode.util.Match.BLUE;
 import static org.wolfcorp.ff.opmode.util.Match.RED;
 import static org.wolfcorp.ff.robot.DriveConstants.LENGTH;
 import static org.wolfcorp.ff.robot.DriveConstants.WIDTH;
@@ -22,7 +21,6 @@ import org.openftc.easyopencv.OpenCvWebcam;
 import org.wolfcorp.ff.BuildConfig;
 import org.wolfcorp.ff.opmode.util.Match;
 import org.wolfcorp.ff.opmode.util.RobotRunnable;
-import org.wolfcorp.ff.robot.DriveConstants;
 import org.wolfcorp.ff.robot.Intake;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequence;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequenceBuilder;
@@ -168,7 +166,8 @@ public abstract class AutonomousMode extends OpMode {
             Pose2d moddedWhPose = whPose.plus(pos(0, i == 1 ? 0 : 2 + i * 1.8));
             queue(from(trueHubPose)
                     .addTemporalMarker(0.5, () -> {
-                        outtake.dumpIn();
+                        // FIXME
+//                        outtake.dumpIn();
                         outtake.slideToAsync(Barcode.ZERO);
                     })
                     .splineToSplineHeading(whPose));
@@ -185,19 +184,19 @@ public abstract class AutonomousMode extends OpMode {
                         // last-minute check & fix for intake
                         if (dumpIndicator.update() == FULL) {
                             intake.out();
-                            outtake.cycleOutAsync(TOP);
+                            outtake.outAsync(TOP);
                         } else if (dumpIndicator.update() == EMPTY) {
                             intake.in();
                         } else {
                             intake.out();
                             outtake.slideToAsync(EXCESS);
-                            outtake.dumpExcess();
+                            outtake.ridExcess();
                         }
                     })
                     .addTemporalMarker(1.0, -0.55, () -> {
-                        outtake.dumpDrop();
+                        outtake.drop();
                         // FIXME: most likely buggy
-                        outtake.cycleInAsync(barcode);
+                        outtake.inAsync();
                     })
                     .splineToSplineHeading(cycleHubPose));
             queueHubSensorCalibration(trueHubPose);
@@ -207,40 +206,37 @@ public abstract class AutonomousMode extends OpMode {
     }
 
     // FIXME: CONTINUE ADAPTING AUTO HERE
-    public void intake(int iteration) {
-        alternativeIntake(iteration);
+    public void intake(int i) {
+        queue(outtake::waitForSlide);
         queue(() -> {
-            drive.setMotorPowers(0);
-            intake.out();
-        });
-    }
-
-    public void alternativeIntake(int i) {
-        queue(() -> {
-            // TODO: or i == 3
             ElapsedTime time = new ElapsedTime();
             time.reset();
             while (dumpIndicator.update() != FULL) {
                 drive.updatePoseEstimate();
                 if (dumpIndicator.update() == EMPTY) {
                     drive.setMotorPowers(i == SCORING_CYCLES && time.milliseconds() > 1250 ? -0.1 : 0.15);
-                    if (!outtake.isApproaching(ZERO)) {
+                    if (!outtake.isAtOrSlidingTo(ZERO)) {
                         outtake.slideToAsync(ZERO);
                     }
-                    outtake.dumpIn();
-                    intake.getFront().setVelocity(0.7 * Intake.IN_SPEED);
+                    // FIXME
+//                    outtake.dumpIn();
+                    intake.getFront().setVelocity(0.7 * Intake.IN_VEL);
                 } else if (dumpIndicator.update() == OVERFLOW) {
                     drive.setMotorPowers(0); // -0.05
-                    intake.getFront().setVelocity(0.75 * Intake.OUT_SPEED);
-                    if (!outtake.isApproaching(EXCESS)) {
-                        outtake.slideToAsync(EXCESS);
-                    }
-                    outtake.dumpExcess();
+                    intake.getFront().setVelocity(0.75 * Intake.OUT_VEL);
+//                    if (!outtake.isSlidingTo(EXCESS)) {
+//                        outtake.slideToAsync(EXCESS);
+//                    }
+//                    outtake.dumpExcess();
                 } else {
                     drive.setMotorPowers(0); // -0.05
                     intake.out();
                 }
             }
+        });
+        queue(() -> {
+            drive.setMotorPowers(0);
+            intake.out();
         });
     }
 
@@ -249,7 +245,8 @@ public abstract class AutonomousMode extends OpMode {
         // park in warehouse
         queue(from(trueHubPose)
                 .addTemporalMarker(0.5, () -> {
-                    outtake.dumpIn();
+                    // FIXME
+//                    outtake.dumpIn();
                     outtake.slideToAsync(Barcode.ZERO);
                 })
                 .splineToSplineHeading(parkPose));
