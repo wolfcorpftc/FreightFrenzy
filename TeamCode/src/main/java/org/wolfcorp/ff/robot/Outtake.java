@@ -39,6 +39,7 @@ public class Outtake {
     public static final double DUMP_OUT_BOT_POSITION = 1 - PIVOT_OUT_BOT_POSITION; // FIXME: tune
     public static final double DUMP_IN_POSITION = 1.03 - PIVOT_IN_POSITION;
     public static final double DUMP_DROP_POSITION = 0;
+    public static final double DUMP_DROP_SHARED_POSITION = 0.6;
 
     public static final double DUMP_OVERFLOW_DIST = 1.60; // FIXME: tune
     public static final double DUMP_FULL_DIST = 1.60; // FIXME: tune
@@ -77,6 +78,9 @@ public class Outtake {
                 || (!extend && slide.getCurrentPosition() <= SLIDE_MIN_POSITION);
         if (!isOverextension || overextend) {
             slide.setVelocity(extend ? SLIDE_UP_VEL : SLIDE_DOWN_VEL);
+            if (extend && slide.getCurrentPosition() < 300) {
+                pivot.setPosition(0);
+            }
         } else {
             Match.status("Overextension");
             slide.setPower(0);
@@ -355,6 +359,35 @@ public class Outtake {
     public void drop() {
         synchronized (cycleStepLock) {
             dump.setPosition(DUMP_DROP_POSITION);
+        }
+    }
+
+    /**
+     * Asynchronously raise the dump bucket after dropping cargo. Must call {@link #out(Barcode)} before it.
+     */
+    public void undrop() {
+        synchronized (cycleStepLock) {
+            dump.setPosition(DUMP_IN_POSITION); // FIXME: Add other in positions
+        }
+    }
+
+    /**
+     * Return boolean value of whether the dump is in drop position. Call {@link #toggleDump()} to flip dump state.
+     */
+    public boolean isDumpOut() {
+        return (Math.abs(dump.getPosition() - DUMP_DROP_POSITION) < 0.0001 || Math.abs(dump.getPosition() - DUMP_DROP_SHARED_POSITION) < 0.0001); // FIXME: Add other possible out positions
+    }
+
+    /**
+     * Toggle dump.
+     */
+    public void toggleDump() {
+        if (isDumpOut()) {
+            undrop();
+        } else if (pivot.getPosition() < 0.2) {
+            dump.setPosition(DUMP_DROP_SHARED_POSITION);
+        } else {
+            drop();
         }
     }
 

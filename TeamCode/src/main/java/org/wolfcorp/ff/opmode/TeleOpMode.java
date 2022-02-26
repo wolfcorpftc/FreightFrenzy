@@ -54,6 +54,7 @@ public abstract class TeleOpMode extends OpMode {
             // *** Outtake: dump ***
             if (gamepad2.right_bumper && !maskDump) {
                 maskDump = true;
+                outtake.toggleDump();
                 // FIXME
 //                outtake.toggleDump();
             }
@@ -162,6 +163,7 @@ public abstract class TeleOpMode extends OpMode {
             if (!(gamepad2.dpad_up || gamepad2.dpad_right || gamepad2.dpad_down || gamepad2.a || gamepad2.y)) {
                 maskSlide = false;
             }
+/*
 
             // *** Shipping Element Arm: claw ***
             if (gamepad2.right_trigger > 0.8 && !maskToggleClaw) {
@@ -184,6 +186,7 @@ public abstract class TeleOpMode extends OpMode {
                 shippingArm.holdPosition();
             }
 
+
             // *** Outtake : reset ***
             if (gamepad1.dpad_right && !maskOuttakeReset) {
                 outtake.getSlide().setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -197,10 +200,13 @@ public abstract class TeleOpMode extends OpMode {
 
             // *** Outtake: dump status ***
             dumpIndicator.update();
-
+*/
             // *** Odometry update ***
             drive.update();
 
+            telemetry.addData("Slide", outtake.getSlide().getCurrentPosition());
+            telemetry.addData("Dump", outtake.getDump().getPosition());
+            telemetry.addData("Pivot", outtake.getPivot().getPosition());
             telemetry.update();
         }
         resetHardware();
