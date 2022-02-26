@@ -188,8 +188,7 @@ public abstract class AutonomousMode extends OpMode {
         if (RED && CAROUSEL && CYCLE) {
             hubPose = pos(-45, 0, 90);
             cycleHubPose = pos(-48, -8, 90);
-        }
-        if (RED && CAROUSEL && PARK) {
+        } else if (RED && CAROUSEL && PARK) {
             hubPose = pos(-40.5, -5, 90);
             cycleHubPose = pos(-48, -8, 90);
         } else if (BLUE && CAROUSEL && CYCLE) {
@@ -203,7 +202,7 @@ public abstract class AutonomousMode extends OpMode {
             cycleHubPose = pos(-45, -9, 90);
         } else if (BLUE && WAREHOUSE) {
             hubPose = pos(-44, -16, 90);
-            cycleHubPose = pos(-48, -10, 90);
+            cycleHubPose = pos(-45, -10, 90);
         }
         capPose = hubPose.minus(pos(2, WIDTH / 2));
         preHubPose = pos(-48, -12, 0);
@@ -356,6 +355,13 @@ public abstract class AutonomousMode extends OpMode {
                             intake.out();
                             outtake.slideToAsync(EXCESS);
                             outtake.dumpExcess();
+                        }
+                    })
+                    .addTemporalMarker(1.4, () -> {
+                        if (dumpIndicator.update() == FULL) {
+                            outtake.dumpIn();
+                            if (!outtake.isApproaching(TOP))
+                            outtake.slideToAsync(TOP);
                         }
                     })
                     .addTemporalMarker(1.0, -0.55, outtake::dumpOut)
