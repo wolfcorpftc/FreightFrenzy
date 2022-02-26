@@ -42,6 +42,7 @@ public abstract class OpMode extends LinearOpMode {
 
     /**
      * Pauses thread for a give duration.
+     *
      * @param millis duration in millseconds
      */
     public static void waitFor(long millis) {
@@ -51,7 +52,7 @@ public abstract class OpMode extends LinearOpMode {
 //            e.printStackTrace();
 //        }
         ElapsedTime timer = new ElapsedTime();
-        while (timer.milliseconds() < millis);
+        while (timer.milliseconds() < millis) ;
     }
 
     /**
@@ -74,6 +75,17 @@ public abstract class OpMode extends LinearOpMode {
         intake = new Intake(hardwareMap);
         outtake = new Outtake(hardwareMap);
         spinner = new CarouselSpinner(hardwareMap, this::sleep);
+        dumpIndicator = new DumpIndicator(hardwareMap);
+        upperDumpDistance = hardwareMap.get(RevColorSensorV3.class, "upperDump");
+        upperDumpDistance.enableLed(false);
+        lowerDumpDistance = hardwareMap.get(RevColorSensorV3.class, "lowerDump");
+        lowerDumpDistance.enableLed(false);
+//        intakeRampDistance = hardwareMap.get(DistanceSensor.class, "intakeDist");
+        if (Match.RED) {
+            rangeSensor = hardwareMap.get(DistanceSensor.class, "redRangeSensor");
+        } else {
+            rangeSensor = hardwareMap.get(DistanceSensor.class, "blueRangeSensor");
+        }
 
         Match.status("Initialized robot hardware");
     }
@@ -85,7 +97,7 @@ public abstract class OpMode extends LinearOpMode {
     protected void resetHardware() {
         Match.status("Resetting robot hardware...");
 
-       drive = null;
+        drive = null;
         intake = null;
         outtake = null;
         spinner = null;

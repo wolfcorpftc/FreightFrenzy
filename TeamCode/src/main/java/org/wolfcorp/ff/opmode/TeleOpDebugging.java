@@ -2,6 +2,7 @@ package org.wolfcorp.ff.opmode;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -14,6 +15,7 @@ import org.wolfcorp.ff.robot.ShippingArm;
 import org.wolfcorp.ff.vision.Barcode;
 
 // NOTE ABOUT TELEOP: Direction of robot is SWAPPED
+@TeleOp(name = "Debug TeleOp", group = "!!testing")
 public abstract class TeleOpDebugging extends OpMode {
     protected FtcDashboard dashboard = null;
 
@@ -35,7 +37,7 @@ public abstract class TeleOpDebugging extends OpMode {
 
     private ElapsedTime timer = new ElapsedTime();
 
-    private double c1=0, c2=0, c3=0, c4=0, c5=0;
+    private double c1 = 0, c2 = 0, c3 = 0, c4 = 0, c5 = 0;
     private double ctimer = 0;
 
 
@@ -327,9 +329,9 @@ public abstract class TeleOpDebugging extends OpMode {
         resetHardware();
     }
 
-    public double gettime(){
+    public double gettime() {
         double a = ctimer;
         ctimer = timer.milliseconds();
-        return timer.milliseconds()-a;
+        return timer.milliseconds() - a;
     }
 }

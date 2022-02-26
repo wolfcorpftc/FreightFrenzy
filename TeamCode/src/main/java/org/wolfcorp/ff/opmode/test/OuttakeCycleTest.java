@@ -43,21 +43,46 @@ public class OuttakeCycleTest extends OpMode {
 //        OpMode.waitFor(100);
 //        outtake.dumpIn();
 
+//        while (opModeIsActive()) {
+//            ElapsedTime timer = new ElapsedTime();
+//            double time;
+////            outtake.cycle(TOP);
+//            {
+//                outtake.out(TOP);
+//                OpMode.waitFor(600);
+//                outtake.drop();//1.636
+//                OpMode.waitFor(800);
+//                time = timer.seconds();
+//                outtake.in();
+//            }
+//            telemetry.addData("Cycling Time", time);
+//            telemetry.update();
+//            sleep(4000);
+//        }
+
         while (opModeIsActive()) {
-            ElapsedTime timer = new ElapsedTime();
-            double time;
-//            outtake.cycle(TOP);
-            {
-                outtake.out(TOP);
-                OpMode.waitFor(600);
-                outtake.drop();//1.636
-                OpMode.waitFor(800);
-                time = timer.seconds();
-                outtake.in();
-            }
-            telemetry.addData("Cycling Time", time);
-            telemetry.update();
-            sleep(4000);
+            // OUT
+            outtake.getDump().setPosition(0.7);
+            OpMode.waitFor(100);
+            outtake.slideToAsync(TOP);
+            OpMode.waitFor(100);
+            outtake.getPivot().setPosition(PIVOT_OUT_TOP_POSITION);
+            outtake.getDump().setPosition(DUMP_OUT_TOP_POSITION + 0.15);
+
+            OpMode.waitFor(600);
+
+//            outtake.getDump().setPosition(DUMP_OUT_TOP_POSITION);
+            // DROP
+            outtake.drop();
+
+            OpMode.waitFor(1200);
+            // IN
+            outtake.slideToAsync(ZERO); // DOES NOT BELONG, make sure the resulting method is async
+            OpMode.waitFor(55);
+            outtake.getDump().setPosition(DUMP_IN_POSITION);
+            outtake.getPivot().setPosition(PIVOT_IN_POSITION);
+            outtake.waitForSlide();
+            sleep(2500);
         }
     }
 }

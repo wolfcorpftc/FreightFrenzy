@@ -12,7 +12,7 @@ public class Intake {
     /** Theoretical maximum speed of motor */
     public static final double MAX_SPEED = 1620 / 60.0 * TICKS_PER_REV; // ticks/sec
     /** Default inward speed in ticks per second. */
-    public static final double IN_VEL = -0.5 * MAX_SPEED; // ticks/sec
+    public static final double IN_VEL = -0.65 * MAX_SPEED; // ticks/sec
     /** Default outward speed in ticks per second. */
     public static final double OUT_VEL = 0.4 * MAX_SPEED; // ticks/sec;
 

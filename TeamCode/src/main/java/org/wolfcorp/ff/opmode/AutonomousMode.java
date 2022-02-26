@@ -94,10 +94,9 @@ public abstract class AutonomousMode extends OpMode {
     public AutonomousMode() {
         // NOTE: All poses are defined assuming we start at blue warehouse!
         double heading = RED ? 180 : 0;
-        initialPose = pos(-72 + WIDTH / 2, 12, heading);
+        initialPose = pos(-72 + WIDTH / 2, 12, heading); // FIXME: tune (vision cam alignment)
 
         trueHubPose = pos(-72 + LENGTH / 2, -12, heading);
-
         if (RED) {
             hubPose = pos(-72 + LENGTH / 2 - 3, -12, heading);
             cycleHubPose = pos(-72 + LENGTH / 2 - 3, -12, heading);
@@ -105,15 +104,13 @@ public abstract class AutonomousMode extends OpMode {
             hubPose = pos(-72 + LENGTH / 2 - 3, -12, heading);
             cycleHubPose = pos(-72 + LENGTH / 2 - 3, -12, heading);
         }
-        calibrateHubPose = hubPose.minus(pos(6, 0));
 
         trueWhPose = pos(-72 + WIDTH / 2, 48 - LENGTH, 0);
         if (RED) {
-            whPose = trueWhPose.plus(pos(-3, 0));
+            whPose = trueWhPose.minus(pos(-4, 0));
         } else {
-            whPose = trueWhPose.plus(pos(-3, 0));
+            whPose = trueWhPose.minus(pos(-4, 0));
         }
-        calibrateWhPose = whPose.minus(pos(8, 0));
 
         parkPose = pos(-72 + WIDTH / 2, 48, 0);
     }
@@ -151,9 +148,8 @@ public abstract class AutonomousMode extends OpMode {
 
     public void deposit() {
         Match.status("Initializing: deposit (preloaded & SE)");
-        queue(fromHere()
-                .addTemporalMarker(0, () -> outtake.cycleAsync(barcode))
-                .lineTo(hubPose.vec()));
+        queue(() -> outtake.cycleAsync(barcode));
+        queue(fromHere().lineTo(hubPose.vec()));
         queueXCalibration(trueHubPose);
     }
 
@@ -162,15 +158,10 @@ public abstract class AutonomousMode extends OpMode {
             Match.status("Initializing: cycle " + i);
 
             // *** To warehouse ***
-            queue(() -> intake.in(0.8, -0.8));
-            Pose2d moddedWhPose = whPose.plus(pos(0, i == 1 ? 0 : 2 + i * 1.8));
+            queue(intake::in);
             queue(from(trueHubPose)
-                    .addTemporalMarker(0.5, () -> {
-                        // FIXME
-//                        outtake.dumpIn();
-                        outtake.slideToAsync(Barcode.ZERO);
-                    })
-                    .splineToSplineHeading(whPose));
+                    .addTemporalMarker(0.5, () -> outtake.slideToAsync(Barcode.ZERO))
+                    .lineToConstantHeading(whPose.vec()));
             queueWarehouseSensorCalibration(trueWhPose);
 
             // *** Intake ***
@@ -178,28 +169,22 @@ public abstract class AutonomousMode extends OpMode {
             queueWarehouseSensorCalibration(trueWhPose);
 
             // *** To hub ***
-            double angleOffset = RED ? -5 : 5;
-            queue(from(trueWhPose.plus(pos(0, 0, angleOffset)))
+            queue(from(trueWhPose)
                     .addTemporalMarker(1.15, () -> {
                         // last-minute check & fix for intake
                         if (dumpIndicator.update() == FULL) {
                             intake.out();
-                            outtake.outAsync(TOP);
                         } else if (dumpIndicator.update() == EMPTY) {
                             intake.in();
                         } else {
                             intake.out();
-                            outtake.slideToAsync(EXCESS);
-                            outtake.ridExcess();
+                            // FIXME: uncomment after flipper is installed
+//                            outtake.ridExcess();
                         }
                     })
-                    .addTemporalMarker(1.0, -0.55, () -> {
-                        outtake.drop();
-                        // FIXME: most likely buggy
-                        outtake.inAsync();
-                    })
-                    .splineToSplineHeading(cycleHubPose));
-            queueHubSensorCalibration(trueHubPose);
+                    .addTemporalMarker(1.0, -1.2, () -> outtake.cycleAsync(TOP))
+                    .lineToConstantHeading(cycleHubPose.vec()));
+            queue(trueHubPose);
 
             queue(intake::off);
         }
@@ -215,41 +200,29 @@ public abstract class AutonomousMode extends OpMode {
                 drive.updatePoseEstimate();
                 if (dumpIndicator.update() == EMPTY) {
                     drive.setMotorPowers(i == SCORING_CYCLES && time.milliseconds() > 1250 ? -0.1 : 0.15);
-                    if (!outtake.isAtOrSlidingTo(ZERO)) {
-                        outtake.slideToAsync(ZERO);
-                    }
-                    // FIXME
-//                    outtake.dumpIn();
-                    intake.getFront().setVelocity(0.7 * Intake.IN_VEL);
+                    intake.getFront().setVelocity(Intake.IN_VEL);
+                    // FIXME: stop rid excess, or make it automatic
                 } else if (dumpIndicator.update() == OVERFLOW) {
-                    drive.setMotorPowers(0); // -0.05
-                    intake.getFront().setVelocity(0.75 * Intake.OUT_VEL);
-//                    if (!outtake.isSlidingTo(EXCESS)) {
-//                        outtake.slideToAsync(EXCESS);
-//                    }
-//                    outtake.dumpExcess();
+                    drive.setMotorPowers(0);
+                    intake.getFront().setVelocity(Intake.OUT_VEL);
+                    outtake.ridExcess();
                 } else {
-                    drive.setMotorPowers(0); // -0.05
-                    intake.out();
+                    drive.setMotorPowers(0);
+                    intake.directedOut();
+                    // FIXME: stop rid excess, or make it automatic
                 }
             }
         });
         queue(() -> {
             drive.setMotorPowers(0);
-            intake.out();
+            intake.directedOut();
         });
     }
 
     public void park() {
         Match.status("Initializing: park");
         // park in warehouse
-        queue(from(trueHubPose)
-                .addTemporalMarker(0.5, () -> {
-                    // FIXME
-//                    outtake.dumpIn();
-                    outtake.slideToAsync(Barcode.ZERO);
-                })
-                .splineToSplineHeading(parkPose));
+        queue(from(trueHubPose).lineToConstantHeading(parkPose.vec()));
         queueWarehouseSensorCalibration(parkPose);
         queue(shippingArm::resetArm);
     }
@@ -261,7 +234,7 @@ public abstract class AutonomousMode extends OpMode {
                 if (dumpIndicator.update() == EMPTY) {
                     intake.in();
                 } else {
-                    intake.out();
+                    intake.directedOut();
                 }
             }
             intake.off();
@@ -624,7 +597,7 @@ public abstract class AutonomousMode extends OpMode {
         queue(() -> {
             Pose2d currentPose = drive.getPoseEstimate();
             Pose2d correctedPose = new Pose2d(
-                    pos(0, 72 - rangeSensor.getDistance(DistanceUnit.INCH) - 6.5).getX(),
+                    pos(0, 72 - rangeSensor.getDistance(DistanceUnit.INCH) - (Match.RED ? 6 : 7)).getX(),
                     predictedPose.getY(),
                     currentPose.getHeading()
             );
