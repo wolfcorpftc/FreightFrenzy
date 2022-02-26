@@ -30,7 +30,7 @@ public class Outtake {
     public static final int SLIDE_MAX_POSITION = 2100; // FIXME: tune, or get rid of it
 
     public static final double PIVOT_IN_POSITION = 0.04;
-    public static final double PIVOT_OUT_TOP_POSITION = 0.6;
+    public static final double PIVOT_OUT_TOP_POSITION = 0.65;
     public static final double PIVOT_OUT_MID_POSITION = 0; // FIXME: tune
     public static final double PIVOT_OUT_BOT_POSITION = 0; // FIXME: tune
 
@@ -400,7 +400,7 @@ public class Outtake {
     public void in() {
         synchronized (cycleStepLock) {
             slideToAsync(ZERO); // DOES NOT BELONG, make sure the resulting method is async
-            OpMode.waitFor(75);
+            OpMode.waitFor(55);
             dump.setPosition(DUMP_IN_POSITION);
             pivot.setPosition(PIVOT_IN_POSITION);
             waitForSlide();
