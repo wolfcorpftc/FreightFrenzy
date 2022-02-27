@@ -62,20 +62,14 @@ public class OuttakeSpoolTest extends LinearOpMode {
         Outtake outtake = new Outtake(hardwareMap);
 //        outtake.cycleOuttake(Barcode.TOP);
         waitForStart();
-        // y for up, a for down
+        // y for up, a for down, x to stop
         while (opModeIsActive()) {
             if (gamepad1.y) {
-                if (Math.abs(outtake.getSlide().getVelocity() - Outtake.SLIDE_MAX_SPEED) > 5) {
-                    outtake.getSlide().setVelocity(0);
-                } else {
-                    outtake.getSlide().setVelocity(Outtake.SLIDE_MAX_SPEED);
-                }
-            } else if (gamepad1.a && !gamepad1.start && !gamepad2.start) {
-                if (Math.abs(outtake.getSlide().getVelocity() + Outtake.SLIDE_MAX_SPEED) > 5) {
-                    outtake.getSlide().setVelocity(0);
-                } else {
-                    outtake.getSlide().setVelocity(-Outtake.SLIDE_MAX_SPEED);
-                }
+                outtake.getSlide().setVelocity(0.5 * Outtake.SLIDE_MAX_SPEED);
+            } else if (gamepad1.a && !gamepad1.start) {
+                outtake.getSlide().setVelocity(-0.5 * Outtake.SLIDE_MAX_SPEED);
+            } else if (gamepad1.x) {
+                outtake.getSlide().setVelocity(0);
             }
         }
     }

@@ -3,6 +3,7 @@ package org.wolfcorp.ff.opmode;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.wolfcorp.ff.opmode.util.Match;
 import org.wolfcorp.ff.robot.CarouselSpinner;
 import org.wolfcorp.ff.robot.Outtake;
@@ -207,6 +208,9 @@ public abstract class TeleOpMode extends OpMode {
             telemetry.addData("Slide", outtake.getSlide().getCurrentPosition());
             telemetry.addData("Dump", outtake.getDump().getPosition());
             telemetry.addData("Pivot", outtake.getPivot().getPosition());
+
+            telemetry.addData("Upper Dist", upperDumpDistance.getDistance(DistanceUnit.INCH));
+            telemetry.addData("Lower Dist", lowerDumpDistance.getDistance(DistanceUnit.INCH));
             telemetry.update();
         }
         resetHardware();

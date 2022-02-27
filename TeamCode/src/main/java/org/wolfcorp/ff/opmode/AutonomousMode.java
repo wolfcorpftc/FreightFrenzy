@@ -96,20 +96,20 @@ public abstract class AutonomousMode extends OpMode {
         double heading = RED ? 180 : 0;
         initialPose = pos(-72 + WIDTH / 2, 12, heading); // FIXME: tune (vision cam alignment)
 
-        trueHubPose = pos(-72 + LENGTH / 2, -12, heading);
+        trueHubPose = pos(-72 + WIDTH / 2, -12, heading);
         if (RED) {
-            hubPose = pos(-72 + LENGTH / 2 - 3, -12, heading);
-            cycleHubPose = pos(-72 + LENGTH / 2 - 3, -12, heading);
+            hubPose = pos(-72 + WIDTH / 2 - 6, -12, heading);
+            cycleHubPose = pos(-72 + WIDTH / 2 - 6, -12, heading);
         } else {
-            hubPose = pos(-72 + LENGTH / 2 - 3, -12, heading);
-            cycleHubPose = pos(-72 + LENGTH / 2 - 3, -12, heading);
+            hubPose = pos(-72 + WIDTH / 2 - 6, -12, heading);
+            cycleHubPose = pos(-72 + WIDTH / 2 - 6, -12, heading);
         }
 
         trueWhPose = pos(-72 + WIDTH / 2, 48 - LENGTH, 0);
         if (RED) {
-            whPose = trueWhPose.minus(pos(-4, 0));
+            whPose = trueWhPose.minus(pos(6, 0));
         } else {
-            whPose = trueWhPose.minus(pos(-4, 0));
+            whPose = trueWhPose.minus(pos(6, 0));
         }
 
         parkPose = pos(-72 + WIDTH / 2, 48, 0);

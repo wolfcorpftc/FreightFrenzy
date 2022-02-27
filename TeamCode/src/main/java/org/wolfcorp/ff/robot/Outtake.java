@@ -22,7 +22,7 @@ public class Outtake {
     public static final double SLIDE_UP_VEL = SLIDE_MAX_SPEED; // ticks/sec
     public static final double SLIDE_DOWN_VEL = -SLIDE_MAX_SPEED; // ticks/sec
 
-    public static final int SLIDE_TOP_POSITION = 1500;
+    public static final int SLIDE_TOP_POSITION = 1650;
     public static final int SLIDE_MID_POSITION = 1350; // FIXME: tune
     public static final int SLIDE_BOT_POSITION = 1050; // FIXME: tune
 
@@ -30,7 +30,8 @@ public class Outtake {
     public static final int SLIDE_MAX_POSITION = 2100; // FIXME: tune, or get rid of it
 
     public static final double PIVOT_IN_POSITION = 0.04;
-    public static final double PIVOT_OUT_TOP_POSITION = 0.65;
+    public static final double PIVOT_MID_POSITION = 0;
+    public static final double PIVOT_OUT_TOP_POSITION = 0.62;
     public static final double PIVOT_OUT_MID_POSITION = 0; // FIXME: tune
     public static final double PIVOT_OUT_BOT_POSITION = 0; // FIXME: tune
 
@@ -41,8 +42,8 @@ public class Outtake {
     public static final double DUMP_DROP_POSITION = 0;
     public static final double DUMP_DROP_SHARED_POSITION = 0.6;
 
-    public static final double DUMP_OVERFLOW_DIST = 1.60; // FIXME: tune
-    public static final double DUMP_FULL_DIST = 1.60; // FIXME: tune
+    public static final double DUMP_OVERFLOW_DIST = 2.1;
+    public static final double DUMP_FULL_DIST = 1.75;
 
     private final DcMotorEx slide;
     private final Servo dump;
@@ -370,27 +371,6 @@ public class Outtake {
             dump.setPosition(DUMP_IN_POSITION); // FIXME: Add other in positions
         }
     }
-
-    /**
-     * Return boolean value of whether the dump is in drop position. Call {@link #toggleDump()} to flip dump state.
-     */
-    public boolean isDumpOut() {
-        return (Math.abs(dump.getPosition() - DUMP_DROP_POSITION) < 0.0001 || Math.abs(dump.getPosition() - DUMP_DROP_SHARED_POSITION) < 0.0001); // FIXME: Add other possible out positions
-    }
-
-    /**
-     * Toggle dump.
-     */
-    public void toggleDump() {
-        if (isDumpOut()) {
-            undrop();
-        } else if (pivot.getPosition() < 0.2) {
-            dump.setPosition(DUMP_DROP_SHARED_POSITION);
-        } else {
-            drop();
-        }
-    }
-
     /**
      * Moves the outtake to intake position.
      *
@@ -399,7 +379,7 @@ public class Outtake {
      */
     public void in() {
         synchronized (cycleStepLock) {
-            slideToAsync(ZERO); // DOES NOT BELONG, make sure the resulting method is async
+            slideToAsync(ZERO);
             OpMode.waitFor(55);
             dump.setPosition(DUMP_IN_POSITION);
             pivot.setPosition(PIVOT_IN_POSITION);
@@ -446,5 +426,35 @@ public class Outtake {
         Thread t = new Thread(() -> out(barcode));
         t.start();
         return t;
+    }
+
+    /**
+     * Returns whether the dump is in drop position. Call {@link #toggleDump()} to flip dump state.
+     */
+    public boolean isDumpDropped() {
+        /* ------ IN  ------
+         * intaking (Pin + Din): 1.03
+         * ready (Pout_top + Dout_top): 1
+         * ready shared (Pin + Din): 1.03
+         * ------ OUT ------
+         * drop (Pout_top + Ddrop): 0.65
+         * drop shared (Pin + Dshared): 0.64
+         */
+        return dump.getPosition() + pivot.getPosition() > 0.75;
+//        return (Math.abs(dump.getPosition() - DUMP_DROP_POSITION) < 0.0001 || Math.abs(dump.getPosition() - DUMP_DROP_SHARED_POSITION) < 0.0001); // FIXME: Add other possible out positions
+    }
+
+    /**
+     * Toggle dump between in and drop.
+     * @see #isDumpDropped()
+     */
+    public void toggleDump() {
+        if (isDumpDropped()) {
+            undrop();
+        } else if (pivot.getPosition() < 0.2) {
+            dump.setPosition(DUMP_DROP_SHARED_POSITION);
+        } else {
+            drop();
+        }
     }
 }
