@@ -1,22 +1,27 @@
 package org.wolfcorp.ff.opmode.test;
 
-import static org.wolfcorp.ff.opmode.util.Match.RED;
+import static org.wolfcorp.ff.opmode.test.CycleAutoTest.IntakeState.CHECK;
+import static org.wolfcorp.ff.opmode.test.CycleAutoTest.IntakeState.INTAKE;
+import static org.wolfcorp.ff.opmode.test.CycleAutoTest.IntakeState.WAIT_INTAKE;
+import static org.wolfcorp.ff.opmode.test.CycleAutoTest.IntakeState.WAIT_SETTLE;
 import static org.wolfcorp.ff.robot.DumpIndicator.Status.EMPTY;
 import static org.wolfcorp.ff.robot.DumpIndicator.Status.FULL;
 import static org.wolfcorp.ff.robot.Outtake.DUMP_IN_POSITION;
 import static org.wolfcorp.ff.robot.Outtake.DUMP_OUT_TOP_POSITION;
 import static org.wolfcorp.ff.robot.Outtake.PIVOT_IN_POSITION;
 import static org.wolfcorp.ff.robot.Outtake.PIVOT_OUT_TOP_POSITION;
-import static org.wolfcorp.ff.vision.Barcode.EXCESS;
 import static org.wolfcorp.ff.vision.Barcode.TOP;
-import static org.wolfcorp.ff.vision.Barcode.ZERO;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.wolfcorp.ff.opmode.AutonomousMode;
 import org.wolfcorp.ff.opmode.OpMode;
 import org.wolfcorp.ff.opmode.util.Match;
+
+import java.util.function.Supplier;
 
 @Autonomous(name = "Cycle Auto Test", group = "!testing")
 public class CycleAutoTest extends AutonomousMode {
@@ -24,34 +29,92 @@ public class CycleAutoTest extends AutonomousMode {
     public void runOpMode() {
         Match.setupTelemetry();
         initialPose = trueWhPose;
+        // EH rev distance sensor: front 0, back 1
         initHardware();
         drive.setPoseEstimate(initialPose);
         for (int i = 1; i <= SCORING_CYCLES; i++) {
-            queue(() -> {
-                ElapsedTime timer = new ElapsedTime();
-                intake.in();
-                drive.setMotorPowers(0.2);
-                while (dumpIndicator.update() == EMPTY) {
-                    drive.updatePoseEstimate();
-                }
-                drive.setMotorPowers(0);
-                intake.directedOut();
-            });
+            queue(this::intake);
             queue(whToHubTimer::reset);
             queueWarehouseSensorCalibration(trueWhPose);
             queue(fromHere()
-                    .addTemporalMarker(1.0, -1.1, this::outtakeAsync)
+                    .addTemporalMarker(1.0, -1.8, this::outtakeAsync)
                     .lineToConstantHeading(hubPose.vec()));
             queue(intake::off);
             queue(() -> Match.log(whToHubTimer.seconds() + " seconds"));
             queue(() -> drive.setPoseEstimate(trueHubPose));
-            queue(() -> waitFor(4000));
+            queue(() -> waitFor(500));
             queue(fromHere().lineToConstantHeading(whPose.vec()));
             queueWarehouseSensorCalibration(trueWhPose);
         }
 //        queue(() -> sleep(300));
         waitForStart();
         runTasks();
+    }
+    enum IntakeState {
+        INTAKE,
+        WAIT_INTAKE,
+        WAIT_SETTLE,
+        CHECK,
+        SCAN,
+        RID_EXCESS,
+    }
+    public void intake() {
+        IntakeState state = INTAKE;
+        IntakeState nextState = INTAKE;
+        ElapsedTime timer = new ElapsedTime();
+        Supplier<Double> current = () -> intake.getFront().getCurrent(CurrentUnit.MILLIAMPS);
+        double normalCurrent = current.get();
+
+        INTAKE_LOOP:
+        while (true) {
+            switch (dumpIndicator.update()) {
+                case EMPTY:
+                    if (state == CHECK)
+                        state = INTAKE;
+                    break;
+                case AFLOAT:
+                    state = CHECK;
+                    break;
+                case FULL:
+                case OVERFLOW:
+                    drive.setMotorPowers(0);
+                    intake.directedOut();
+                    break INTAKE_LOOP;
+            }
+            switch (state) {
+                case INTAKE:
+                    // eh front 1, rear 2
+                    double distance = rampSensor.getDistance(DistanceUnit.INCH);
+                    drive.setMotorPowers(Math.min(Math.pow(distance / 10, 2), 0.3));
+                    intake.in();
+                    if (distance < 2) { // FIXME:
+                        drive.setMotorPowers(0);
+                        nextState = WAIT_INTAKE;
+                    }
+                    break;
+                case WAIT_INTAKE:
+                    if (timer.seconds() > 0.5 && Math.abs(current.get() - normalCurrent) < 0.05 * normalCurrent) {
+                        nextState = WAIT_SETTLE;
+                    }
+                    break;
+                case WAIT_SETTLE:
+                    if (timer.seconds() > 1) {
+                        nextState = CHECK;
+                    }
+                    break;
+                case CHECK:
+                    break;
+                case SCAN:
+                    // TODO: implement
+                    break;
+                case RID_EXCESS:
+                    // TODO: implement
+                    break;
+            }
+            if (state != nextState)
+                timer.reset();
+            state = nextState;
+        }
     }
     public void outtakeAsync() {
         Thread t = new Thread(this::outtakeCycle);
@@ -66,7 +129,7 @@ public class CycleAutoTest extends AutonomousMode {
         OpMode.waitFor(400);
         outtake.getDump().setPosition(DUMP_OUT_TOP_POSITION + 0.25);
 
-        OpMode.waitFor(600);
+        OpMode.waitFor(400);
 
         // DROP
         outtake.drop();

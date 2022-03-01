@@ -15,8 +15,9 @@ public class DumpIndicator {
 
     public enum Status {
         EMPTY,
+        AFLOAT,
         FULL,
-        OVERFLOW
+        OVERFLOW,
     }
 
     public DumpIndicator(HardwareMap hardwareMap) {
@@ -75,6 +76,9 @@ public class DumpIndicator {
         if (full && overflow) {
             overflow();
             return Status.OVERFLOW;
+        } else if (overflow) {
+            overflow();
+            return Status.AFLOAT;
         } else if (full) {
             full();
             return Status.FULL;

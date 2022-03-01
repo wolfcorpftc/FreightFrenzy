@@ -318,7 +318,7 @@ public abstract class TeleOpDebugging extends OpMode {
             telemetry.addData("Dump G", lowerDumpDistance.green());
             telemetry.addData("Dump B", lowerDumpDistance.blue());
             telemetry.addData("Dump Status", dumpIndicator.update().toString().toLowerCase());
-            telemetry.addData("Intake Ramp Distance", intakeRampDistance.getDistance(DistanceUnit.INCH));
+            telemetry.addData("Intake Ramp Distance", rampSensor.getDistance(DistanceUnit.INCH));
             telemetry.addData("Pose Calibration Distance", rangeSensor.getDistance(DistanceUnit.INCH));
 
             telemetry.addData("Arm Position", shippingArm.getMotor().getCurrentPosition());

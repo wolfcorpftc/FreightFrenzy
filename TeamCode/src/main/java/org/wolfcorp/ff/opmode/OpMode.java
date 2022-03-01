@@ -27,7 +27,7 @@ public abstract class OpMode extends LinearOpMode {
     public static DistanceSensor rangeSensor;
     public static RevColorSensorV3 upperDumpDistance = null;
     public static RevColorSensorV3 lowerDumpDistance = null;
-    public static DistanceSensor intakeRampDistance = null;
+    public static DistanceSensor rampSensor = null;
 
     /**
      * Based on the OpMode name, initialize {@link Match} members appropriately.
@@ -80,11 +80,12 @@ public abstract class OpMode extends LinearOpMode {
         upperDumpDistance.enableLed(false);
         lowerDumpDistance = hardwareMap.get(RevColorSensorV3.class, "lowerDump");
         lowerDumpDistance.enableLed(false);
-//        intakeRampDistance = hardwareMap.get(DistanceSensor.class, "intakeDist");
         if (Match.RED) {
             rangeSensor = hardwareMap.get(DistanceSensor.class, "redRangeSensor");
+            rampSensor = hardwareMap.get(DistanceSensor.class, "redRampSensor");
         } else {
             rangeSensor = hardwareMap.get(DistanceSensor.class, "blueRangeSensor");
+            rampSensor = hardwareMap.get(DistanceSensor.class, "blueRampSensor");
         }
 
         Match.status("Initialized robot hardware");
@@ -105,7 +106,7 @@ public abstract class OpMode extends LinearOpMode {
         rangeSensor = null;
         upperDumpDistance = null;
         lowerDumpDistance = null;
-        intakeRampDistance = null;
+        rampSensor = null;
 
         instance = null;
 
