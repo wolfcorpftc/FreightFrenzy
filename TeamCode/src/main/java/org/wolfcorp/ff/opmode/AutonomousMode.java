@@ -17,6 +17,7 @@ import static org.wolfcorp.ff.vision.Barcode.TOP;
 import static org.wolfcorp.ff.vision.Barcode.ZERO;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.acmerobotics.roadrunner.trajectory.MarkerCallback;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
@@ -311,7 +312,7 @@ public abstract class AutonomousMode extends OpMode {
         Match.status("Initializing: deposit (preloaded & SE)");
         queue(() -> outtake.slideToAsync(barcode));
         queue(fromHere()
-                .addTemporalMarker((CAROUSEL ? 1.2 : 0.6), outtake::dumpOut)
+                .addTemporalMarker((CAROUSEL ? 1.2 : 0.6), async(outtake::dumpOut))
                 .lineTo(hubPose.vec()));
         queueHubSensorCalibration(trueHubPose);
     }
@@ -327,10 +328,10 @@ public abstract class AutonomousMode extends OpMode {
             queue(() -> intake.getMotor().setVelocity(0.8 * Intake.IN_SPEED));
             Pose2d moddedWhPose = whPose.plus(pos(0, i == 1 ? 0 : 2 + i * 1.8));
             queue(from(trueHubPose)
-                    .addTemporalMarker(0.5, () -> {
+                    .addTemporalMarker(0.5, async(() -> {
                         outtake.dumpIn();
                         outtake.slideToAsync(Barcode.ZERO);
-                    })
+                    }))
                     .splineToSplineHeading(preWhPose.plus(pos(-3.5, 4)), deg(0))
                     .splineToConstantHeading(moddedWhPose.minus(pos(9, 0)).vec()));// from 3.5
             queueWarehouseSensorCalibration(moddedWhPose);
@@ -345,7 +346,7 @@ public abstract class AutonomousMode extends OpMode {
             double angleOffset = RED ? -5 : 5;
             queue(from(moddedWhPose.plus(pos(0, 0, angleOffset)))
                     .lineToLinearHeading(preWhPose.plus(pos(0, -4, angleOffset)))
-                    .addTemporalMarker(1.15, () -> {
+                    .addTemporalMarker(1.15, async(() -> {
                         // last-minute check & fix for intake
                         if (dumpIndicator.update() == FULL) {
                             outtake.slideToAsync(TOP);
@@ -356,15 +357,15 @@ public abstract class AutonomousMode extends OpMode {
                             outtake.slideToAsync(EXCESS);
                             outtake.dumpExcess();
                         }
-                    })
-                    .addTemporalMarker(1.4, () -> {
+                    }))
+                    .addTemporalMarker(1.4, async(() -> {
                         if (dumpIndicator.update() == FULL) {
                             outtake.dumpIn();
                             if (!outtake.isApproaching(TOP))
                             outtake.slideToAsync(TOP);
                         }
-                    })
-                    .addTemporalMarker(1.0, -0.55, outtake::dumpOut)
+                    }))
+                    .addTemporalMarker(1.0, -0.55, async(outtake::dumpOut))
                     .splineToSplineHeading(cycleHubPose, deg((BLUE ? -1 : 1) * 90)));
             queueHubSensorCalibration(trueHubPose);
 
@@ -381,22 +382,6 @@ public abstract class AutonomousMode extends OpMode {
 
     public void intake(int iteration) {
 //        regularIntake();
-        alternativeIntake(iteration);
-        queue(() -> {
-            drive.setMotorPowers(0);
-            intake.out();
-//            drive.follow(from(drive.getPoseEstimate()).lineTo(whPose.vec()).build());
-//            if (iteration == 2) {
-//                if (RED) {
-//                    drive.strafeRight(1, 10);
-//                } else {
-//                    drive.strafeLeft(1, 10);
-//                }
-//            }
-        });
-    }
-
-    public void alternativeIntake(int i) {
         queue(() -> {
             // TODO: or i == 3
             ElapsedTime time = new ElapsedTime();
@@ -404,7 +389,7 @@ public abstract class AutonomousMode extends OpMode {
             while (dumpIndicator.update() != FULL) {
                 drive.updatePoseEstimate();
                 if (dumpIndicator.update() == EMPTY) {
-                    drive.setMotorPowers(i == SCORING_CYCLES && time.milliseconds() > 1250 ? -0.1 : 0.15);
+                    drive.setMotorPowers(iteration == SCORING_CYCLES && time.milliseconds() > 1250 ? -0.1 : 0.15);
                     if (!outtake.isApproaching(ZERO)) {
                         outtake.slideToAsync(ZERO);
                     }
@@ -422,30 +407,38 @@ public abstract class AutonomousMode extends OpMode {
                     intake.out();
                 }
             }
+            drive.setMotorPowers(0);
+            intake.out();
+//            drive.follow(from(drive.getPoseEstimate()).lineTo(whPose.vec()).build());
+//            if (iteration == 2) {
+//                if (RED) {
+//                    drive.strafeRight(1, 10);
+//                } else {
+//                    drive.strafeLeft(1, 10);
+//                }
+//            }
         });
     }
 
     public void park() {
         Match.status("Initializing: park");
         // park in storage unit
-        queue(() -> {
-        });
         if (CAROUSEL && PARK) {
             queue(from(trueHubPose)
-                    .addTemporalMarker(0.5, () -> {
+                    .addTemporalMarker(0.5, async(() -> {
                         outtake.dumpIn();
                         outtake.slideToAsync(Barcode.ZERO);
-                    })
+                    }))
                     .lineTo(storageUnitParkPose.vec()));
             return;
         }
         if (CYCLE) {
             // park in warehouse
             queue(from(trueHubPose)
-                    .addTemporalMarker(0.5, () -> {
+                    .addTemporalMarker(0.5, async(() -> {
                         outtake.dumpIn();
                         outtake.slideToAsync(Barcode.ZERO);
-                    })
+                    }))
                     .splineToSplineHeading(preWhPose.plus(pos(-3.5, 4)), deg(0))
                     .lineTo(whPose.minus(pos(3.5, -4)).vec()));
         }
@@ -854,6 +847,12 @@ public abstract class AutonomousMode extends OpMode {
             drive.setPoseEstimate(correctedPose);
         });
         queue(predictedPose);
+    }
+
+    public static MarkerCallback async(Runnable task) {
+        return () -> {
+            new Thread(task).start();
+        };
     }
     // endregion
 }
