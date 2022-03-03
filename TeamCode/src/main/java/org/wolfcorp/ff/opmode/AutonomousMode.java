@@ -324,7 +324,7 @@ public abstract class AutonomousMode extends OpMode {
 
 
             // *** To warehouse ***
-            queue(() -> intake.getMotor().setVelocity(0.8 * Intake.IN_SPEED));
+            queue(() -> intake.getMotor().setVelocity(0.6 * Intake.IN_SPEED));
             Pose2d moddedWhPose = whPose.plus(pos(0, i == 1 ? 0 : 2 + i * 1.8));
             queue(from(trueHubPose)
                     .addTemporalMarker(0.5, () -> {
@@ -404,7 +404,7 @@ public abstract class AutonomousMode extends OpMode {
             while (dumpIndicator.update() != FULL) {
                 drive.updatePoseEstimate();
                 if (dumpIndicator.update() == EMPTY) {
-                    drive.setMotorPowers(i == SCORING_CYCLES && time.milliseconds() > 1250 ? -0.1 : 0.15);
+                    drive.setMotorPowers(time.milliseconds() > 1000 ? -0.1 : 0.15);
                     if (!outtake.isApproaching(ZERO)) {
                         outtake.slideToAsync(ZERO);
                     }

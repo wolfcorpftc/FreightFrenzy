@@ -1,23 +1,20 @@
 package org.wolfcorp.ff.opmode;
 
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.roadrunner.trajectory.Trajectory;
+
 import com.qualcomm.robotcore.hardware.DcMotor;
 
-import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.wolfcorp.ff.opmode.util.Match;
 import org.wolfcorp.ff.robot.CarouselSpinner;
 import org.wolfcorp.ff.robot.Outtake;
 import org.wolfcorp.ff.robot.ShippingArm;
 import org.wolfcorp.ff.vision.Barcode;
 
-// NOTE ABOUT TELEOP: Direction of robot is SWAPPED
-public abstract class TeleOpMode extends OpMode {
+@TeleOp(name = "Demo TeleOp", group = "!main")
+public class DemoTeleOp extends OpMode {
     protected FtcDashboard dashboard = null;
 
-    private boolean maskSlowMode = false;
-    private boolean maskCheckpoint = false;
     private boolean maskIntake = false;
     private boolean maskSlide = false;
     private boolean maskDump = false;
@@ -26,6 +23,7 @@ public abstract class TeleOpMode extends OpMode {
     private boolean maskOuttakeReset = false;
     private boolean maskSpinnerOverride = false;
     private boolean maskToggleClaw = false;
+    private boolean maskLights = false;
 
     private boolean slowMode = false;
 
@@ -61,38 +59,6 @@ public abstract class TeleOpMode extends OpMode {
                 maskDump = false;
             }
 
-            // *** Drivetrain ***
-            if (!drive.isBusy() && drive.leftFront.getMode() != DcMotor.RunMode.RUN_TO_POSITION) {
-
-                // *** Even Slower Mode
-                if (gamepad1.right_trigger > 0.5) {
-                    drive.drive(
-                            gamepad1.right_stick_y,
-                            -gamepad1.right_stick_x,
-                            gamepad1.left_stick_x,
-                            0.32,
-                            true
-                    );
-                } else {
-                    drive.drive(
-                            gamepad1.right_stick_y,
-                            -gamepad1.right_stick_x,
-                            gamepad1.left_stick_x,
-                            0.4,
-                            slowMode
-                    );
-                }
-            }
-
-            // *** Slow Mode ***
-            if (gamepad1.right_bumper && !maskSlowMode) {
-                slowMode = !slowMode;
-                maskSlowMode = true;
-            }
-            if (!gamepad1.right_bumper) {
-                maskSlowMode = false;
-            }
-
             // *** Outtake: slide - manual ***
             if (gamepad2.y && !maskSlide) {
                 if (outtake.getMotor().getMode() == DcMotor.RunMode.RUN_TO_POSITION) {
@@ -116,7 +82,7 @@ public abstract class TeleOpMode extends OpMode {
                 maskIntake = true;
                 // the dump must be at the bottom-most position when intake is on
                 outtake.slideToAsync(Barcode.ZERO);
-                intake.toggleIn();
+                intake.toggleIn(0.75);
             }
 
             if (!gamepad2.b && !gamepad2.x) {
@@ -157,7 +123,7 @@ public abstract class TeleOpMode extends OpMode {
                 maskSpinnerOverride = false;
             }
 
-            if (!(gamepad2.dpad_up || gamepad2.dpad_right || gamepad2.dpad_down || gamepad2.a || gamepad2.y)) {
+            if (!(gamepad2.a || gamepad2.y)) {
                 maskSlide = false;
             }
 
@@ -169,11 +135,6 @@ public abstract class TeleOpMode extends OpMode {
 
             if (gamepad2.right_trigger < 0.8) {
                 maskToggleClaw = false;
-            }
-            if (gamepad2.right_stick_y < -0.3) {
-                shippingArm.clawIncrement(true);
-            } else if (gamepad2.right_stick_y > 0.3) {
-                shippingArm.clawIncrement(false);
             }
 
             // *** Shipping Element Arm: claw ***
@@ -198,11 +159,22 @@ public abstract class TeleOpMode extends OpMode {
                 maskOuttakeReset = false;
             }
 
-            // *** Outtake: dump status ***
-            dumpIndicator.update();
-
-            // *** Odometry update ***
-            drive.update();
+            // *** Light flash && Outtake: dump status ***
+            if (gamepad2.dpad_up && !maskLights) {
+                maskLights = true;
+                System.out.println("hit");
+                for (int i = 0; i < 15; i++) {
+                    System.out.println(i + "pre");
+                    dumpIndicator.full();
+                    sleep(400);
+                    System.out.println("post");
+                    dumpIndicator.overflow();
+                    sleep(400);
+                }
+            } else if (!gamepad2.dpad_up) {
+                maskLights = false;
+                dumpIndicator.update();
+            }
 
             telemetry.update();
         }

@@ -11,8 +11,8 @@ public class Intake {
     public static final double TICKS_PER_REV = 103.8;
     public static final int INTAKE_REVS = 20;
     public static final double MAX_SPEED = 1620 / 60.0 * TICKS_PER_REV; // ticks/sec
-    public static final double IN_SPEED = -0.365 * MAX_SPEED; // ticks/sec
-    public static final double OUT_SPEED = 0.4 * MAX_SPEED; // ticks/sec;
+    public static final double IN_SPEED = -0.4 * MAX_SPEED; // ticks/sec
+    public static final double OUT_SPEED = 0.6 * MAX_SPEED; // ticks/sec;
 
     private final DcMotorEx motor;
 
@@ -38,10 +38,15 @@ public class Intake {
      * Toggles the intake to take in game elements. Intended for TeleOp.
      */
     public void toggleIn() {
+        toggleIn(1);
+    }
+
+    /** Toggle intake with custom speed ***/
+    public void toggleIn(double factor) {
         if (isOn()) {
             off();
         } else {
-            motor.setVelocity(IN_SPEED);
+            motor.setVelocity(IN_SPEED * factor);
         }
     }
 

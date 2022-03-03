@@ -434,10 +434,10 @@ public class Drivetrain extends MecanumDrive {
 
         for (int i = 0; i < 4; i++) {
             wheelSpeeds[i] = Math.pow(wheelSpeeds[i], 3);
-            if (wheelSpeeds[i] > -0.25 && wheelSpeeds[i] < 0) {
-                wheelSpeeds[i] = -0.25;
-            } else if (wheelSpeeds[i] < 0.25 && wheelSpeeds[i] > 0) {
-                wheelSpeeds[i] = 0.25;
+            if (wheelSpeeds[i] > -0.3 && wheelSpeeds[i] < 0) {
+                wheelSpeeds[i] = -0.3;
+            } else if (wheelSpeeds[i] < 0.3 && wheelSpeeds[i] > 0) {
+                wheelSpeeds[i] = 0.3;
             }
         }
         normalize(wheelSpeeds);
