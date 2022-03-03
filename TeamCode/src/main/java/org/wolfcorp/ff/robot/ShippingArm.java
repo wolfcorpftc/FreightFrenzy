@@ -123,7 +123,7 @@ public class ShippingArm {
     }
 
     public void clawIncrement(boolean open) {
-        clawIncrement(open?-0.02:0.02);
+        clawIncrement(open?0.02:-0.02);
     }
 
     public DcMotorEx getMotor() {

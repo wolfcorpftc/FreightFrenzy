@@ -310,7 +310,7 @@ public abstract class AutonomousMode extends OpMode {
         Match.status("Initializing: deposit (preloaded & SE)");
         queue(() -> outtake.slideToAsync(barcode));
         queue(fromHere()
-                .addTemporalMarker((CAROUSEL ? 1.2 : 0.6), outtake::dumpOut)
+                .addTemporalMarker((CAROUSEL ? 1.2 : 0.6), async(outtake::dumpOut))
                 .lineTo(hubPose.vec()));
         queueHubSensorCalibration(trueHubPose);
     }
@@ -326,7 +326,7 @@ public abstract class AutonomousMode extends OpMode {
             queue(() -> intake.getMotor().setVelocity(0.6 * Intake.IN_SPEED));
             Pose2d moddedWhPose = whPose.plus(pos(0, i == 1 ? 0 : 2 + i * 1.8));
             queue(from(trueHubPose)
-                    .addTemporalMarker(0.5, async(() -> {
+                    .addTemporalMarker(0.4, async(() -> {
                         outtake.dumpIn();
                         outtake.slideToAsync(ZERO);
                     }))
@@ -381,7 +381,6 @@ public abstract class AutonomousMode extends OpMode {
     public void intake(int iteration) {
 //        regularIntake();
         queue(() -> {
-            // TODO: or i == 3
             ElapsedTime time = new ElapsedTime();
             time.reset();
             while (dumpIndicator.update() != FULL) {
@@ -434,11 +433,12 @@ public abstract class AutonomousMode extends OpMode {
             // park in warehouse
             queue(from(trueHubPose)
                     .addTemporalMarker(0.5, async(() -> {
+                        intake.getMotor().setVelocity(0.7 * Intake.IN_SPEED);
                         outtake.dumpIn();
                         outtake.slideToAsync(ZERO);
                     }))
                     .splineToSplineHeading(preWhPose.plus(pos(-3.5, 4)), deg(0))
-                    .lineTo(whPose.minus(pos(3.5, -4)).vec()));
+                    .lineTo(whPose.minus(pos(3.5, 8)).vec()));
         }
         queueWarehouseSensorCalibration(parkPose);
         queue(shippingArm::resetArm);
