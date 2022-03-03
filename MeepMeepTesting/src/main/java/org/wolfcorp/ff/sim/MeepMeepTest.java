@@ -7,5 +7,6 @@ public class MeepMeepTest extends AutoTest {
 
         MeepMeepTest test = new MeepMeepTest();
         test.start();
+        test.original();
     }
 }

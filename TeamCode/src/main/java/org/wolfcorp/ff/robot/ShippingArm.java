@@ -10,9 +10,9 @@ import com.qualcomm.robotcore.util.Range;
 import org.wolfcorp.ff.opmode.OpMode;
 
 public class ShippingArm {
-    private DcMotorEx motor;
-    private Servo servo;
-    private Object motorModeLock = new Object();
+    private final DcMotorEx motor;
+    private final Servo servo;
+    private final Object motorModeLock = new Object();
 
     public static final double ARM_GEAR_RATIO = 2;
     public static final double ARM_TICKS_PER_REV = 1425.1;
