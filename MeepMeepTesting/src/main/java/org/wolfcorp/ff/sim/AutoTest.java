@@ -98,7 +98,8 @@ public class AutoTest {
 
     public void start() {
         initPoses();
-        initialPose = whPose;
+        initialPose = pos(-72 + width / 2, 42);
+        cycleHubPose = pos(-44, -3, isRed ? -75 : 75);
 
         // Declare a MeepMeep instance
         // With a field size of 800 pixels
@@ -114,11 +115,37 @@ public class AutoTest {
                 .setBotDimensions(width,length)
                 .followTrajectorySequence(drive -> drive
                         .trajectorySequenceBuilder(initialPose)
-                        .splineToConstantHeading(preWhPose.minus(pos(2, 10)).vec(), deg(180))
-                        .splineToSplineHeading(cycleHubPose, deg((isRed ? 1 : -1) * 90))
+                        .splineToConstantHeading(preWhPose.minus(pos(2, -5)).vec(), deg(180))
+                        .splineToSplineHeading(cycleHubPose.plus(pos(0, 5)), deg((isRed ? 1 : -1) * 175))
                         .build()
                 )
                 .start();
+
+    }
+
+    public void original() {
+        initPoses();
+        initialPose = pos(-72 + width / 2, 45, 0);
+        preWhPose = pos(-72 + width / 2, 12, 0);
+        cycleHubPose = pos(-45, -10, 90);
+
+        // Declare a MeepMeep instance
+        // With a field size of 800 pixels
+        new MeepMeep(600)
+                // Set field image
+                .setBackground(MeepMeep.Background.FIELD_FREIGHT_FRENZY)
+                // Set theme
+                .setTheme(new ColorSchemeRedDark())
+                // Background opacity from 0-1
+                .setBackgroundAlpha(1f)
+                // Set constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
+                .setConstraints(60, 60, Math.toRadians(180), Math.toRadians(180), 15)
+                .setBotDimensions(width,length)
+                .followTrajectorySequence(drive -> drive
+                        .trajectorySequenceBuilder(initialPose)
+                        .lineToLinearHeading(preWhPose.plus(pos(0, -4)))
+                        .splineToSplineHeading(cycleHubPose, deg((!isRed ? -1 : 1) * 90))
+                        .build()).start();
 
     }
 

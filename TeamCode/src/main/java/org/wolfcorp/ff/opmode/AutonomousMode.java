@@ -165,12 +165,10 @@ public abstract class AutonomousMode extends OpMode {
             elementMidPose = pos(-52, 8.25, 90); // y-difference was supposed to be 8.4
             elementRightPose = pos(-52, -1.8, 90);
         } else if (RED && WAREHOUSE) {
-            // TODO: tune
             elementLeftPose = pos(-52, WIDTH / 2, 90); // originally x = -54, y = 20.4
             elementMidPose = pos(-52, 7.25 + 8.25, 90); // y-difference was supposed to be 8.4
             elementRightPose = pos(-52, 11 + 15, 90);
         } else if (BLUE && WAREHOUSE) {
-            // TODO: tune
             // everything is the same except right / top
             elementLeftPose = pos(-52, 17, 90); // originally x = -54, y = 20.4
             elementMidPose = pos(-52, 8.25, 90); // y-difference was supposed to be 8.4
@@ -312,7 +310,7 @@ public abstract class AutonomousMode extends OpMode {
         Match.status("Initializing: deposit (preloaded & SE)");
         queue(() -> outtake.slideToAsync(barcode));
         queue(fromHere()
-                .addTemporalMarker((CAROUSEL ? 1.2 : 0.6), async(outtake::dumpOut))
+                .addTemporalMarker((CAROUSEL ? 1.2 : 0.6), outtake::dumpOut)
                 .lineTo(hubPose.vec()));
         queueHubSensorCalibration(trueHubPose);
     }
@@ -330,7 +328,7 @@ public abstract class AutonomousMode extends OpMode {
             queue(from(trueHubPose)
                     .addTemporalMarker(0.5, async(() -> {
                         outtake.dumpIn();
-                        outtake.slideToAsync(Barcode.ZERO);
+                        outtake.slideToAsync(ZERO);
                     }))
                     .splineToSplineHeading(preWhPose.plus(pos(-3.5, 4)), deg(0))
                     .splineToConstantHeading(moddedWhPose.minus(pos(9, 0)).vec()));// from 3.5
@@ -365,7 +363,7 @@ public abstract class AutonomousMode extends OpMode {
                             outtake.slideToAsync(TOP);
                         }
                     }))
-                    .addTemporalMarker(1.0, -0.55, async(outtake::dumpOut))
+                    .addTemporalMarker(1.0, -0.55, outtake::dumpOut)
                     .splineToSplineHeading(cycleHubPose, deg((BLUE ? -1 : 1) * 90)));
             queueHubSensorCalibration(trueHubPose);
 
@@ -427,7 +425,7 @@ public abstract class AutonomousMode extends OpMode {
             queue(from(trueHubPose)
                     .addTemporalMarker(0.5, async(() -> {
                         outtake.dumpIn();
-                        outtake.slideToAsync(Barcode.ZERO);
+                        outtake.slideToAsync(ZERO);
                     }))
                     .lineTo(storageUnitParkPose.vec()));
             return;
@@ -437,7 +435,7 @@ public abstract class AutonomousMode extends OpMode {
             queue(from(trueHubPose)
                     .addTemporalMarker(0.5, async(() -> {
                         outtake.dumpIn();
-                        outtake.slideToAsync(Barcode.ZERO);
+                        outtake.slideToAsync(ZERO);
                     }))
                     .splineToSplineHeading(preWhPose.plus(pos(-3.5, 4)), deg(0))
                     .lineTo(whPose.minus(pos(3.5, -4)).vec()));
