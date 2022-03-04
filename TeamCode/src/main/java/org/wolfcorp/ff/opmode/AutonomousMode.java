@@ -28,16 +28,14 @@ import org.openftc.easyopencv.OpenCvWebcam;
 import org.wolfcorp.ff.BuildConfig;
 import org.wolfcorp.ff.opmode.util.Match;
 import org.wolfcorp.ff.opmode.util.RobotRunnable;
-import org.wolfcorp.ff.opmode.util.TimedController;
 import org.wolfcorp.ff.robot.DriveConstants;
-import org.wolfcorp.ff.robot.DumpIndicator;
 import org.wolfcorp.ff.robot.Intake;
-import org.wolfcorp.ff.robot.Outtake;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequence;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequenceBuilder;
 import org.wolfcorp.ff.vision.Barcode;
 import org.wolfcorp.ff.vision.BarcodeScanner;
 import org.wolfcorp.ff.vision.Guide;
+import org.wolfcorp.ff.vision.PartialBarcodeScanner;
 import org.wolfcorp.ff.vision.TFWarehouseGuide;
 import org.wolfcorp.ff.vision.VuforiaNavigator;
 import org.wolfcorp.ff.vision.WarehouseGuide;
@@ -98,6 +96,7 @@ public abstract class AutonomousMode extends OpMode {
     protected Pose2d trueHubPose;
     /** Where the robot scores freight into hub (takes robot error into account). */
     protected Pose2d hubPose;
+    protected Pose2d carouselHubPose;
     /** Where the robot scores the shipping element. */
     protected Pose2d capPose;
     /** Where the robot scores freight during cyclign **/
@@ -184,18 +183,21 @@ public abstract class AutonomousMode extends OpMode {
         calibratePreCarouselPose = preCarouselPose.minus(pos(0, 8));
 
         trueHubPose = pos(-48.5, -12, 90);
+        carouselHubPose = pos(-24, -33);
         if (RED && CAROUSEL && CYCLE) {
             hubPose = pos(-45, 0, 90);
             cycleHubPose = pos(-48, -8, 90);
         } else if (RED && CAROUSEL && PARK) {
-            hubPose = pos(-40.5, -5, 90);
+            carouselHubPose = pos(-24, -33, 180);
+            hubPose = pos(-45, 0, 90);
             cycleHubPose = pos(-48, -8, 90);
         } else if (BLUE && CAROUSEL && CYCLE) {
             hubPose = pos(-43.5, -8, 90);
             cycleHubPose = pos(-48, -11, 90);
         } else if (BLUE && CAROUSEL && PARK) {
-            hubPose = pos(-40, -8, 90);
-            cycleHubPose = pos(-48, -11, 90);
+            carouselHubPose = pos(-24, -33, 180);
+            hubPose = pos(-45, 0, 90);
+            cycleHubPose = pos(-48, -8, 90);
         } else if (RED && WAREHOUSE) {
             hubPose = pos(-40, -12, 90);
             cycleHubPose = pos(-45, -9, 90);
@@ -236,7 +238,7 @@ public abstract class AutonomousMode extends OpMode {
         if (RED) {
             storageUnitParkPose = pos(-36 + 1, -72 + WIDTH / 2 - 2.5, 90);
         } else {
-            storageUnitParkPose = pos(-36 + 1, -72 + WIDTH / 2 - 2.5, 90);
+            storageUnitParkPose = pos(-36 + 1, -72 + WIDTH / 2 - 6, 90);
         }
 
         // Carousel path's initial pose is two tiles over from warehouse.
@@ -260,8 +262,9 @@ public abstract class AutonomousMode extends OpMode {
         spinCarousel(); // CAROUSEL only
         deposit();
         cycle(); // CYCLE only
-        park();
-        getFreight(); // CYCLE only
+//        park();
+//        getFreight(); // CYCLE only
+        parkShared(); // CYCLE ONLY
 
         epilogue();
     }
@@ -287,7 +290,7 @@ public abstract class AutonomousMode extends OpMode {
             queue(shippingArm::armOutAsync); // necessary to prevent the arm from blocking the spinner
             queue(fromHere()
                     .lineTo(calibratePreCarouselPose.vec())
-                    .lineTo(carouselPose.minus(pos(0, 10)).vec(), getVelocityConstraint(25, 5, TRACK_WIDTH), getAccelerationConstraint(25)));
+                    .lineTo(carouselPose.minus(pos(2.5, 10)).vec(), getVelocityConstraint(25, 5, TRACK_WIDTH), getAccelerationConstraint(35)));
             queue(() -> {
                 // Spin asynchronously
                 Thread spin = spinner.spinAsync(1, 1.2 * SPIN_TIME, WAIT_TIME);
@@ -309,10 +312,21 @@ public abstract class AutonomousMode extends OpMode {
     public void deposit() {
         Match.status("Initializing: deposit (preloaded & SE)");
         queue(() -> outtake.slideToAsync(barcode));
-        queue(fromHere()
-                .addTemporalMarker((CAROUSEL ? 1.2 : 0.6), async(outtake::dumpOut))
-                .lineTo(hubPose.vec()));
-        queueHubSensorCalibration(trueHubPose);
+        if (CAROUSEL) {
+            queue(fromHere()
+                    .lineTo(storageUnitParkPose.minus(pos(0,20)).vec()));
+            queueCalibration(storageUnitParkPose);
+            queue(fromHere()
+                    .lineToLinearHeading(carouselHubPose)
+                    .addTemporalMarker(0.6, async(outtake::dumpOut)));
+
+
+        } else if (CYCLE) {
+            queue(fromHere()
+                    .addTemporalMarker((CAROUSEL ? 1.2 : 0.6), async(outtake::dumpOut))
+                    .lineTo(hubPose.vec()));
+            queueHubSensorCalibration(trueHubPose);
+        }
     }
 
     public void cycle() {
@@ -438,10 +452,10 @@ public abstract class AutonomousMode extends OpMode {
                         outtake.slideToAsync(ZERO);
                     }))
                     .splineToSplineHeading(preWhPose.plus(pos(-3.5, 4)), deg(0))
-                    .lineTo(whPose.minus(pos(3.5, 8)).vec()));
+                    .lineTo(whPose.minus(pos(3.5, 5)).vec()));
         }
         queueWarehouseSensorCalibration(parkPose);
-        queue(shippingArm::resetArm);
+        queue(shippingArm::resetArmAsync);
     }
 
     public void getFreight() {
@@ -458,6 +472,71 @@ public abstract class AutonomousMode extends OpMode {
             }
             intake.off();
         });
+    }
+
+    /**
+     * Park facing the shared hub with one freight in the dump. Use after {@link #park()}.
+     */
+    public void parkSharedBrainDead() {
+        if (!CYCLE)
+            return;
+        Pose2d transition = pos(-36, 36, 45);
+        Pose2d intakePose = pos(-48 + LENGTH / 2, 72 - WIDTH / 2, 90);
+        queue(fromHere().lineToLinearHeading(transition).lineToLinearHeading(intakePose));
+        queue(() -> {
+            drive.setMotorPowers(0.2);
+            intake.in();
+            while (intakeRampDistance.getDistance(DistanceUnit.INCH) > 3 && dumpIndicator.update() == EMPTY && OpMode.isActive());
+            drive.setMotorPowers(0);
+            intake.off();
+        });
+    }
+
+    public void parkSharedSpline() {
+        if (!CYCLE)
+            return;
+        Pose2d transition = pos(-36, 36, 45);
+        Pose2d intakePose = pos(-48 + LENGTH / 2, 72 - WIDTH / 2, 90);
+        queue(fromHere().lineToLinearHeading(transition).lineToLinearHeading(intakePose));
+        queue(() -> {
+            drive.setMotorPowers(0.2);
+            intake.in();
+            while (intakeRampDistance.getDistance(DistanceUnit.INCH) > 3 && dumpIndicator.update() == EMPTY && OpMode.isActive());
+            drive.setMotorPowers(0);
+            intake.off();
+        });
+    }
+
+    public void parkShared() {
+        Match.status("Initializing: park");
+        // park in storage unit
+        if (CAROUSEL && PARK) {
+            queue(from(trueHubPose)
+                    .addTemporalMarker(0.5, async(() -> {
+                        outtake.dumpIn();
+                        outtake.slideToAsync(ZERO);
+                    }))
+                    .splineToSplineHeading(storageUnitParkPose));
+            return;
+        }
+        if (CYCLE) {
+            // park in warehouse
+            queue(from(trueHubPose)
+                    .addTemporalMarker(0.5, async(() -> {
+                        intake.getMotor().setVelocity(0.7 * Intake.IN_SPEED);
+                        outtake.dumpIn();
+                        outtake.slideToAsync(ZERO);
+                    }))
+                    .splineToSplineHeading(preWhPose)
+                    .lineTo(whPose.minus(pos(3.5, 5)).vec())
+                    .now(shippingArm::resetArmAsync)
+                    .lineTo(parkPose.vec())
+                    .splineToSplineHeading(pos(-42, 44, 90))
+                    .splineToSplineHeading(pos(-48 + LENGTH / 2, 72 - WIDTH / 2, 90))
+            );
+        }
+        queueWarehouseSensorCalibration(parkPose);
+        queue(shippingArm::resetArmAsync);
     }
 
     public void startScanner() {
@@ -507,7 +586,7 @@ public abstract class AutonomousMode extends OpMode {
         navigator = new VuforiaNavigator(hardwareMap, telemetry);
         camera = navigator.createOpenCvPassthru();
         guide = new TFWarehouseGuide(navigator.getLocalizer(), hardwareMap);
-        scanner = new BarcodeScanner(camera);
+        scanner = new PartialBarcodeScanner(camera);
     }
 
     /**
@@ -530,7 +609,7 @@ public abstract class AutonomousMode extends OpMode {
             }
         });
         guide = new WarehouseGuide(camera);
-        scanner = new BarcodeScanner(camera);
+        scanner = new PartialBarcodeScanner(camera);
     }
     // endregion
 

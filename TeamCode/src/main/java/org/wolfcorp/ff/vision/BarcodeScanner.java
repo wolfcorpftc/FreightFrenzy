@@ -97,7 +97,7 @@ public class BarcodeScanner extends Detector {
             leftColor = midColor = mismatchColor;
         }
         latch.countDown();
-        Match.telemetry.update();
+        Match.update();
 
         Imgproc.rectangle(input, leftROI, leftColor);
         Imgproc.rectangle(input, midROI, midColor);

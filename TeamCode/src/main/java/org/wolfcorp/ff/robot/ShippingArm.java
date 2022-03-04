@@ -102,6 +102,10 @@ public class ShippingArm {
         }
     }
 
+    public void resetArmAsync() {
+        new Thread(this::resetArm).start();
+    }
+
     public void toggleClaw() {
         if (Math.abs(servo.getPosition() - CLAW_CLOSE_POSITION) < 0.01) {
             openClaw();

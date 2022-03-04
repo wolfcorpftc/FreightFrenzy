@@ -101,6 +101,12 @@ public class AutoTest {
         initialPose = pos(-72 + width / 2, 42);
         cycleHubPose = pos(-44, -3, isRed ? -75 : 75);
 
+        parkPose = pos(-72 + width / 2, 27, 0);
+        Pose2d transition = pos(-42, 44, 90);
+//        initialPose = parkPose;
+        initialPose = hubPose;
+
+        Pose2d intakePose = pos(-48 + length / 2, 72 - width / 2, 90);
         // Declare a MeepMeep instance
         // With a field size of 800 pixels
         MeepMeep mm = new MeepMeep(600)
@@ -115,8 +121,10 @@ public class AutoTest {
                 .setBotDimensions(width,length)
                 .followTrajectorySequence(drive -> drive
                         .trajectorySequenceBuilder(initialPose)
-                        .splineToConstantHeading(preWhPose.minus(pos(2, -5)).vec(), deg(180))
-                        .splineToSplineHeading(cycleHubPose.plus(pos(0, 5)), deg((isRed ? 1 : -1) * 175))
+                        .splineToSplineHeading(preWhPose, 0)
+                        .lineTo(parkPose.vec())
+                        .splineToSplineHeading(transition, deg(0))
+                        .splineToSplineHeading(intakePose, deg(0))
                         .build()
                 )
                 .start();
