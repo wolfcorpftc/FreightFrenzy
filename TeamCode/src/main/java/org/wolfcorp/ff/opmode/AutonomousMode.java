@@ -405,7 +405,13 @@ public abstract class AutonomousMode extends OpMode {
                         outtake.slideToAsync(ZERO);
                     }
                     outtake.dumpIn();
-                    intake.getMotor().setVelocity(0.7 * Intake.IN_SPEED);
+                    if (time.milliseconds() / 1000 % 2 == 1) {
+                        drive.setMotorPowers(-0.1);
+                        intake.getMotor().setVelocity(0.7 * Intake.IN_SPEED);
+                    } else if (time.milliseconds() / 1000 % 2 == 0) {
+                        drive.setMotorPowers(0.15);
+                        intake.getMotor().setVelocity(0.7 * Intake.IN_SPEED);
+                    }
                 } else if (dumpIndicator.update() == OVERFLOW) {
                     drive.setMotorPowers(0); // -0.05
                     intake.getMotor().setVelocity(0.75 * Intake.OUT_SPEED);

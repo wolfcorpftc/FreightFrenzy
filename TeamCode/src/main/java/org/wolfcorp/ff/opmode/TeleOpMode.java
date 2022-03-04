@@ -74,12 +74,19 @@ public abstract class TeleOpMode extends OpMode {
                             true
                     );
                 } else {
-                    drive.drive(
+//                      drive.drive(
+//                            gamepad1.right_stick_y,
+//                            -gamepad1.right_stick_x,
+//                            gamepad1.left_stick_x,
+//                            0.4,
+//                            slowMode
+//                      );
+                        drive.drive(
                             gamepad1.right_stick_y,
                             -gamepad1.right_stick_x,
                             gamepad1.left_stick_x,
                             0.4,
-                            slowMode
+                            slowMode && gamepad1.right_stick_y < -0.02
                     );
                 }
             }
@@ -99,7 +106,7 @@ public abstract class TeleOpMode extends OpMode {
                     outtake.resetSlide();
                 }
                 outtake.extend(gamepad2.back);
-            } else if (gamepad2.a && !maskSlide) {
+            } else if (gamepad2.a && !gamepad2.start && !gamepad1.start && !maskSlide) {
                 if (outtake.getMotor().getMode() == DcMotor.RunMode.RUN_TO_POSITION) {
                     outtake.resetSlide();
                 }
@@ -109,7 +116,7 @@ public abstract class TeleOpMode extends OpMode {
             }
 
             // *** Intake ***
-            if (gamepad2.b && !gamepad2.start && !maskIntake) {
+            if (gamepad2.b && !gamepad2.start && !gamepad1.start && !maskIntake) {
                 maskIntake = true;
                 intake.toggleOut();
             } else if (gamepad2.x && !maskIntake) {
@@ -157,19 +164,6 @@ public abstract class TeleOpMode extends OpMode {
                 maskSpinnerOverride = false;
             }
 
-            if (!(gamepad2.dpad_up || gamepad2.dpad_right || gamepad2.dpad_down || gamepad2.a || gamepad2.y)) {
-                maskSlide = false;
-            }
-
-            // *** Shipping Element Arm: claw ***
-            if (gamepad2.right_trigger > 0.8 && !maskToggleClaw) {
-                maskToggleClaw = true;
-                shippingArm.toggleClaw();
-            }
-
-            if (gamepad2.right_trigger < 0.8) {
-                maskToggleClaw = false;
-            }
             if (gamepad2.right_stick_y < -0.3) {
                 shippingArm.clawIncrement(true);
             } else if (gamepad2.right_stick_y > 0.3) {
@@ -178,7 +172,7 @@ public abstract class TeleOpMode extends OpMode {
 
             // *** Shipping Element Arm: claw ***
             double armMultiplier = Math.abs(gamepad2.left_stick_y)
-                    * (gamepad2.right_stick_button ? 0.4 : 1);
+                    * (gamepad2.right_trigger > 0.5 ? 0.25 : 1);
             if (gamepad2.left_stick_y < -0.02) {
                 shippingArm.setArmVelocity(armMultiplier * ShippingArm.ARM_OUT_SPEED);
             } else if (gamepad2.left_stick_y > 0.02) {
@@ -188,13 +182,13 @@ public abstract class TeleOpMode extends OpMode {
             }
 
             // *** Outtake : reset ***
-            if (gamepad1.dpad_right && !maskOuttakeReset) {
+            if ((gamepad1.dpad_right || gamepad2.dpad_right) && !maskOuttakeReset) {
                 outtake.getMotor().setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                 outtake.getMotor().setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                 maskOuttakeReset = true;
             }
 
-            if (!gamepad1.dpad_right) {
+            if (!gamepad1.dpad_right && !gamepad2.dpad_right) {
                 maskOuttakeReset = false;
             }
 
