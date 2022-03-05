@@ -236,9 +236,9 @@ public abstract class AutonomousMode extends OpMode {
         calibratePreDuckPose = preDuckPose.minus(pos(3, 0));
         duckPose = preDuckPose.minus(pos(0, 48)); // FIXME: fix the y value
         if (RED) {
-            storageUnitParkPose = pos(-36 + 1, -72 + WIDTH / 2 - 2.5, 90);
+            storageUnitParkPose = pos(-34, -72 + WIDTH / 2 - 2.5, 90);
         } else {
-            storageUnitParkPose = pos(-36 + 1, -72 + WIDTH / 2 - 6, 90);
+            storageUnitParkPose = pos(-34, -72 + WIDTH / 2 - 6, 90);
         }
 
         // Carousel path's initial pose is two tiles over from warehouse.
@@ -292,7 +292,7 @@ public abstract class AutonomousMode extends OpMode {
             queue(fromHere()
                     .lineTo(calibratePreCarouselPose.vec())
                     .lineTo(carouselPose.minus(pos(2.5, 10)).vec(), getVelocityConstraint(25, 5, TRACK_WIDTH), getAccelerationConstraint(35)));
-            Pose2d expectedPose = pos(-48 - LENGTH / 2, -72 + WIDTH / 2, 90);
+            Pose2d expectedPose = pos(-48 - LENGTH / 2 + 2, -72 + WIDTH / 2, 90);
             queue(() -> {
                 // Spin asynchronously
                 Thread spin = spinner.spinAsync(1, 1.2 * SPIN_TIME, WAIT_TIME);
@@ -311,11 +311,11 @@ public abstract class AutonomousMode extends OpMode {
         queue(() -> outtake.slideToAsync(barcode));
         if (CAROUSEL) {
             queue(fromHere()
-                    .lineTo(storageUnitParkPose.minus(pos(0,20)).vec()));
+                    .lineTo(storageUnitParkPose.minus(pos(0,2)).vec()));
             queueCalibration(storageUnitParkPose);
             queue(fromHere()
                     .lineToLinearHeading(carouselHubPose)
-                    .addTemporalMarker(0.6, async(outtake::dumpOut)));
+                    .addTemporalMarker(0.8, async(outtake::dumpOut)));
 
 
         } else if (CYCLE) {
@@ -588,7 +588,7 @@ public abstract class AutonomousMode extends OpMode {
         navigator = new VuforiaNavigator(hardwareMap, telemetry);
         camera = navigator.createOpenCvPassthru();
         guide = new TFWarehouseGuide(navigator.getLocalizer(), hardwareMap);
-        scanner = new PartialBarcodeScanner(camera);
+        scanner = new BarcodeScanner(camera);
     }
 
     /**
