@@ -183,7 +183,7 @@ public abstract class AutonomousMode extends OpMode {
         calibratePreCarouselPose = preCarouselPose.minus(pos(0, 8));
 
         trueHubPose = pos(-48.5, -12, 90);
-        carouselHubPose = pos(-24, -33);
+        carouselHubPose = pos(-24, -33, 180);
         if (RED && CAROUSEL && CYCLE) {
             hubPose = pos(-45, 0, 90);
             cycleHubPose = pos(-48, -8, 90);
@@ -262,9 +262,10 @@ public abstract class AutonomousMode extends OpMode {
         spinCarousel(); // CAROUSEL only
         deposit();
         cycle(); // CYCLE only
-//        park();
+        park();
+        getFreight();
 //        getFreight(); // CYCLE only
-        parkShared(); // CYCLE ONLY
+//        parkShared(); // CYCLE ONLY
 
         epilogue();
     }
@@ -337,15 +338,15 @@ public abstract class AutonomousMode extends OpMode {
 
 
             // *** To warehouse ***
-            queue(() -> intake.getMotor().setVelocity(0.6 * Intake.IN_SPEED));
+            queue(() -> intake.getMotor().setVelocity(0.8 * Intake.IN_SPEED));
             Pose2d moddedWhPose = whPose.plus(pos(0, i == 1 ? 0 : 2 + i * 1.8));
             queue(from(trueHubPose)
                     .addTemporalMarker(0.4, async(() -> {
                         outtake.dumpIn();
                         outtake.slideToAsync(ZERO);
                     }))
-                    .splineToSplineHeading(preWhPose.plus(pos(-3.5, 4)), deg(0))
-                    .splineToConstantHeading(moddedWhPose.minus(pos(9, 0)).vec()));// from 3.5
+                    .splineToSplineHeading(preWhPose.plus(pos(-2.75, 4)), deg(0))
+                    .splineToConstantHeading(moddedWhPose.minus(pos(7, 0)).vec()));// from 3.5
             queueWarehouseSensorCalibration(moddedWhPose);
 
 
@@ -355,7 +356,7 @@ public abstract class AutonomousMode extends OpMode {
 
 
             // *** To hub ***
-            double angleOffset = RED ? -5 : 5;
+            double angleOffset = RED ? -3 : 3;
             queue(from(moddedWhPose.plus(pos(0, 0, angleOffset)))
                     .lineToLinearHeading(preWhPose.plus(pos(0, -4, angleOffset)))
                     .addTemporalMarker(1.15, async(() -> {
@@ -400,18 +401,13 @@ public abstract class AutonomousMode extends OpMode {
             while (dumpIndicator.update() != FULL) {
                 drive.updatePoseEstimate();
                 if (dumpIndicator.update() == EMPTY) {
-                    drive.setMotorPowers(time.milliseconds() > 1000 ? -0.1 : 0.15);
+                    if (lowerDumpDistance.getDistance(DistanceUnit.INCH) < 1.5 && time.milliseconds() > 2500) {
+                        intake.getMotor().setVelocity(0.75 * Intake.OUT_SPEED);
+                    }
                     if (!outtake.isApproaching(ZERO)) {
                         outtake.slideToAsync(ZERO);
                     }
                     outtake.dumpIn();
-                    if (time.milliseconds() / 1000 % 2 == 1) {
-                        drive.setMotorPowers(-0.1);
-                        intake.getMotor().setVelocity(0.7 * Intake.IN_SPEED);
-                    } else if (time.milliseconds() / 1000 % 2 == 0) {
-                        drive.setMotorPowers(0.15);
-                        intake.getMotor().setVelocity(0.7 * Intake.IN_SPEED);
-                    }
                 } else if (dumpIndicator.update() == OVERFLOW) {
                     drive.setMotorPowers(0); // -0.05
                     intake.getMotor().setVelocity(0.75 * Intake.OUT_SPEED);
@@ -453,12 +449,12 @@ public abstract class AutonomousMode extends OpMode {
             // park in warehouse
             queue(from(trueHubPose)
                     .addTemporalMarker(0.5, async(() -> {
-                        intake.getMotor().setVelocity(0.7 * Intake.IN_SPEED);
+                        intake.getMotor().setVelocity(0.6 * Intake.IN_SPEED);
                         outtake.dumpIn();
                         outtake.slideToAsync(ZERO);
                     }))
                     .splineToSplineHeading(preWhPose.plus(pos(-3.5, 4)), deg(0))
-                    .lineTo(whPose.minus(pos(3.5, 5)).vec()));
+                    .lineTo(whPose.plus(pos(-3.5, 5)).vec()));
         }
         queueWarehouseSensorCalibration(parkPose);
         queue(shippingArm::resetArmAsync);
@@ -471,11 +467,14 @@ public abstract class AutonomousMode extends OpMode {
             Match.status("getting additional freight");
             while (opModeIsActive()) {
                 if (dumpIndicator.update() == EMPTY) {
+                    drive.setMotorPowers(0.2);
                     intake.in();
                 } else {
+                    drive.setMotorPowers(0);
                     intake.out();
                 }
             }
+            drive.setMotorPowers(0);
             intake.off();
         });
     }
