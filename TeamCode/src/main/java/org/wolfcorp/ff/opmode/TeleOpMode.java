@@ -85,7 +85,7 @@ public abstract class TeleOpMode extends OpMode {
                             gamepad1.right_stick_y,
                             -gamepad1.right_stick_x,
                             gamepad1.left_stick_x,
-                            0.4,
+                            0.25,
                             slowMode && gamepad1.right_stick_y < -0.02
                     );
                 }
@@ -164,10 +164,11 @@ public abstract class TeleOpMode extends OpMode {
                 maskSpinnerOverride = false;
             }
 
-            if (gamepad2.right_stick_y < -0.3) {
-                shippingArm.clawIncrement(true);
-            } else if (gamepad2.right_stick_y > 0.3) {
-                shippingArm.clawIncrement(false);
+            if (gamepad2.right_trigger > 0.8 && !maskToggleClaw) {
+                maskToggleClaw = true;
+                shippingArm.toggleClaw();
+            } else if (gamepad2.right_trigger <= 0.8) {
+                maskToggleClaw = false;
             }
 
             // *** Shipping Element Arm: claw ***

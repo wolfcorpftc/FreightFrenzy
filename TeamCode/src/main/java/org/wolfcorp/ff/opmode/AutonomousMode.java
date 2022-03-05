@@ -263,7 +263,7 @@ public abstract class AutonomousMode extends OpMode {
         deposit();
         cycle(); // CYCLE only
         park();
-        getFreight();
+        // getFreight();
 //        getFreight(); // CYCLE only
 //        parkShared(); // CYCLE ONLY
 
@@ -408,6 +408,7 @@ public abstract class AutonomousMode extends OpMode {
                         outtake.slideToAsync(ZERO);
                     }
                     outtake.dumpIn();
+                    drive.setMotorPowers(0.15);
                 } else if (dumpIndicator.update() == OVERFLOW) {
                     drive.setMotorPowers(0); // -0.05
                     intake.getMotor().setVelocity(0.75 * Intake.OUT_SPEED);
@@ -442,7 +443,7 @@ public abstract class AutonomousMode extends OpMode {
                         outtake.dumpIn();
                         outtake.slideToAsync(ZERO);
                     }))
-                    .lineTo(storageUnitParkPose.vec()));
+                    .lineToLinearHeading(storageUnitParkPose));
             return;
         }
         if (CYCLE) {

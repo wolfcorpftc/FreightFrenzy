@@ -25,8 +25,8 @@ public class ShippingArm {
     public static final int ARM_OUT_POSITION = (int) (91.0 / 360 * ARM_TICKS_PER_REV * ARM_GEAR_RATIO);
     public static final int ARM_OUTERMOST_POSITION = (int) (230.0 / 360 * ARM_TICKS_PER_REV * ARM_GEAR_RATIO);
 
-    public static final double CLAW_OPEN_POSITION = 0.6;
-    public static final double CLAW_CLOSE_POSITION = 0;
+    public static final double CLAW_OPEN_POSITION = 1;
+    public static final double CLAW_CLOSE_POSITION = 0.69;
 
     public ShippingArm(HardwareMap hwMap) {
         motor = hwMap.get(DcMotorEx.class, "armMotor");
@@ -119,14 +119,6 @@ public class ShippingArm {
 
     public void closeClaw() {
         servo.setPosition(CLAW_CLOSE_POSITION);
-    }
-
-    public void clawIncrement(double deltaPos) {
-        servo.setPosition(Range.clip(servo.getPosition()+deltaPos,CLAW_CLOSE_POSITION,CLAW_OPEN_POSITION));
-    }
-
-    public void clawIncrement(boolean open) {
-        clawIncrement(open?0.02:-0.02);
     }
 
     public DcMotorEx getMotor() {
