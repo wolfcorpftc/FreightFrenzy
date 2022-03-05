@@ -172,8 +172,7 @@ public abstract class TeleOpMode extends OpMode {
             }
 
             // *** Shipping Element Arm: claw ***
-            double armMultiplier = Math.abs(gamepad2.left_stick_y)
-                    * (gamepad2.right_trigger > 0.5 ? 0.25 : 1);
+            double armMultiplier = Math.abs(gamepad2.left_stick_y);
             if (gamepad2.left_stick_y < -0.02) {
                 shippingArm.setArmVelocity(armMultiplier * ShippingArm.ARM_OUT_SPEED);
             } else if (gamepad2.left_stick_y > 0.02) {
