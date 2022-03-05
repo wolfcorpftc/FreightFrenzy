@@ -292,21 +292,17 @@ public abstract class AutonomousMode extends OpMode {
             queue(fromHere()
                     .lineTo(calibratePreCarouselPose.vec())
                     .lineTo(carouselPose.minus(pos(2.5, 10)).vec(), getVelocityConstraint(25, 5, TRACK_WIDTH), getAccelerationConstraint(35)));
+            Pose2d expectedPose = pos(-48 - LENGTH / 2, -72 + WIDTH / 2, 90);
             queue(() -> {
                 // Spin asynchronously
                 Thread spin = spinner.spinAsync(1, 1.2 * SPIN_TIME, WAIT_TIME);
                 // Calibrate y-coordinate; see queueYCalibration
-                Pose2d currentPose = drive.getPoseEstimate();
-                Pose2d correctedPose = new Pose2d(
-                        carouselPose.getX(),
-                        currentPose.getY(),
-                        carouselPose.getHeading()
-                );
-                drive.setPoseEstimate(correctedPose);
+                drive.setPoseEstimate(expectedPose);
                 spin.join();
                 // Bring arm in
                 shippingArm.armInAsync(0.7);
             });
+            queue(expectedPose);
         }
     }
 
@@ -438,8 +434,8 @@ public abstract class AutonomousMode extends OpMode {
         Match.status("Initializing: park");
         // park in storage unit
         if (CAROUSEL && PARK) {
-            queue(from(trueHubPose)
-                    .addTemporalMarker(0.5, async(() -> {
+            queue(from(carouselHubPose)
+                    .addTemporalMarker(1, async(() -> {
                         outtake.dumpIn();
                         outtake.slideToAsync(ZERO);
                     }))
