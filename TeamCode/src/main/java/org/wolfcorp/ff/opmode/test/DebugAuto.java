@@ -9,6 +9,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.wolfcorp.ff.opmode.AutonomousMode;
 import org.wolfcorp.ff.opmode.util.Match;
 import org.wolfcorp.ff.robot.DumpIndicator;
+import org.wolfcorp.ff.robot.Intake;
 import org.wolfcorp.ff.vision.Barcode;
 
 @Autonomous(name = "Debug", group = "test")
@@ -18,7 +19,8 @@ public class DebugAuto extends AutonomousMode {
         Match.setupTelemetry();
         initHardware();
         waitForStart();
-        drive.forward(0.5, 12);
+        while (opModeIsActive())
+            intake.getMotor().setVelocity(0.75 * Intake.IN_SPEED);
     }
 
     public void runOpMode2() {

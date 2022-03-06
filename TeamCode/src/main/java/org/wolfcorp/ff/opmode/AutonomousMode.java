@@ -334,7 +334,7 @@ public abstract class AutonomousMode extends OpMode {
 
 
             // *** To warehouse ***
-            queue(() -> intake.getMotor().setVelocity(0.8 * Intake.IN_SPEED));
+            queue(() -> intake.getMotor().setVelocity(0.75 * Intake.IN_SPEED));
             Pose2d moddedWhPose = whPose.plus(pos(0, i == 1 ? 0 : 2 + i * 1.8));
             queue(from(trueHubPose)
                     .addTemporalMarker(0.4, async(() -> {
@@ -364,6 +364,7 @@ public abstract class AutonomousMode extends OpMode {
                         } else {
                             intake.out();
                             outtake.slideToAsync(EXCESS);
+                            sleep(100);
                             outtake.dumpExcess();
                         }
                     }))
@@ -397,12 +398,13 @@ public abstract class AutonomousMode extends OpMode {
             while (dumpIndicator.update() != FULL) {
                 drive.updatePoseEstimate();
                 if (dumpIndicator.update() == EMPTY) {
-                    if (lowerDumpDistance.getDistance(DistanceUnit.INCH) < 1.5 && time.milliseconds() > 2500) {
-                        intake.getMotor().setVelocity(0.75 * Intake.OUT_SPEED);
-                    }
+//                    if (lowerDumpDistance.getDistance(DistanceUnit.INCH) < 1.5 && time.milliseconds() > 2500) {
+//                        intake.getMotor().setVelocity(0.75 * Intake.OUT_SPEED);
+//                    }
                     if (!outtake.isApproaching(ZERO)) {
                         outtake.slideToAsync(ZERO);
                     }
+                    intake.getMotor().setVelocity(0.78 * Intake.IN_SPEED);
                     outtake.dumpIn();
                     drive.setMotorPowers(0.15);
                 } else if (dumpIndicator.update() == OVERFLOW) {
@@ -932,6 +934,12 @@ public abstract class AutonomousMode extends OpMode {
         return () -> {
             new Thread(task).start();
         };
+    }
+
+    public static Thread doAsync(Runnable task) {
+        Thread t = new Thread(task);
+        t.start();
+        return t;
     }
     // endregion
 }
