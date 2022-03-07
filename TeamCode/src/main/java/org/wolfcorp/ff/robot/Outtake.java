@@ -6,6 +6,7 @@ import static org.wolfcorp.ff.vision.Barcode.EXCESS;
 import static org.wolfcorp.ff.vision.Barcode.MID;
 import static org.wolfcorp.ff.vision.Barcode.TOP;
 import static org.wolfcorp.ff.vision.Barcode.ZERO;
+import static org.wolfcorp.ff.vision.Barcode.SUPERTOP;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -27,8 +28,9 @@ public class Outtake {
     public static final double SLIDE_DOWN_SPEED = -SLIDE_MAX_SPEED; // ticks/sec
 
     public static final int SLIDE_TOP_POSITION = 1900;
+    public static final int SLIDE_SUPERTOP_POSITION = 2000;
     public static final int SLIDE_MID_POSITION = 1000;
-    public static final int SLIDE_EXCESS_POSITION = 360;
+    public static final int SLIDE_EXCESS_POSITION = 150;
     public static final int SLIDE_BOT_POSITION = 400;
 
     public static final int SLIDE_MIN_POSITION = -100;
@@ -117,6 +119,8 @@ public class Outtake {
 
     public static int barcodeToPosition(Barcode barcode) {
         switch (barcode) {
+            case SUPERTOP:
+                return SLIDE_SUPERTOP_POSITION;
             case TOP:
                 return SLIDE_TOP_POSITION;
             case MID:
@@ -134,6 +138,8 @@ public class Outtake {
 
     public static Barcode positionToBarcode(int pos) {
         switch (pos) {
+            case SLIDE_SUPERTOP_POSITION:
+                return SUPERTOP;
             case SLIDE_TOP_POSITION:
                 return TOP;
             case SLIDE_MID_POSITION:

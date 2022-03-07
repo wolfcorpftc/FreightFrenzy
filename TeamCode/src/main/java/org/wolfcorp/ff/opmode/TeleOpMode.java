@@ -85,18 +85,18 @@ public abstract class TeleOpMode extends OpMode {
                             gamepad1.right_stick_y,
                             -gamepad1.right_stick_x,
                             gamepad1.left_stick_x,
-                            0.25,
+                            0.28,
                             slowMode && gamepad1.right_stick_y < -0.02
                     );
                 }
             }
 
             // *** Slow Mode ***
-            if (gamepad1.right_bumper && !maskSlowMode) {
+            if (gamepad1.left_bumper && !maskSlowMode) {
                 slowMode = !slowMode;
                 maskSlowMode = true;
             }
-            if (!gamepad1.right_bumper) {
+            if (!gamepad1.left_bumper) {
                 maskSlowMode = false;
             }
 
@@ -194,6 +194,10 @@ public abstract class TeleOpMode extends OpMode {
 
             // *** Outtake: dump status ***
             dumpIndicator.update();
+
+            telemetry.addData("ramp sensor", intakeRampDistance.getDistance(DistanceUnit.INCH));
+            telemetry.addData("left range sensor inches", leftRangeSensor.getDistance(DistanceUnit.INCH));
+            telemetry.addData("right range sensor inches", rightRangeSensor.getDistance(DistanceUnit.INCH));
 
             // *** Odometry update ***
             drive.update();

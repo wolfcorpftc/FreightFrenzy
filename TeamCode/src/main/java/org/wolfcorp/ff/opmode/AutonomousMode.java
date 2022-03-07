@@ -14,6 +14,7 @@ import static org.wolfcorp.ff.robot.DumpIndicator.Status.FULL;
 import static org.wolfcorp.ff.robot.DumpIndicator.Status.OVERFLOW;
 import static org.wolfcorp.ff.vision.Barcode.EXCESS;
 import static org.wolfcorp.ff.vision.Barcode.TOP;
+import static org.wolfcorp.ff.vision.Barcode.SUPERTOP;
 import static org.wolfcorp.ff.vision.Barcode.ZERO;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
@@ -358,7 +359,7 @@ public abstract class AutonomousMode extends OpMode {
                     .addTemporalMarker(1.15, async(() -> {
                         // last-minute check & fix for intake
                         if (dumpIndicator.update() == FULL) {
-                            outtake.slideToAsync(TOP);
+                            outtake.slideToAsync(SUPERTOP);
                         } else if (dumpIndicator.update() == EMPTY) {
                             intake.in();
                         } else {
@@ -371,8 +372,8 @@ public abstract class AutonomousMode extends OpMode {
                     .addTemporalMarker(1.4, async(() -> {
                         if (dumpIndicator.update() == FULL) {
                             outtake.dumpIn();
-                            if (!outtake.isApproaching(TOP))
-                            outtake.slideToAsync(TOP);
+                            if (!outtake.isApproaching(SUPERTOP))
+                            outtake.slideToAsync(SUPERTOP);
                         }
                     }))
                     .addTemporalMarker(1.0, -0.55, outtake::dumpOut)
@@ -383,8 +384,8 @@ public abstract class AutonomousMode extends OpMode {
             // *** Score ***
             queue(() -> {
                 intake.off();
-                if (!outtake.isApproaching(TOP)) {
-                    outtake.slideTo(TOP);
+                if (!outtake.isApproaching(SUPERTOP)) {
+                    outtake.slideTo(SUPERTOP);
                 }
             });
         }
@@ -393,9 +394,10 @@ public abstract class AutonomousMode extends OpMode {
     public void intake(int iteration) {
 //        regularIntake();
         queue(() -> {
-            ElapsedTime time = new ElapsedTime();
-            time.reset();
+            ElapsedTime cloggedTimer = new ElapsedTime();
+            boolean clogged = false;
             while (dumpIndicator.update() != FULL) {
+                System.out.println(intakeRampDistance.getDistance(DistanceUnit.INCH) + "asdf");
                 drive.updatePoseEstimate();
                 if (dumpIndicator.update() == EMPTY) {
 //                    if (lowerDumpDistance.getDistance(DistanceUnit.INCH) < 1.5 && time.milliseconds() > 2500) {
@@ -404,9 +406,24 @@ public abstract class AutonomousMode extends OpMode {
                     if (!outtake.isApproaching(ZERO)) {
                         outtake.slideToAsync(ZERO);
                     }
-                    intake.getMotor().setVelocity(0.78 * Intake.IN_SPEED);
+                    if (intakeRampDistance.getDistance(DistanceUnit.INCH) < 2) {
+                        clogged = true;
+                    } else {
+                        clogged = false;
+                    }
+                    if (!clogged) {
+                        cloggedTimer.reset();
+                    }
+                    if (cloggedTimer.milliseconds() > 250) {
+                        intake.getMotor().setVelocity(Intake.MAX_SPEED);
+                        drive.setMotorPowers(-0.3);
+                    } else if (cloggedTimer.milliseconds() > 2500) {
+                        drive.setMotorPowers(0.4);
+                    } else {
+                        intake.getMotor().setVelocity(0.78 * Intake.IN_SPEED);
+                        drive.setMotorPowers(0.15);
+                    }
                     outtake.dumpIn();
-                    drive.setMotorPowers(0.15);
                 } else if (dumpIndicator.update() == OVERFLOW) {
                     drive.setMotorPowers(0); // -0.05
                     intake.getMotor().setVelocity(0.75 * Intake.OUT_SPEED);
@@ -900,8 +917,8 @@ public abstract class AutonomousMode extends OpMode {
             Pose2d currentPose = drive.getPoseEstimate();
             Pose2d correctedPose = new Pose2d(
                     pos(0, 72 - rangeSensor.getDistance(DistanceUnit.INCH) - 6.5).getX(),
-                    predictedPose.getY(),
-                    currentPose.getHeading()
+                    pos(-76 + WIDTH / 2 + (RED ? rightRangeSensor.getDistance(DistanceUnit.INCH) : leftRangeSensor.getDistance(DistanceUnit.INCH)) - 1, 0).getY(),
+                    drive.getExternalHeading()
             );
             drive.setPoseEstimate(correctedPose);
         });

@@ -24,6 +24,8 @@ public abstract class OpMode extends LinearOpMode {
     public static ShippingArm shippingArm = null;
     public static DumpIndicator dumpIndicator = null;
     public static DistanceSensor rangeSensor;
+    public static DistanceSensor leftRangeSensor;
+    public static DistanceSensor rightRangeSensor;
     public static RevColorSensorV3 upperDumpDistance = null;
     public static RevColorSensorV3 lowerDumpDistance = null;
     public static DistanceSensor intakeRampDistance = null;
@@ -62,6 +64,8 @@ public abstract class OpMode extends LinearOpMode {
         shippingArm = new ShippingArm(hardwareMap);
         dumpIndicator = new DumpIndicator(hardwareMap);
         rangeSensor = hardwareMap.get(DistanceSensor.class, "sensor_range");
+        leftRangeSensor = hardwareMap.get(DistanceSensor.class, "leftRangeSensor");
+        rightRangeSensor = hardwareMap.get(DistanceSensor.class, "rightRangeSensor");
         upperDumpDistance = hardwareMap.get(RevColorSensorV3.class, "upperDumpDist");
         upperDumpDistance.enableLed(false);
         lowerDumpDistance = hardwareMap.get(RevColorSensorV3.class, "lowerDumpDist");
@@ -85,6 +89,8 @@ public abstract class OpMode extends LinearOpMode {
         spinner = null;
         dumpIndicator = null;
         rangeSensor = null;
+        leftRangeSensor = null;
+        rightRangeSensor = null;
         upperDumpDistance = null;
         lowerDumpDistance = null;
         intakeRampDistance = null;
