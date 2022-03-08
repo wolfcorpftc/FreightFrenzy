@@ -13,11 +13,11 @@ import static org.wolfcorp.ff.robot.DumpIndicator.Status.EMPTY;
 import static org.wolfcorp.ff.robot.DumpIndicator.Status.FULL;
 import static org.wolfcorp.ff.robot.DumpIndicator.Status.OVERFLOW;
 import static org.wolfcorp.ff.vision.Barcode.EXCESS;
-import static org.wolfcorp.ff.vision.Barcode.TOP;
 import static org.wolfcorp.ff.vision.Barcode.SUPERTOP;
 import static org.wolfcorp.ff.vision.Barcode.ZERO;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.acmerobotics.roadrunner.trajectory.MarkerCallback;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -33,6 +33,7 @@ import org.wolfcorp.ff.robot.DriveConstants;
 import org.wolfcorp.ff.robot.Intake;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequence;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequenceBuilder;
+import org.wolfcorp.ff.robot.util.InchSensor;
 import org.wolfcorp.ff.vision.Barcode;
 import org.wolfcorp.ff.vision.BarcodeScanner;
 import org.wolfcorp.ff.vision.Guide;
@@ -904,6 +905,29 @@ public abstract class AutonomousMode extends OpMode {
     }
 
     /**
+     * Calibrate robot pose at the warehouse using side and forward distance sensors and IMU.
+     * @see #queueWarehouseSensorCalibration(Pose2d)
+     */
+    protected void warehouseSensorCalibration() {
+        double heading = drive.getExternalHeading();
+
+        // sensor to wall distance (horizontal line relative to field)
+        InchSensor xSensor = RED ? rightRangeSensor : leftRangeSensor;
+        double wallToXSensor = xSensor.get() * Math.cos(heading + (RED ? 1 : -1) * Math.PI / 4);
+        Vector2d xSensorToRobot = RED ? new Vector2d(-5.5, 7.5) : new Vector2d(5.25, 7.25);
+        xSensorToRobot.rotated(drive.getExternalHeading());
+        double xDist = new Vector2d(wallToXSensor, 0).plus(xSensorToRobot).getX();
+
+        InchSensor ySensor = rangeSensor;
+        double ySensorCenterXOffset = -2;
+        double wallToYSensor = ySensor.get();
+        double yDist = wallToYSensor - ySensorCenterXOffset * Math.tan(heading);
+
+        Pose2d correctedPose = pos(-72 + xDist, 72 - yDist, drive.getExternalHeading());
+        drive.setPoseEstimate(correctedPose);
+    }
+
+    /**
      * Queues a y-coordinates calibration of the robot's pose estimate at the warehouse. The new
      * pose estimate will calibrate the alliance-agnostic y-coordinates based on the distance sensor
      * reading. Future trajectories will begin at a predicted pose.
@@ -913,15 +937,7 @@ public abstract class AutonomousMode extends OpMode {
      * @see #queue(Pose2d)
      */
     protected void queueWarehouseSensorCalibration(Pose2d predictedPose) {
-        queue(() -> {
-            Pose2d currentPose = drive.getPoseEstimate();
-            Pose2d correctedPose = new Pose2d(
-                    pos(0, 72 - rangeSensor.getDistance(DistanceUnit.INCH) - 6.5).getX(),
-                    pos(-76 + WIDTH / 2 + (RED ? rightRangeSensor.getDistance(DistanceUnit.INCH) : leftRangeSensor.getDistance(DistanceUnit.INCH)) - 1, 0).getY(),
-                    drive.getExternalHeading()
-            );
-            drive.setPoseEstimate(correctedPose);
-        });
+        queue(this::warehouseSensorCalibration);
         queue(predictedPose);
     }
 

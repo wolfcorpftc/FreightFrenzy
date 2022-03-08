@@ -3,9 +3,13 @@ package org.wolfcorp.ff.opmode.test;
 import static org.wolfcorp.ff.vision.Barcode.EXCESS;
 import static org.wolfcorp.ff.vision.Barcode.ZERO;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.wolfcorp.ff.opmode.AutonomousMode;
 import org.wolfcorp.ff.opmode.util.Match;
 import org.wolfcorp.ff.robot.DumpIndicator;
@@ -19,8 +23,20 @@ public class DebugAuto extends AutonomousMode {
         Match.setupTelemetry();
         initHardware();
         waitForStart();
-        while (opModeIsActive())
-            intake.getMotor().setVelocity(0.75 * Intake.IN_SPEED);
+        Telemetry graphData = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+
+        drive.setMotorPowers(0.2);
+        while (opModeIsActive()) {
+            drive.updatePoseEstimate();
+            graphData.addData("Edge distance", rangeSensor.getDistance(DistanceUnit.INCH));
+            graphData.addData("Center distance", rangeSensor.getDistance(DistanceUnit.INCH) + 6.5);
+            graphData.update();
+            if (rangeSensor.getDistance(DistanceUnit.INCH) + 6.5 > 29){
+                drive.setMotorPowers(0);
+                break;
+            }
+        }
+
     }
 
     public void runOpMode2() {
