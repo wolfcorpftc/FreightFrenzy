@@ -11,6 +11,7 @@ import org.wolfcorp.ff.robot.DumpIndicator;
 import org.wolfcorp.ff.robot.Intake;
 import org.wolfcorp.ff.robot.Outtake;
 import org.wolfcorp.ff.robot.ShippingArm;
+import org.wolfcorp.ff.robot.util.InchSensor;
 
 public abstract class OpMode extends LinearOpMode {
     /** Initialized in {@link #OpMode()} and reset in {@link #resetHardware()} */
@@ -23,12 +24,12 @@ public abstract class OpMode extends LinearOpMode {
     public static CarouselSpinner spinner = null;
     public static ShippingArm shippingArm = null;
     public static DumpIndicator dumpIndicator = null;
-    public static DistanceSensor rangeSensor;
-    public static DistanceSensor leftRangeSensor;
-    public static DistanceSensor rightRangeSensor;
+    public static InchSensor rangeSensor;
+    public static InchSensor leftRangeSensor;
+    public static InchSensor rightRangeSensor;
     public static RevColorSensorV3 upperDumpDistance = null;
     public static RevColorSensorV3 lowerDumpDistance = null;
-    public static DistanceSensor intakeRampDistance = null;
+    public static InchSensor intakeRampDistance = null;
 
     /**
      * Based on the OpMode name, initialize {@link Match} members appropriately.
@@ -63,15 +64,15 @@ public abstract class OpMode extends LinearOpMode {
         spinner = new CarouselSpinner(hardwareMap, this::sleep);
         shippingArm = new ShippingArm(hardwareMap);
         dumpIndicator = new DumpIndicator(hardwareMap);
-        rangeSensor = hardwareMap.get(DistanceSensor.class, "sensor_range");
-        leftRangeSensor = hardwareMap.get(DistanceSensor.class, "leftRangeSensor");
-        rightRangeSensor = hardwareMap.get(DistanceSensor.class, "rightRangeSensor");
+        rangeSensor = new InchSensor(hardwareMap.get(DistanceSensor.class, "sensor_range"));
+        leftRangeSensor = new InchSensor(hardwareMap.get(DistanceSensor.class, "leftRangeSensor"));
+        rightRangeSensor = new InchSensor(hardwareMap.get(DistanceSensor.class, "rightRangeSensor"));
         upperDumpDistance = hardwareMap.get(RevColorSensorV3.class, "upperDumpDist");
         upperDumpDistance.enableLed(false);
         lowerDumpDistance = hardwareMap.get(RevColorSensorV3.class, "lowerDumpDist");
         lowerDumpDistance.enableLed(false);
         lowerDumpDistance.enableLed(false);
-        intakeRampDistance = hardwareMap.get(DistanceSensor.class, "intakeDist");
+        intakeRampDistance = new InchSensor(hardwareMap.get(DistanceSensor.class, "intakeDist"));
 
         Match.status("Initialized robot hardware");
     }

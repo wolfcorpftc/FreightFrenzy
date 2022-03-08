@@ -13,11 +13,13 @@ import static org.wolfcorp.ff.robot.DumpIndicator.Status.EMPTY;
 import static org.wolfcorp.ff.robot.DumpIndicator.Status.FULL;
 import static org.wolfcorp.ff.robot.DumpIndicator.Status.OVERFLOW;
 import static org.wolfcorp.ff.vision.Barcode.EXCESS;
-import static org.wolfcorp.ff.vision.Barcode.TOP;
 import static org.wolfcorp.ff.vision.Barcode.SUPERTOP;
 import static org.wolfcorp.ff.vision.Barcode.ZERO;
 
+import static java.lang.Math.cos;
+
 import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.acmerobotics.roadrunner.trajectory.MarkerCallback;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -33,6 +35,7 @@ import org.wolfcorp.ff.robot.DriveConstants;
 import org.wolfcorp.ff.robot.Intake;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequence;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequenceBuilder;
+import org.wolfcorp.ff.robot.util.InchSensor;
 import org.wolfcorp.ff.vision.Barcode;
 import org.wolfcorp.ff.vision.BarcodeScanner;
 import org.wolfcorp.ff.vision.Guide;
@@ -344,12 +347,12 @@ public abstract class AutonomousMode extends OpMode {
                     }))
                     .splineToSplineHeading(preWhPose.plus(pos(-2.75, 4)), deg(0))
                     .splineToConstantHeading(moddedWhPose.minus(pos(7, 0)).vec()));// from 3.5
-            queueWarehouseSensorCalibration(moddedWhPose);
+            queueWarehouseLocalization(moddedWhPose);
 
 
             // *** Intake ***
             intake(i);
-            queueWarehouseSensorCalibration(pos(-72 + DriveConstants.WIDTH / 2, 42, 0));
+            queueWarehouseLocalization(pos(-72 + DriveConstants.WIDTH / 2, 42, 0));
 
 
             // *** To hub ***
@@ -472,7 +475,7 @@ public abstract class AutonomousMode extends OpMode {
                     .splineToSplineHeading(preWhPose.plus(pos(-3.5, 4)), deg(0))
                     .lineTo(whPose.plus(pos(-3.5, 5)).vec()));
         }
-        queueWarehouseSensorCalibration(parkPose);
+        queueWarehouseLocalization(parkPose);
         queue(shippingArm::resetArmAsync);
     }
 
@@ -556,7 +559,7 @@ public abstract class AutonomousMode extends OpMode {
                     .splineToSplineHeading(pos(-48 + LENGTH / 2, 72 - WIDTH / 2, 90))
             );
         }
-        queueWarehouseSensorCalibration(parkPose);
+        queueWarehouseLocalization(parkPose);
         queue(shippingArm::resetArmAsync);
     }
 
@@ -904,6 +907,30 @@ public abstract class AutonomousMode extends OpMode {
     }
 
     /**
+     * Calibrate robot pose at the warehouse using side and forward distance sensors and IMU.
+     * @see #queueWarehouseLocalization(Pose2d)
+     */
+    protected void warehouseLocalization() {
+        double heading = drive.getExternalHeading();
+
+        InchSensor xSensor = RED ? rightRangeSensor : leftRangeSensor;
+        // horizontal distance from wall to sensor
+        double wallToXSensor = xSensor.get() * cos(heading);
+        // sensor point to robot center point
+        Vector2d xSensorToRobot = (RED ? new Vector2d(-5.5, 7.5) : new Vector2d(5.25, -7.25)).rotated(heading);
+        // horizontal distance between wall and robot center point
+        double xDist = new Vector2d(wallToXSensor, 0).plus(xSensorToRobot).getX();
+
+        // same logic below
+        double wallToYSensor = rangeSensor.get() * cos(heading);
+        Vector2d ySensorToRobot = new Vector2d(-2, -6.5).rotated(heading);
+        double yDist = new Vector2d(0, -wallToYSensor).plus(ySensorToRobot).getY();
+
+        Pose2d correctedPose = pos(-72 + xDist, 72 + yDist, drive.getExternalHeadingDeg());
+        drive.setPoseEstimate(correctedPose);
+    }
+
+    /**
      * Queues a y-coordinates calibration of the robot's pose estimate at the warehouse. The new
      * pose estimate will calibrate the alliance-agnostic y-coordinates based on the distance sensor
      * reading. Future trajectories will begin at a predicted pose.
@@ -912,16 +939,8 @@ public abstract class AutonomousMode extends OpMode {
      * @see #pos(double, double, double)
      * @see #queue(Pose2d)
      */
-    protected void queueWarehouseSensorCalibration(Pose2d predictedPose) {
-        queue(() -> {
-            Pose2d currentPose = drive.getPoseEstimate();
-            Pose2d correctedPose = new Pose2d(
-                    pos(0, 72 - rangeSensor.getDistance(DistanceUnit.INCH) - 6.5).getX(),
-                    pos(-76 + WIDTH / 2 + (RED ? rightRangeSensor.getDistance(DistanceUnit.INCH) : leftRangeSensor.getDistance(DistanceUnit.INCH)) - 1, 0).getY(),
-                    drive.getExternalHeading()
-            );
-            drive.setPoseEstimate(correctedPose);
-        });
+    protected void queueWarehouseLocalization(Pose2d predictedPose) {
+        queue(this::warehouseLocalization);
         queue(predictedPose);
     }
 
@@ -934,7 +953,7 @@ public abstract class AutonomousMode extends OpMode {
      * @see #pos(double, double, double)
      * @see #queue(Pose2d)
      */
-    protected void queueAllianceHubSensorCalibration(Pose2d predictedPose) {
+    protected void queueAllianceHubLocalization(Pose2d predictedPose) {
         queue(() -> {
             Pose2d currentPose = drive.getPoseEstimate();
             Pose2d correctedPose = new Pose2d(
