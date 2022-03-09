@@ -762,7 +762,6 @@ public abstract class AutonomousMode extends OpMode {
         queue(new ConditionalTask(condition, runnable));
     }
 
-
     /**
      * Specify the robot's current pose manually. This will shadow the end pose of the last
      * trajectory in the {@link #tasks} ArrayList.
@@ -919,15 +918,20 @@ public abstract class AutonomousMode extends OpMode {
         // sensor point to robot center point
         Vector2d xSensorToRobot = (RED ? new Vector2d(-5.5, 7.5) : new Vector2d(5.25, -7.25)).rotated(heading);
         // horizontal distance between wall and robot center point
-        double xDist = new Vector2d(wallToXSensor, 0).plus(xSensorToRobot).getX();
+        double xDist;
+        if (RED) {
+            xDist = -new Vector2d(-wallToXSensor, 0).plus(xSensorToRobot).getX();
+        } else {
+            xDist = new Vector2d(wallToXSensor, 0).plus(xSensorToRobot).getX();
+        }
 
         // same logic below
         double wallToYSensor = rangeSensor.get() * cos(heading);
         Vector2d ySensorToRobot = new Vector2d(-2, -6.5).rotated(heading);
         double yDist = new Vector2d(0, -wallToYSensor).plus(ySensorToRobot).getY();
 
-        Pose2d correctedPose = pos(-72 + xDist, 72 + yDist, drive.getExternalHeadingDeg());
-        drive.setPoseEstimate(correctedPose);
+        Vector2d correctedVec = pos(-72 + xDist, 72 + yDist).vec();
+        drive.setPoseEstimate(new Pose2d(correctedVec.getX(), correctedVec.getY(), heading));
     }
 
     /**

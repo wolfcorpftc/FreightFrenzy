@@ -1,12 +1,9 @@
-package org.wolfcorp.ff.opmode.demo;
-
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+package org.wolfcorp.ff.opmode.control;
 
 import org.wolfcorp.ff.opmode.AutonomousMode;
 import org.wolfcorp.ff.opmode.util.Match;
 
-@TeleOp(name = "Warehouse Calibration Demo", group = "!demo")
-public class WarehouseCalibrationDemo extends AutonomousMode {
+public class WarehouseCalibrationTest extends AutonomousMode {
     @Override
     public void runOpMode() {
         Match.setupTelemetry();
@@ -17,7 +14,7 @@ public class WarehouseCalibrationDemo extends AutonomousMode {
 
         boolean maskCalibrate = false;
         while (opModeIsActive()) {
-            drive.updatePoseEstimate();
+            drive.update();
 
             if (gamepad1.y && !maskCalibrate) {
                 warehouseLocalization();
@@ -28,5 +25,4 @@ public class WarehouseCalibrationDemo extends AutonomousMode {
             }
         }
     }
-
 }
