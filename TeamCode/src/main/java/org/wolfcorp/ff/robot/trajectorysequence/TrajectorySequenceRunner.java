@@ -38,7 +38,7 @@ public class TrajectorySequenceRunner {
     public static String COLOR_ACTIVE_TURN = "#7c4dff";
     public static String COLOR_ACTIVE_WAIT = "#dd2c00";
 
-    public static int POSE_HISTORY_LIMIT = 100;
+    public static int POSE_HISTORY_LIMIT = 0; // FIXME: original 100
 
     private final TrajectoryFollower follower;
 
@@ -266,6 +266,11 @@ public class TrajectorySequenceRunner {
             fieldOverlay.setStroke("#4CAF50");
             DashboardUtil.drawRobot(fieldOverlay, targetPose);
         }
+
+        // FIXME: remove this when done with control
+        fieldOverlay.setStroke("#1cd100");
+        fieldOverlay.strokeLine(poseEstimate.getX(), poseEstimate.getY() + 9, poseEstimate.getX(), 72);
+        fieldOverlay.strokeLine(poseEstimate.getX() + 9, poseEstimate.getY(), 72, poseEstimate.getY());
 
         fieldOverlay.setStroke("#3F51B5");
         DashboardUtil.drawPoseHistory(fieldOverlay, poseHistory);

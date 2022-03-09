@@ -16,6 +16,8 @@ import static org.wolfcorp.ff.vision.Barcode.EXCESS;
 import static org.wolfcorp.ff.vision.Barcode.SUPERTOP;
 import static org.wolfcorp.ff.vision.Barcode.ZERO;
 
+import static java.lang.Math.cos;
+
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.acmerobotics.roadrunner.trajectory.MarkerCallback;
@@ -322,7 +324,7 @@ public abstract class AutonomousMode extends OpMode {
 
         } else if (CYCLE) {
             queue(fromHere()
-                    .addTemporalMarker((CAROUSEL ? 1.2 : 0.6), async(outtake::dumpOut))
+                    .addTemporalMarker(0.6, async(outtake::dumpOut))
                     .lineTo(hubPose.vec()));
             queueHubSensorCalibration(trueHubPose);
         }
@@ -345,12 +347,12 @@ public abstract class AutonomousMode extends OpMode {
                     }))
                     .splineToSplineHeading(preWhPose.plus(pos(-2.75, 4)), deg(0))
                     .splineToConstantHeading(moddedWhPose.minus(pos(7, 0)).vec()));// from 3.5
-            queueWarehouseSensorCalibration(moddedWhPose);
+            queueWarehouseLocalization(moddedWhPose);
 
 
             // *** Intake ***
             intake(i);
-            queueWarehouseSensorCalibration(pos(-72 + DriveConstants.WIDTH / 2, 42, 0));
+            queueWarehouseLocalization(pos(-72 + DriveConstants.WIDTH / 2, 42, 0));
 
 
             // *** To hub ***
@@ -374,7 +376,7 @@ public abstract class AutonomousMode extends OpMode {
                         if (dumpIndicator.update() == FULL) {
                             outtake.dumpIn();
                             if (!outtake.isApproaching(SUPERTOP))
-                            outtake.slideToAsync(SUPERTOP);
+                                outtake.slideToAsync(SUPERTOP);
                         }
                     }))
                     .addTemporalMarker(1.0, -0.55, outtake::dumpOut)
@@ -473,7 +475,7 @@ public abstract class AutonomousMode extends OpMode {
                     .splineToSplineHeading(preWhPose.plus(pos(-3.5, 4)), deg(0))
                     .lineTo(whPose.plus(pos(-3.5, 5)).vec()));
         }
-        queueWarehouseSensorCalibration(parkPose);
+        queueWarehouseLocalization(parkPose);
         queue(shippingArm::resetArmAsync);
     }
 
@@ -557,7 +559,7 @@ public abstract class AutonomousMode extends OpMode {
                     .splineToSplineHeading(pos(-48 + LENGTH / 2, 72 - WIDTH / 2, 90))
             );
         }
-        queueWarehouseSensorCalibration(parkPose);
+        queueWarehouseLocalization(parkPose);
         queue(shippingArm::resetArmAsync);
     }
 
@@ -760,7 +762,6 @@ public abstract class AutonomousMode extends OpMode {
         queue(new ConditionalTask(condition, runnable));
     }
 
-
     /**
      * Specify the robot's current pose manually. This will shadow the end pose of the last
      * trajectory in the {@link #tasks} ArrayList.
@@ -906,25 +907,33 @@ public abstract class AutonomousMode extends OpMode {
 
     /**
      * Calibrate robot pose at the warehouse using side and forward distance sensors and IMU.
-     * @see #queueWarehouseSensorCalibration(Pose2d)
+     * @see #queueWarehouseLocalization(Pose2d)
      */
-    protected void warehouseSensorCalibration() {
+    protected void warehouseLocalization() {
         double heading = drive.getExternalHeading();
 
-        // sensor to wall distance (horizontal line relative to field)
         InchSensor xSensor = RED ? rightRangeSensor : leftRangeSensor;
-        double wallToXSensor = xSensor.get() * Math.cos(heading + (RED ? 1 : -1) * Math.PI / 4);
-        Vector2d xSensorToRobot = RED ? new Vector2d(-5.5, 7.5) : new Vector2d(5.25, 7.25);
-        xSensorToRobot.rotated(drive.getExternalHeading());
-        double xDist = new Vector2d(wallToXSensor, 0).plus(xSensorToRobot).getX();
+        // horizontal distance from wall to sensor
+        double wallToXSensor = xSensor.get() * cos(heading);
+        // sensor point to robot center point
+        Vector2d xSensorToRobot = (RED ? new Vector2d(-5.5, 7.5) : new Vector2d(5.25, -7.25)).rotated(heading);
+        // horizontal distance between wall and robot center point
+        double xDist;
+        if (RED) {
+            xDist = -new Vector2d(-wallToXSensor, 0).plus(xSensorToRobot).getX();
+        } else {
+            xDist = new Vector2d(wallToXSensor, 0).plus(xSensorToRobot).getX();
+        }
 
-        InchSensor ySensor = rangeSensor;
-        double ySensorCenterXOffset = -2;
-        double wallToYSensor = ySensor.get();
-        double yDist = wallToYSensor - ySensorCenterXOffset * Math.tan(heading);
+        // same logic below
+        double wallToYSensor = rangeSensor.get() * cos(heading);
+        Vector2d ySensorToRobot = new Vector2d(-2, -6.5).rotated(heading);
+        double yDist = new Vector2d(0, -wallToYSensor).plus(ySensorToRobot).getY();
 
-        Pose2d correctedPose = pos(-72 + xDist, 72 - yDist, drive.getExternalHeading());
-        drive.setPoseEstimate(correctedPose);
+        Vector2d correctedVec = pos(-72 + xDist, 72 + yDist).vec();
+        if (Math.abs(correctedVec.getX()) < 72 && Math.abs(correctedVec.getY()) < 72) {
+            drive.setPoseEstimate(new Pose2d(correctedVec.getX(), correctedVec.getY(), heading));
+        }
     }
 
     /**
@@ -936,8 +945,8 @@ public abstract class AutonomousMode extends OpMode {
      * @see #pos(double, double, double)
      * @see #queue(Pose2d)
      */
-    protected void queueWarehouseSensorCalibration(Pose2d predictedPose) {
-        queue(this::warehouseSensorCalibration);
+    protected void queueWarehouseLocalization(Pose2d predictedPose) {
+        queue(this::warehouseLocalization);
         queue(predictedPose);
     }
 
@@ -950,7 +959,7 @@ public abstract class AutonomousMode extends OpMode {
      * @see #pos(double, double, double)
      * @see #queue(Pose2d)
      */
-    protected void queueAllianceHubSensorCalibration(Pose2d predictedPose) {
+    protected void queueAllianceHubLocalization(Pose2d predictedPose) {
         queue(() -> {
             Pose2d currentPose = drive.getPoseEstimate();
             Pose2d correctedPose = new Pose2d(
