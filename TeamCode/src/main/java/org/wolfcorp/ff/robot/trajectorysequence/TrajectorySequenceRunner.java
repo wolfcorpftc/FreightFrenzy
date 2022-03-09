@@ -16,6 +16,7 @@ import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.acmerobotics.roadrunner.trajectory.TrajectoryMarker;
 import com.acmerobotics.roadrunner.util.NanoClock;
 
+import org.wolfcorp.ff.robot.DriveConstants;
 import org.wolfcorp.ff.robot.trajectorysequence.sequencesegment.SequenceSegment;
 import org.wolfcorp.ff.robot.trajectorysequence.sequencesegment.TrajectorySegment;
 import org.wolfcorp.ff.robot.trajectorysequence.sequencesegment.TurnSegment;
@@ -269,8 +270,8 @@ public class TrajectorySequenceRunner {
 
         // FIXME: remove this when done with control
         fieldOverlay.setStroke("#1cd100");
-        fieldOverlay.strokeLine(poseEstimate.getX(), poseEstimate.getY() + 9, poseEstimate.getX(), 72);
-        fieldOverlay.strokeLine(poseEstimate.getX() + 9, poseEstimate.getY(), 72, poseEstimate.getY());
+        fieldOverlay.strokeLine(poseEstimate.getX(), poseEstimate.getY() + DriveConstants.LENGTH / 2 - 2, poseEstimate.getX(), 72);
+        fieldOverlay.strokeLine(poseEstimate.getX() + DriveConstants.WIDTH / 2, poseEstimate.getY(), 72, poseEstimate.getY());
 
         fieldOverlay.setStroke("#3F51B5");
         DashboardUtil.drawPoseHistory(fieldOverlay, poseHistory);

@@ -5,6 +5,8 @@ import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.acmerobotics.roadrunner.path.Path;
 
+import org.wolfcorp.ff.robot.DriveConstants;
+
 import java.util.List;
 
 /**
@@ -45,7 +47,7 @@ public class DashboardUtil {
     }
 
     public static void drawRobot(Canvas canvas, Pose2d pose) {
-        canvas.strokeCircle(pose.getX(), pose.getY(), ROBOT_RADIUS);
+        canvas.strokeRect(pose.getX() - DriveConstants.WIDTH / 2, pose.getY() - DriveConstants.LENGTH / 2, DriveConstants.LENGTH, DriveConstants.WIDTH);
         Vector2d v = pose.headingVec().times(ROBOT_RADIUS);
         double x1 = pose.getX() + v.getX() / 2, y1 = pose.getY() + v.getY() / 2;
         double x2 = pose.getX() + v.getX(), y2 = pose.getY() + v.getY();

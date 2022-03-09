@@ -403,6 +403,8 @@ public abstract class AutonomousMode extends OpMode {
                 System.out.println(intakeRampDistance.getDistance(DistanceUnit.INCH) + "asdf");
                 drive.updatePoseEstimate();
                 if (dumpIndicator.update() == EMPTY) {
+                    System.out.println(clogged);
+                    System.out.println(cloggedTimer.milliseconds());
 //                    if (lowerDumpDistance.getDistance(DistanceUnit.INCH) < 1.5 && time.milliseconds() > 2500) {
 //                        intake.getMotor().setVelocity(0.75 * Intake.OUT_SPEED);
 //                    }

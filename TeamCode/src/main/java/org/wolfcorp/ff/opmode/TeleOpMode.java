@@ -47,6 +47,13 @@ public abstract class TeleOpMode extends OpMode {
             drive.setExternalHeadingDeg(180);
         }
 
+        shippingArm.toggleClaw();
+        spinner.on();
+        sleep(50);
+        spinner.off();
+        shippingArm.toggleClaw();
+
+
         waitForStart();
 
         Match.status("Start!");
