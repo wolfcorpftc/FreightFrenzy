@@ -324,7 +324,7 @@ public abstract class AutonomousMode extends OpMode {
 
         } else if (CYCLE) {
             queue(fromHere()
-                    .addTemporalMarker((CAROUSEL ? 1.2 : 0.6), async(outtake::dumpOut))
+                    .addTemporalMarker(0.6, async(outtake::dumpOut))
                     .lineTo(hubPose.vec()));
             queueHubSensorCalibration(trueHubPose);
         }
@@ -931,7 +931,9 @@ public abstract class AutonomousMode extends OpMode {
         double yDist = new Vector2d(0, -wallToYSensor).plus(ySensorToRobot).getY();
 
         Vector2d correctedVec = pos(-72 + xDist, 72 + yDist).vec();
-        drive.setPoseEstimate(new Pose2d(correctedVec.getX(), correctedVec.getY(), heading));
+        if (Math.abs(correctedVec.getX()) < 72 && Math.abs(correctedVec.getY()) < 72) {
+            drive.setPoseEstimate(new Pose2d(correctedVec.getX(), correctedVec.getY(), heading));
+        }
     }
 
     /**
