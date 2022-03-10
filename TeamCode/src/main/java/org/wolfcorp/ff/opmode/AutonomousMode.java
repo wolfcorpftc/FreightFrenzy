@@ -356,7 +356,8 @@ public abstract class AutonomousMode extends OpMode {
 
 
             // *** To hub ***
-            double angleOffset = RED ? -3 : 3;
+//            double angleOffset = RED ? -3 : 3;
+            double angleOffset = 0;
             queue(from(moddedWhPose.plus(pos(0, 0, angleOffset)))
                     .lineToLinearHeading(preWhPose.plus(pos(0, -4, angleOffset)))
                     .addTemporalMarker(1.15, async(() -> {
@@ -411,11 +412,7 @@ public abstract class AutonomousMode extends OpMode {
                     if (!outtake.isApproaching(ZERO)) {
                         outtake.slideToAsync(ZERO);
                     }
-                    if (intakeRampDistance.getDistance(DistanceUnit.INCH) < 2) {
-                        clogged = true;
-                    } else {
-                        clogged = false;
-                    }
+                    clogged = intakeRampDistance.getDistance(DistanceUnit.INCH) < 2;
                     if (!clogged) {
                         cloggedTimer.reset();
                     }
