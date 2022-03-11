@@ -203,8 +203,8 @@ public abstract class TeleOpMode extends OpMode {
             dumpIndicator.update();
 
             telemetry.addData("ramp sensor", intakeRampDistance.getDistance(DistanceUnit.INCH));
-            telemetry.addData("left range sensor inches", leftRangeSensor.getDistance(DistanceUnit.INCH));
-            telemetry.addData("right range sensor inches", rightRangeSensor.getDistance(DistanceUnit.INCH));
+            telemetry.addData("top distance", upperDumpDistance.getDistance(DistanceUnit.INCH));
+            telemetry.addData("bottom disance", lowerDumpDistance.getDistance(DistanceUnit.INCH));
 
             // *** Odometry update ***
             drive.update();

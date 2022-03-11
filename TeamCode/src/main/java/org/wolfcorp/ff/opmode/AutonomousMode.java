@@ -211,7 +211,7 @@ public abstract class AutonomousMode extends OpMode {
             cycleHubPose = pos(-45, -9, 90);
         } else if (BLUE && WAREHOUSE) {
             hubPose = pos(-44, -16, 90);
-            cycleHubPose = pos(-45, -10, 90);
+            cycleHubPose = pos(-45, -11, 90);
         }
         capPose = hubPose.minus(pos(2, WIDTH / 2));
         preHubPose = pos(-48, -12, 0);
@@ -283,6 +283,7 @@ public abstract class AutonomousMode extends OpMode {
         Match.setupTelemetry();
         // *** Initialization ***
         initHardware();
+        outtake.dumpIn();
 
         Match.status("Starting vision init thread");
         initVisionThread = new Thread(this::initVisionWebcam);
@@ -340,7 +341,7 @@ public abstract class AutonomousMode extends OpMode {
 
             // *** To warehouse ***
             queue(() -> intake.getMotor().setVelocity(0.75 * Intake.IN_SPEED));
-            Pose2d moddedWhPose = whPose.plus(pos(0, i == 1 ? 0 : 2 + i * 1.8));
+            Pose2d moddedWhPose = whPose.plus(pos(0, i == 1 ? 0 : 2 + (RED ? 2 : 0) + i * 1.8));
             queue(from(trueHubPose)
                     .addTemporalMarker(0.4, async(() -> {
                         outtake.dumpIn();
@@ -405,26 +406,15 @@ public abstract class AutonomousMode extends OpMode {
                 System.out.println(intakeRampDistance.getDistance(DistanceUnit.INCH) + "asdf");
                 drive.updatePoseEstimate();
                 if (dumpIndicator.update() == EMPTY) {
-                    System.out.println(clogged);
-                    System.out.println(cloggedTimer.milliseconds());
-//                    if (lowerDumpDistance.getDistance(DistanceUnit.INCH) < 1.5 && time.milliseconds() > 2500) {
-//                        intake.getMotor().setVelocity(0.75 * Intake.OUT_SPEED);
-//                    }
-                    if (!outtake.isApproaching(ZERO)) {
-                        outtake.slideToAsync(ZERO);
-                    }
-                    clogged = intakeRampDistance.getDistance(DistanceUnit.INCH) < 2;
-                    if (!clogged) {
-                        cloggedTimer.reset();
-                    }
-                    if (cloggedTimer.milliseconds() > 250) {
-                        intake.getMotor().setVelocity(Intake.MAX_SPEED);
-                        drive.setMotorPowers(-0.3);
-                    } else if (cloggedTimer.milliseconds() > 2500) {
-                        drive.setMotorPowers(0.4);
-                    } else {
+                    System.out.println("qwer" + cloggedTimer.milliseconds() / 1000);
+                    System.out.println("milli" + cloggedTimer.milliseconds());
+                    System.out.println("asdf" + ((cloggedTimer.milliseconds() / 1000) % 2 == 1));
+                    if (cloggedTimer.milliseconds() < 2000 || (((int) cloggedTimer.milliseconds()) / 1000) % 2 == 1) {
                         intake.getMotor().setVelocity(0.78 * Intake.IN_SPEED);
                         drive.setMotorPowers(0.15);
+                    } else {
+                        intake.getMotor().setVelocity(Intake.MAX_SPEED);
+                        drive.setMotorPowers(-0.1);
                     }
                     outtake.dumpIn();
                 } else if (dumpIndicator.update() == OVERFLOW) {
@@ -932,7 +922,9 @@ public abstract class AutonomousMode extends OpMode {
 
         Vector2d correctedVec = pos(-72 + xDist, 72 + yDist).vec();
         if (Math.abs(correctedVec.getX()) < 72 && Math.abs(correctedVec.getY()) < 72) {
-            drive.setPoseEstimate(new Pose2d(correctedVec.getX(), correctedVec.getY(), heading));
+            if (Math.abs(drive.getPoseEstimate().getX()) < Math.abs(correctedVec.getX()) ) {
+                drive.setPoseEstimate(new Pose2d(correctedVec.getX(), correctedVec.getY(), heading));
+            }
         }
     }
 

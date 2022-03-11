@@ -27,8 +27,8 @@ public class Outtake {
     public static final double SLIDE_UP_SPEED = SLIDE_MAX_SPEED; // ticks/sec
     public static final double SLIDE_DOWN_SPEED = -SLIDE_MAX_SPEED; // ticks/sec
 
-    public static final int SLIDE_TOP_POSITION = 1900;
-    public static final int SLIDE_SUPERTOP_POSITION = 2000;
+    public static final int SLIDE_TOP_POSITION = 1950;
+    public static final int SLIDE_SUPERTOP_POSITION = 1951;
     public static final int SLIDE_MID_POSITION = 1000;
     public static final int SLIDE_EXCESS_POSITION = 150;
     public static final int SLIDE_BOT_POSITION = 400;
@@ -36,12 +36,12 @@ public class Outtake {
     public static final int SLIDE_MIN_POSITION = 0;
     public static final int SLIDE_MAX_POSITION = 2100;
 
-    public static final double DUMP_EXCESS_POSITION = 0.88;
-    public static final double DUMP_IN_POSITION = 0.84;
+    public static final double DUMP_EXCESS_POSITION = 0.90;
+    public static final double DUMP_IN_POSITION = 0.87;
     public static final double DUMP_OUT_POSITION = 0.40;
 
-    public static final double DUMP_OVERFLOW_DIST = 1.60;
-    public static final double DUMP_FULL_DIST = 1.60;
+    public static final double DUMP_OVERFLOW_DIST = 1.65;
+    public static final double DUMP_FULL_DIST = 1.65;
 
     /** Milliseconds to wait for after running dumpOut. */
     public static final int DUMP_DELAY = 0;
