@@ -83,6 +83,8 @@ public abstract class AutonomousMode extends OpMode {
     protected Pose2d preCarouselPose;
     /** Where the robot turns the carousel. */
     protected Pose2d carouselPose;
+    /** Actual pose where the obot turn the carousel (for localization purposes)." */
+    protected Pose2d trueCarouselPose;
 
     /** Where the robot retrieves the left shipping element. */
     protected Pose2d elementLeftPose;
@@ -128,7 +130,8 @@ public abstract class AutonomousMode extends OpMode {
     /** Where the robot moves to in order to pick up duck */
     protected Pose2d duckPose;
     /** Where the robot parks in the storage unit. */
-    protected Pose2d storageUnitParkPose;
+    protected Pose2d storageUnitPose;
+    protected Pose2d trueStorageUnitPose;
     /** Where the robot parks on the shared alliance wall */
     protected Pose2d sharedParkPose;
     // endregion
@@ -178,10 +181,11 @@ public abstract class AutonomousMode extends OpMode {
             elementRightPose = pos(-52, -1.8, 90); // FIXME: fix pose; make sure no collision w/ wall
         }
 
+        trueCarouselPose = pos(-48 + 1 - LENGTH / 2, -72 + WIDTH / 2, 90);
         if (RED) {
             carouselPose = pos(-52, -72 + WIDTH / 2, 90);
         } else {
-            carouselPose = pos(-56, -72 + WIDTH / 2, 90);
+            carouselPose = pos(-55.5, -72 + WIDTH / 2, 90);
         }
         preCarouselPose = carouselPose.plus(pos(3, 0));
         calibratePreCarouselPose = preCarouselPose.minus(pos(0, 8));
@@ -239,10 +243,11 @@ public abstract class AutonomousMode extends OpMode {
         preDuckPose = pos(-72 + WIDTH / 2, -12, 180);
         calibratePreDuckPose = preDuckPose.minus(pos(3, 0));
         duckPose = preDuckPose.minus(pos(0, 48)); // FIXME: fix the y value
+        storageUnitPose = pos(-36, -72 + WIDTH / 2, 90);
         if (RED) {
-            storageUnitParkPose = pos(-34, -72 + WIDTH / 2 - 2.5, 90);
+            storageUnitPose = pos(-34, -72 + WIDTH / 2 - 2.5, 90);
         } else {
-            storageUnitParkPose = pos(-34, -72 + WIDTH / 2 - 6, 90);
+            storageUnitPose = pos(-34, -72 + WIDTH / 2 - 6, 90);
         }
 
         // Carousel path's initial pose is two tiles over from warehouse.
@@ -296,17 +301,13 @@ public abstract class AutonomousMode extends OpMode {
             queue(fromHere()
                     .lineTo(calibratePreCarouselPose.vec())
                     .lineTo(carouselPose.minus(pos(2.5, 10)).vec(), getVelocityConstraint(25, 5, TRACK_WIDTH), getAccelerationConstraint(35)));
-            Pose2d expectedPose = pos(-48 - LENGTH / 2 + 2, -72 + WIDTH / 2, 90);
             queue(() -> {
-                // Spin asynchronously
                 Thread spin = spinner.spinAsync(1, 1.2 * SPIN_TIME, WAIT_TIME);
-                // Calibrate y-coordinate; see queueYCalibration
-                drive.setPoseEstimate(expectedPose);
+                localizeCarousel();
                 spin.join();
-                // Bring arm in
                 shippingArm.armInAsync(0.7);
             });
-            queue(expectedPose);
+            queue(trueCarouselPose);
         }
     }
 
@@ -315,8 +316,8 @@ public abstract class AutonomousMode extends OpMode {
         queue(() -> outtake.slideToAsync(barcode));
         if (CAROUSEL) {
             queue(fromHere()
-                    .lineTo(storageUnitParkPose.minus(pos(0,2)).vec()));
-            queueCalibration(storageUnitParkPose);
+                    .lineTo(storageUnitPose.plus(pos(3,-2)).vec()));
+            queueCalibration(storageUnitPose);
             queue(fromHere()
                     .lineToLinearHeading(carouselHubPose)
                     .addTemporalMarker(0.8, async(outtake::dumpOut)));
@@ -326,7 +327,7 @@ public abstract class AutonomousMode extends OpMode {
             queue(fromHere()
                     .addTemporalMarker(0.6, async(outtake::dumpOut))
                     .lineTo(hubPose.vec()));
-            queueHubSensorCalibration(trueHubPose);
+            queueLocalizeHub(trueHubPose);
         }
     }
 
@@ -347,12 +348,12 @@ public abstract class AutonomousMode extends OpMode {
                     }))
                     .splineToSplineHeading(preWhPose.plus(pos(-2.75, 4)), deg(0))
                     .splineToConstantHeading(moddedWhPose.minus(pos(7, 0)).vec()));// from 3.5
-            queueWarehouseLocalization(moddedWhPose);
+            queueLocalizeWarehouse(moddedWhPose);
 
 
             // *** Intake ***
             intake(i);
-            queueWarehouseLocalization(pos(-72 + DriveConstants.WIDTH / 2, 42, 0));
+            queueLocalizeWarehouse(pos(-72 + DriveConstants.WIDTH / 2, 42, 0));
 
 
             // *** To hub ***
@@ -382,7 +383,7 @@ public abstract class AutonomousMode extends OpMode {
                     }))
                     .addTemporalMarker(1.0, -0.55, outtake::dumpOut)
                     .splineToSplineHeading(cycleHubPose, deg((BLUE ? -1 : 1) * 90)));
-            queueHubSensorCalibration(trueHubPose);
+            queueLocalizeHub(trueHubPose);
 
 
             // *** Score ***
@@ -460,7 +461,7 @@ public abstract class AutonomousMode extends OpMode {
                         outtake.dumpIn();
                         outtake.slideToAsync(ZERO);
                     }))
-                    .lineToLinearHeading(storageUnitParkPose));
+                    .lineToLinearHeading(storageUnitPose));
             return;
         }
         if (CYCLE) {
@@ -474,7 +475,7 @@ public abstract class AutonomousMode extends OpMode {
                     .splineToSplineHeading(preWhPose.plus(pos(-3.5, 4)), deg(0))
                     .lineTo(whPose.plus(pos(-3.5, 5)).vec()));
         }
-        queueWarehouseLocalization(parkPose);
+        queueLocalizeWarehouse(parkPose);
         queue(shippingArm::resetArmAsync);
     }
 
@@ -539,7 +540,7 @@ public abstract class AutonomousMode extends OpMode {
                         outtake.dumpIn();
                         outtake.slideToAsync(ZERO);
                     }))
-                    .splineToSplineHeading(storageUnitParkPose));
+                    .splineToSplineHeading(storageUnitPose));
             return;
         }
         if (CYCLE) {
@@ -558,7 +559,7 @@ public abstract class AutonomousMode extends OpMode {
                     .splineToSplineHeading(pos(-48 + LENGTH / 2, 72 - WIDTH / 2, 90))
             );
         }
-        queueWarehouseLocalization(parkPose);
+        queueLocalizeWarehouse(parkPose);
         queue(shippingArm::resetArmAsync);
     }
 
@@ -891,7 +892,7 @@ public abstract class AutonomousMode extends OpMode {
      * @see #pos(double, double, double)
      * @see #queue(Pose2d)
      */
-    protected void queueHubSensorCalibration(Pose2d predictedPose) {
+    protected void queueLocalizeHub(Pose2d predictedPose) {
         queue(() -> {
             Pose2d currentPose = drive.getPoseEstimate();
             Pose2d correctedPose = new Pose2d(
@@ -905,10 +906,10 @@ public abstract class AutonomousMode extends OpMode {
     }
 
     /**
-     * Calibrate robot pose at the warehouse using side and forward distance sensors and IMU.
-     * @see #queueWarehouseLocalization(Pose2d)
+     * Calibrate robot pose at a wall corner using side and forward distance sensors and IMU.
+     * @see #queueLocalizeWarehouse(Pose2d)
      */
-    protected void warehouseLocalization() {
+    protected void localizeWarehouse() {
         double heading = drive.getExternalHeading();
 
         InchSensor xSensor = RED ? rightRangeSensor : leftRangeSensor;
@@ -935,17 +936,42 @@ public abstract class AutonomousMode extends OpMode {
         }
     }
 
+    protected void localizeCarousel() {
+        double heading = drive.getExternalHeading();
+
+        InchSensor ySensor = RED ? rightRangeSensor : leftRangeSensor;
+        double wallToYSensor = ySensor.get() * cos(heading);
+        Vector2d ySensorToRobot = (RED ? new Vector2d(-5.5, 7.5) : new Vector2d(5.25, -7.25)).rotated(heading);
+        double yDist = new Vector2d(0, wallToYSensor).plus(ySensorToRobot).getY();
+
+        double wallToXSensor = rangeSensor.get() * cos(heading);
+        Vector2d xSensorToRobot = new Vector2d(-2, -6.5).rotated(heading);
+        double xDist;
+        if (RED) {
+            xDist = -new Vector2d(-wallToXSensor, 0).plus(xSensorToRobot).getX();
+        } else {
+            xDist = new Vector2d(wallToXSensor, 0).plus(xSensorToRobot).getX();
+        }
+
+        Vector2d correctedVec = pos(-72 + xDist, -72 + yDist).vec();
+        if (Math.abs(correctedVec.getX()) < 72 && Math.abs(correctedVec.getY()) < 72) {
+            drive.setPoseEstimate(new Pose2d(correctedVec.getX(), correctedVec.getY(), heading));
+        }
+    }
+
+
     /**
      * Queues a y-coordinates calibration of the robot's pose estimate at the warehouse. The new
      * pose estimate will calibrate the alliance-agnostic y-coordinates based on the distance sensor
      * reading. Future trajectories will begin at a predicted pose.
      *
      * @param predictedPose the correct pose of the robot
+     * @see #localizeWarehouse()
      * @see #pos(double, double, double)
      * @see #queue(Pose2d)
      */
-    protected void queueWarehouseLocalization(Pose2d predictedPose) {
-        queue(this::warehouseLocalization);
+    protected void queueLocalizeWarehouse(Pose2d predictedPose) {
+        queue(this::localizeWarehouse);
         queue(predictedPose);
     }
 

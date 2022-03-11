@@ -17,7 +17,7 @@ public class WarehouseCalibrationTest extends AutonomousMode {
             drive.update();
 
             if (gamepad1.y && !maskCalibrate) {
-                warehouseLocalization();
+                localizeWarehouse();
                 maskCalibrate = true;
             }
             if (!gamepad1.y) {

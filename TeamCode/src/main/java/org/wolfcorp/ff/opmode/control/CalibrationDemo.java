@@ -1,7 +1,5 @@
 package org.wolfcorp.ff.opmode.control;
 
-import com.qualcomm.robotcore.util.ElapsedTime;
-
 import org.wolfcorp.ff.opmode.AutonomousMode;
 import org.wolfcorp.ff.opmode.util.Match;
 
@@ -15,7 +13,7 @@ public class CalibrationDemo extends AutonomousMode {
         telemetry.setAutoClear(true);
         while (opModeIsActive()) {
             Match.status("Looping");
-            warehouseLocalization();
+            localizeWarehouse();
             telemetry.addData("Pose", drive.getPoseEstimate());
             telemetry.update();
             drive.update();
