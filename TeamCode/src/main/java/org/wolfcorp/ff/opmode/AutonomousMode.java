@@ -358,8 +358,8 @@ public abstract class AutonomousMode extends OpMode {
 
 
             // *** To hub ***
-//            double angleOffset = RED ? -3 : 3;
-            double angleOffset = 0;
+            double angleOffset = RED ? -3 : 3;
+//            double angleOffset = 0;
             queue(from(moddedWhPose.plus(pos(0, 0, angleOffset)))
                     .lineToLinearHeading(preWhPose.plus(pos(0, -4, angleOffset)))
                     .addTemporalMarker(1.15, async(() -> {
@@ -401,14 +401,9 @@ public abstract class AutonomousMode extends OpMode {
 //        regularIntake();
         queue(() -> {
             ElapsedTime cloggedTimer = new ElapsedTime();
-            boolean clogged = false;
             while (dumpIndicator.update() != FULL) {
-                System.out.println(intakeRampDistance.getDistance(DistanceUnit.INCH) + "asdf");
                 drive.updatePoseEstimate();
                 if (dumpIndicator.update() == EMPTY) {
-                    System.out.println("qwer" + cloggedTimer.milliseconds() / 1000);
-                    System.out.println("milli" + cloggedTimer.milliseconds());
-                    System.out.println("asdf" + ((cloggedTimer.milliseconds() / 1000) % 2 == 1));
                     if (cloggedTimer.milliseconds() < 2000 || (((int) cloggedTimer.milliseconds()) / 1000) % 2 == 1) {
                         intake.getMotor().setVelocity(0.78 * Intake.IN_SPEED);
                         drive.setMotorPowers(0.15);
@@ -924,6 +919,8 @@ public abstract class AutonomousMode extends OpMode {
         if (Math.abs(correctedVec.getX()) < 72 && Math.abs(correctedVec.getY()) < 72) {
             if (Math.abs(drive.getPoseEstimate().getX()) < Math.abs(correctedVec.getX()) ) {
                 drive.setPoseEstimate(new Pose2d(correctedVec.getX(), correctedVec.getY(), heading));
+            } else {
+                drive.setPoseEstimate(new Pose2d(drive.getPoseEstimate().getX(), correctedVec.getY(), heading));
             }
         }
     }
