@@ -63,13 +63,24 @@ public class CarouselSpinner {
     public Thread spinAsync(int times, double spinTime, long waitTime) {
         Runnable runnable = () -> {
             for (int i = times; i >= 1 && !Thread.currentThread().isInterrupted(); i--) {
+                System.out.println(Thread.currentThread().isInterrupted());
+                if (Thread.currentThread().isInterrupted()) {
+                    return;
+                }
                 spinTimer.reset();
                 on();
                 OpMode.dumpIndicator.full();
-                while (spinTimer.milliseconds() < spinTime && !Thread.currentThread().isInterrupted());
+                while (spinTimer.milliseconds() < spinTime && !Thread.currentThread().isInterrupted()) {
+                    if (Thread.currentThread().isInterrupted()) {
+                        return;
+                    }
+                }
                 off();
                 OpMode.dumpIndicator.overflow();
                 if (i != 1 && !Thread.currentThread().isInterrupted()) {
+                    if (Thread.currentThread().isInterrupted()) {
+                        return;
+                    }
                     sleep.accept(waitTime);
                 }
             }

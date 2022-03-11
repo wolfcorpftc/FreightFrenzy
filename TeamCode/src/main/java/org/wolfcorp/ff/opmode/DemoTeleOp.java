@@ -145,7 +145,7 @@ public class DemoTeleOp extends OpMode {
             } else if (gamepad2.left_stick_y > 0.02) {
                 shippingArm.setArmVelocity(armMultiplier * ShippingArm.ARM_IN_SPEED);
             } else {
-                shippingArm.holdPosition();
+                shippingArm.holdPosition(false);
             }
 
             // *** Outtake : reset ***

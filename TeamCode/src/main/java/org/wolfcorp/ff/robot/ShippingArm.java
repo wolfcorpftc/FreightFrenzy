@@ -90,7 +90,15 @@ public class ShippingArm {
     }
 
     public void holdPosition() {
-        motor.setVelocity(motor.getCurrentPosition() > ARM_OUT_POSITION ? -1 : 1);
+        holdPosition(true);
+    }
+
+    public void holdPosition(boolean condition) {
+        if (condition) {
+            motor.setVelocity(motor.getCurrentPosition() > ARM_OUT_POSITION ? -1 : 1);
+        } else {
+            motor.setVelocity(0);
+        }
     }
 
     public void resetArm() {
