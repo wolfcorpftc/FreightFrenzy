@@ -1,5 +1,4 @@
 package org.wolfcorp.ff.robot;
-
 import static org.wolfcorp.ff.vision.Barcode.BOT;
 import static org.wolfcorp.ff.vision.Barcode.DIRTY;
 import static org.wolfcorp.ff.vision.Barcode.EXCESS;
@@ -28,7 +27,7 @@ public class Outtake {
     public static final double SLIDE_DOWN_SPEED = -SLIDE_MAX_SPEED; // ticks/sec
 
     public static final int SLIDE_TOP_POSITION = 1950;
-    public static final int SLIDE_SUPERTOP_POSITION = 1951;
+    public static final int SLIDE_SUPERTOP_POSITION = 1920;
     public static final int SLIDE_MID_POSITION = 1000;
     public static final int SLIDE_EXCESS_POSITION = 150;
     public static final int SLIDE_BOT_POSITION = 400;

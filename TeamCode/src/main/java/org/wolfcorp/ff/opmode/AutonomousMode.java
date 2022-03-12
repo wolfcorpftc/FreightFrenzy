@@ -143,6 +143,7 @@ public abstract class AutonomousMode extends OpMode {
      * @see ConditionalTask
      */
     private final ArrayList<Object> tasks = new ArrayList<>();
+    private final ElapsedTime runtime = new ElapsedTime();
     // endregion
 
     // region Robot Logic
@@ -208,7 +209,7 @@ public abstract class AutonomousMode extends OpMode {
             cycleHubPose = pos(-48, -8, 90);
         } else if (RED && WAREHOUSE) {
             hubPose = pos(-40, -12, 90);
-            cycleHubPose = pos(-45, -9, 90);
+            cycleHubPose = pos(-45, -12, 90);
         } else if (BLUE && WAREHOUSE) {
             hubPose = pos(-44, -16, 90);
             cycleHubPose = pos(-45, -11, 90);
@@ -321,12 +322,12 @@ public abstract class AutonomousMode extends OpMode {
             queueCalibration(storageUnitPose);
             queue(fromHere()
                     .lineToLinearHeading(carouselHubPose)
-                    .addTemporalMarker(0.8, async(outtake::dumpOut)));
+                    .addTemporalMarker(0.8, outtake::dumpOut));
 
 
         } else if (CYCLE) {
             queue(fromHere()
-                    .addTemporalMarker(0.6, async(outtake::dumpOut))
+                    .addTemporalMarker(0.6, outtake::dumpOut)
                     .lineTo(hubPose.vec()));
             queueLocalizeHub(trueHubPose);
         }
@@ -355,6 +356,12 @@ public abstract class AutonomousMode extends OpMode {
             // *** Intake ***
             intake(i);
             queueLocalizeWarehouse(pos(-72 + DriveConstants.WIDTH / 2, 42, 0));
+            queue(() -> {
+                if (30 - runtime.seconds() <= 5) {
+                    throw new InterruptedException();
+                }
+            });
+
 
 
             // *** To hub ***
@@ -368,11 +375,12 @@ public abstract class AutonomousMode extends OpMode {
                             outtake.slideToAsync(SUPERTOP);
                         } else if (dumpIndicator.update() == EMPTY) {
                             intake.in();
+                            outtake.slideToAsync(SUPERTOP);
                         } else {
                             intake.out();
                             outtake.slideToAsync(EXCESS);
                             sleep(100);
-                            outtake.dumpExcess();
+//                            outtake.dumpExcess();
                         }
                     }))
                     .addTemporalMarker(1.4, async(() -> {
@@ -400,16 +408,30 @@ public abstract class AutonomousMode extends OpMode {
     public void intake(int iteration) {
 //        regularIntake();
         queue(() -> {
+            ElapsedTime timer = new ElapsedTime();
             ElapsedTime cloggedTimer = new ElapsedTime();
-            while (dumpIndicator.update() != FULL) {
+            boolean clog = false;
+            while (dumpIndicator.update() != FULL && timer.milliseconds() < 400) {
                 drive.updatePoseEstimate();
                 if (dumpIndicator.update() == EMPTY) {
-                    if (cloggedTimer.milliseconds() < 2000 || (((int) cloggedTimer.milliseconds()) / 1000) % 2 == 1) {
+                    timer.reset();
+                    System.out.println(intake.getMotor().getVelocity());
+                    if (!clog) {
+                        if ((Math.abs(intake.getMotor().getVelocity()) > 0.1 * Intake.MAX_SPEED)) {
+                            cloggedTimer.reset();
+                        }
                         intake.getMotor().setVelocity(0.78 * Intake.IN_SPEED);
                         drive.setMotorPowers(0.15);
                     } else {
+                        System.out.println("hit");
                         intake.getMotor().setVelocity(Intake.MAX_SPEED);
                         drive.setMotorPowers(-0.1);
+                    }
+                    if (cloggedTimer.milliseconds() > 2000) {
+                        cloggedTimer.reset();
+                        clog = false;
+                    } else if (cloggedTimer.milliseconds() > 1000) {
+                        clog = true;
                     }
                     outtake.dumpIn();
                 } else if (dumpIndicator.update() == OVERFLOW) {
@@ -418,7 +440,7 @@ public abstract class AutonomousMode extends OpMode {
                     if (!outtake.isApproaching(EXCESS)) {
                         outtake.slideToAsync(EXCESS);
                     }
-                    outtake.dumpExcess();
+//                    outtake.dumpExcess();
                 } else {
                     drive.setMotorPowers(0); // -0.05
                     intake.out();
@@ -436,6 +458,8 @@ public abstract class AutonomousMode extends OpMode {
 //            }
         });
     }
+
+
 
     public void park() {
         Match.status("Initializing: park");
@@ -574,6 +598,7 @@ public abstract class AutonomousMode extends OpMode {
         startScanner();
         Match.status("Task queue ready, waiting for start");
         waitForStart();
+        runtime.reset();
         Match.status("Start!");
 
         scanBarcode();
@@ -916,12 +941,10 @@ public abstract class AutonomousMode extends OpMode {
         double yDist = new Vector2d(0, -wallToYSensor).plus(ySensorToRobot).getY();
 
         Vector2d correctedVec = pos(-72 + xDist, 72 + yDist).vec();
-        if (Math.abs(correctedVec.getX()) < 72 && Math.abs(correctedVec.getY()) < 72) {
-            if (Math.abs(drive.getPoseEstimate().getX()) < Math.abs(correctedVec.getX()) ) {
-                drive.setPoseEstimate(new Pose2d(correctedVec.getX(), correctedVec.getY(), heading));
-            } else {
-                drive.setPoseEstimate(new Pose2d(drive.getPoseEstimate().getX(), correctedVec.getY(), heading));
-            }
+        if (Math.abs(correctedVec.getX()) < 72 && Math.abs(correctedVec.getY()) < 72 && Math.abs(drive.getPoseEstimate().getX()) < Math.abs(correctedVec.getX())) {
+            drive.setPoseEstimate(new Pose2d(drive.getPoseEstimate().getX(), correctedVec.getY(), heading));
+        } else {
+            drive.setPoseEstimate(new Pose2d(drive.getPoseEstimate().getX(), correctedVec.getY(), heading));
         }
     }
 
