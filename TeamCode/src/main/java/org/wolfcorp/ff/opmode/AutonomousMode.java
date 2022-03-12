@@ -302,10 +302,16 @@ public abstract class AutonomousMode extends OpMode {
             queue(shippingArm::armOutAsync); // necessary to prevent the arm from blocking the spinner
             queue(fromHere()
                     .lineTo(calibratePreCarouselPose.vec())
-                    .lineTo(carouselPose.minus(pos(2.5, 10)).vec(), getVelocityConstraint(25, 5, TRACK_WIDTH), getAccelerationConstraint(35)));
+                    .lineTo(carouselPose.minus(pos(1.5, 10)).vec(), getVelocityConstraint(25, 5, TRACK_WIDTH), getAccelerationConstraint(35)));
             queue(() -> {
                 Thread spin = spinner.spinAsync(1, 1.2 * SPIN_TIME, WAIT_TIME);
-                localizeCarousel();
+                Pose2d currentPose = drive.getPoseEstimate();
+                Pose2d correctedPose = new Pose2d(
+                        trueCarouselPose.getX(),
+                        currentPose.getY(),
+                        trueCarouselPose.getHeading()
+                );
+                drive.setPoseEstimate(correctedPose);
                 spin.join();
                 shippingArm.armInAsync(0.7);
             });
@@ -321,7 +327,7 @@ public abstract class AutonomousMode extends OpMode {
                     .lineTo(storageUnitPose.plus(pos(3,-2)).vec()));
             queueCalibration(storageUnitPose);
             queue(fromHere()
-                    .lineToLinearHeading(carouselHubPose)
+                    .lineToLinearHeading(carouselHubPose.minus(pos(2, 0)))
                     .addTemporalMarker(0.8, outtake::dumpOut));
 
 
@@ -350,12 +356,13 @@ public abstract class AutonomousMode extends OpMode {
                     }))
                     .splineToSplineHeading(preWhPose.plus(pos(-2.75, 4)), deg(0))
                     .splineToConstantHeading(moddedWhPose.minus(pos(7, 0)).vec()));// from 3.5
-            queueLocalizeWarehouse(moddedWhPose);
+            queueWarehouseSensorCalibration(moddedWhPose);
 
 
             // *** Intake ***
             intake(i);
-            queueLocalizeWarehouse(pos(-72 + DriveConstants.WIDTH / 2, 42, 0));
+            queue(() -> drive.strafeRight(0.5, RED ? 5: -5));
+            queueWarehouseSensorCalibration(pos(-72 + DriveConstants.WIDTH / 2, 42, 0));
             queue(() -> {
                 if (30 - runtime.seconds() <= 5) {
                     throw new InterruptedException();
@@ -367,7 +374,7 @@ public abstract class AutonomousMode extends OpMode {
             // *** To hub ***
             double angleOffset = RED ? -5 : 5;
 //            double angleOffset = 0;
-            queue(from(moddedWhPose.plus(pos(-4, 0, angleOffset))) // FIXME: tune x offset?
+            queue(from(moddedWhPose.plus(pos(0, 0, angleOffset))) // FIXME: tune x offset?
                     .lineToLinearHeading(preWhPose.plus(pos(-4, -4, angleOffset)))
                     .addTemporalMarker(1.15, async(() -> {
                         // last-minute check & fix for intake
@@ -391,8 +398,9 @@ public abstract class AutonomousMode extends OpMode {
                         }
                     }))
                     .addTemporalMarker(1.0, -0.55, outtake::dumpOut)
-                    .splineToSplineHeading(cycleHubPose, deg((BLUE ? -1 : 1) * 90)));
-            queueLocalizeHub(trueHubPose);
+                    .splineToSplineHeading(cycleHubPose.plus(pos(-2,0)), deg((BLUE ? -1 : 1) * 90)));
+            //
+             queueLocalizeHub(trueHubPose);
 
 
             // *** Score ***
@@ -476,7 +484,7 @@ public abstract class AutonomousMode extends OpMode {
                         outtake.dumpIn();
                         outtake.slideToAsync(ZERO);
                     }))
-                    .lineToLinearHeading(storageUnitPose));
+                    .lineToLinearHeading(storageUnitPose.minus(pos(4, 0))));
             return;
         }
         if (CYCLE) {
@@ -490,7 +498,7 @@ public abstract class AutonomousMode extends OpMode {
                     .splineToSplineHeading(preWhPose.plus(pos(-3.5, 4)), deg(0))
                     .lineTo(whPose.plus(pos(-3.5, 5)).vec()));
         }
-        queueLocalizeWarehouse(parkPose);
+        queueWarehouseSensorCalibration(parkPose);
         queue(shippingArm::resetArmAsync);
     }
 
@@ -574,7 +582,7 @@ public abstract class AutonomousMode extends OpMode {
                     .splineToSplineHeading(pos(-48 + LENGTH / 2, 72 - WIDTH / 2, 90))
             );
         }
-        queueLocalizeWarehouse(parkPose);
+        queueWarehouseSensorCalibration(parkPose);
         queue(shippingArm::resetArmAsync);
     }
 
@@ -910,10 +918,16 @@ public abstract class AutonomousMode extends OpMode {
      */
     protected void queueLocalizeHub(Pose2d predictedPose) {
         queue(() -> {
+            double dist = rangeSensor.get();
+            Match.log("hub dist = " + dist);
+            if (dist > 30) {
+                drive.setPoseEstimate(predictedPose);
+                return;
+            }
             Pose2d currentPose = drive.getPoseEstimate();
             Pose2d correctedPose = new Pose2d(
                     currentPose.getX(),
-                    pos(-72 + rangeSensor.getDistance(DistanceUnit.INCH) + 6.5, 0).getY(),
+                    pos(-72 + dist + 6.5, 0).getY(),
                     currentPose.getHeading()
             );
             drive.setPoseEstimate(correctedPose);
@@ -946,11 +960,12 @@ public abstract class AutonomousMode extends OpMode {
         Vector2d ySensorToRobot = new Vector2d(-2, -6.5).rotated(heading);
         double yDist = new Vector2d(0, -wallToYSensor).plus(ySensorToRobot).getY();
 
+
         Vector2d correctedVec = pos(-72 + xDist, 72 + yDist).vec();
         if (Math.abs(correctedVec.getX()) < 72 && Math.abs(correctedVec.getY()) < 72 && Math.abs(drive.getPoseEstimate().getX()) < Math.abs(correctedVec.getX())) {
-            drive.setPoseEstimate(new Pose2d(drive.getPoseEstimate().getX(), correctedVec.getY(), heading));
+            drive.setPoseEstimate(new Pose2d(correctedVec.getX(), drive.getPoseEstimate().getY() + (RED ? 2 : -2), heading));
         } else {
-            drive.setPoseEstimate(new Pose2d(drive.getPoseEstimate().getX(), correctedVec.getY(), heading));
+            drive.setPoseEstimate(new Pose2d(correctedVec.getX(), drive.getPoseEstimate().getY() + (RED ? 2 : -2), heading));
         }
     }
 
@@ -973,9 +988,9 @@ public abstract class AutonomousMode extends OpMode {
 
         Vector2d correctedVec = pos(-72 + xDist, -72 + yDist).vec();
         if (Math.abs(correctedVec.getX()) < 72 && Math.abs(correctedVec.getY()) < 72 && Math.abs(drive.getPoseEstimate().getX()) < Math.abs(correctedVec.getX())) {
-            drive.setPoseEstimate(new Pose2d(drive.getPoseEstimate().getX(), correctedVec.getY(), heading));
+            drive.setPoseEstimate(new Pose2d(correctedVec.getX(), drive.getPoseEstimate().getY(), heading));
         } else {
-            drive.setPoseEstimate(new Pose2d(drive.getPoseEstimate().getX(), correctedVec.getY(), heading));
+            drive.setPoseEstimate(new Pose2d(correctedVec.getX(), drive.getPoseEstimate().getY(), heading));
         }
     }
 
@@ -992,6 +1007,34 @@ public abstract class AutonomousMode extends OpMode {
      */
     protected void queueLocalizeWarehouse(Pose2d predictedPose) {
         queue(this::localizeWarehouse);
+        queue(predictedPose);
+    }
+
+    /**
+     * Queues a y-coordinates calibration of the robot's pose estimate at the warehouse. The new
+     * pose estimate will calibrate the alliance-agnostic y-coordinates based on the distance sensor
+     * reading. Future trajectories will begin at a predicted pose.
+     *
+     * @param predictedPose the correct pose of the robot
+     * @see #pos(double, double, double)
+     * @see #queue(Pose2d)
+     */
+    protected void queueWarehouseSensorCalibration(Pose2d predictedPose) {
+        queue(() -> {
+            double dist = rangeSensor.get();
+            Match.log("warehouse dist = " + dist);
+            if (dist > 30) {
+                drive.setPoseEstimate(predictedPose);
+                return;
+            }
+            Pose2d currentPose = drive.getPoseEstimate();
+            Pose2d correctedPose = new Pose2d(
+                    pos(0, 72 - dist - 6.5).getX(),
+                    predictedPose.getY(),
+                    currentPose.getHeading()
+            );
+            drive.setPoseEstimate(correctedPose);
+        });
         queue(predictedPose);
     }
 
