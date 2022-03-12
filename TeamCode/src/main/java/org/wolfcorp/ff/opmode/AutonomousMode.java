@@ -212,7 +212,7 @@ public abstract class AutonomousMode extends OpMode {
             cycleHubPose = pos(-45, -12, 90);
         } else if (BLUE && WAREHOUSE) {
             hubPose = pos(-44, -16, 90);
-            cycleHubPose = pos(-45, -13, 90);
+            cycleHubPose = pos(-45, -14.55, 90);
         }
         capPose = hubPose.minus(pos(2, WIDTH / 2));
         preHubPose = pos(-48, -12, 0);
@@ -341,7 +341,7 @@ public abstract class AutonomousMode extends OpMode {
 
 
             // *** To warehouse ***
-            queue(() -> intake.getMotor().setVelocity(0.75 * Intake.IN_SPEED));
+            queue(intake::in);
             Pose2d moddedWhPose = whPose.plus(pos(0, i == 1 ? 0 : 2 + (RED ? 2 : 0) + i * 1.8));
             queue(from(trueHubPose)
                     .addTemporalMarker(0.4, async(() -> {
@@ -365,10 +365,10 @@ public abstract class AutonomousMode extends OpMode {
 
 
             // *** To hub ***
-            double angleOffset = RED ? -3 : 3;
+            double angleOffset = RED ? -5 : 5;
 //            double angleOffset = 0;
-            queue(from(moddedWhPose.plus(pos(0, 0, angleOffset)))
-                    .lineToLinearHeading(preWhPose.plus(pos(0, -4, angleOffset)))
+            queue(from(moddedWhPose.plus(pos(-3, 0, angleOffset))) // FIXME: tune x offset?
+                    .lineToLinearHeading(preWhPose.plus(pos(-3, -4, angleOffset)))
                     .addTemporalMarker(1.15, async(() -> {
                         // last-minute check & fix for intake
                         if (dumpIndicator.update() == FULL) {
@@ -421,12 +421,12 @@ public abstract class AutonomousMode extends OpMode {
                         if ((Math.abs(intake.getMotor().getVelocity()) > 0.1 * Intake.MAX_SPEED)) {
                             cloggedTimer.reset();
                         }
-                        intake.getMotor().setVelocity(clogFlag ? -0.8 * Intake.MAX_SPEED : 0.78 * Intake.IN_SPEED);
-                        drive.setMotorPowers(0.15);
+                        intake.getMotor().setVelocity(clogFlag ? -0.6 * Intake.MAX_SPEED : Intake.IN_SPEED);
+                        drive.setMotorPowers(0.2);
                     } else {
                         System.out.println("hit");
                         intake.getMotor().setVelocity(Intake.MAX_SPEED);
-                        drive.setMotorPowers(-0.1);
+                        drive.setMotorPowers(-0.3);
                     }
                     if (cloggedTimer.milliseconds() > 1500) {
                         cloggedTimer.reset();
@@ -483,7 +483,7 @@ public abstract class AutonomousMode extends OpMode {
             // park in warehouse
             queue(from(trueHubPose)
                     .addTemporalMarker(0.5, async(() -> {
-                        intake.getMotor().setVelocity(0.6 * Intake.IN_SPEED);
+                        intake.in();
                         outtake.dumpIn();
                         outtake.slideToAsync(ZERO);
                     }))
@@ -562,7 +562,7 @@ public abstract class AutonomousMode extends OpMode {
             // park in warehouse
             queue(from(trueHubPose)
                     .addTemporalMarker(0.5, async(() -> {
-                        intake.getMotor().setVelocity(0.7 * Intake.IN_SPEED);
+                        intake.in();
                         outtake.dumpIn();
                         outtake.slideToAsync(ZERO);
                     }))
