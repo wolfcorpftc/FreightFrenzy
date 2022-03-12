@@ -212,7 +212,7 @@ public abstract class AutonomousMode extends OpMode {
             cycleHubPose = pos(-45, -12, 90);
         } else if (BLUE && WAREHOUSE) {
             hubPose = pos(-44, -16, 90);
-            cycleHubPose = pos(-45, -11, 90);
+            cycleHubPose = pos(-45, -13, 90);
         }
         capPose = hubPose.minus(pos(2, WIDTH / 2));
         preHubPose = pos(-48, -12, 0);
@@ -411,6 +411,7 @@ public abstract class AutonomousMode extends OpMode {
             ElapsedTime timer = new ElapsedTime();
             ElapsedTime cloggedTimer = new ElapsedTime();
             boolean clog = false;
+            boolean clogFlag = false;
             while (dumpIndicator.update() != FULL && timer.milliseconds() < 400) {
                 drive.updatePoseEstimate();
                 if (dumpIndicator.update() == EMPTY) {
@@ -420,18 +421,19 @@ public abstract class AutonomousMode extends OpMode {
                         if ((Math.abs(intake.getMotor().getVelocity()) > 0.1 * Intake.MAX_SPEED)) {
                             cloggedTimer.reset();
                         }
-                        intake.getMotor().setVelocity(0.78 * Intake.IN_SPEED);
+                        intake.getMotor().setVelocity(clogFlag ? -0.8 * Intake.MAX_SPEED : 0.78 * Intake.IN_SPEED);
                         drive.setMotorPowers(0.15);
                     } else {
                         System.out.println("hit");
                         intake.getMotor().setVelocity(Intake.MAX_SPEED);
                         drive.setMotorPowers(-0.1);
                     }
-                    if (cloggedTimer.milliseconds() > 2000) {
+                    if (cloggedTimer.milliseconds() > 1500) {
                         cloggedTimer.reset();
                         clog = false;
-                    } else if (cloggedTimer.milliseconds() > 1000) {
+                    } else if (cloggedTimer.milliseconds() > 750) {
                         clog = true;
+                        clogFlag = true;
                     }
                     outtake.dumpIn();
                 } else if (dumpIndicator.update() == OVERFLOW) {
@@ -448,6 +450,10 @@ public abstract class AutonomousMode extends OpMode {
             }
             drive.setMotorPowers(0);
             intake.out();
+            if (!outtake.isApproaching(EXCESS)) {
+                outtake.slideToAsync(EXCESS);
+            }
+            outtake.dumpExcess();
 //            drive.follow(from(drive.getPoseEstimate()).lineTo(whPose.vec()).build());
 //            if (iteration == 2) {
 //                if (RED) {
