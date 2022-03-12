@@ -972,8 +972,10 @@ public abstract class AutonomousMode extends OpMode {
         }
 
         Vector2d correctedVec = pos(-72 + xDist, -72 + yDist).vec();
-        if (Math.abs(correctedVec.getX()) < 72 && Math.abs(correctedVec.getY()) < 72) {
-            drive.setPoseEstimate(new Pose2d(correctedVec.getX(), correctedVec.getY(), heading));
+        if (Math.abs(correctedVec.getX()) < 72 && Math.abs(correctedVec.getY()) < 72 && Math.abs(drive.getPoseEstimate().getX()) < Math.abs(correctedVec.getX())) {
+            drive.setPoseEstimate(new Pose2d(drive.getPoseEstimate().getX(), correctedVec.getY(), heading));
+        } else {
+            drive.setPoseEstimate(new Pose2d(drive.getPoseEstimate().getX(), correctedVec.getY(), heading));
         }
     }
 
