@@ -212,7 +212,7 @@ public abstract class AutonomousMode extends OpMode {
             cycleHubPose = pos(-45, -12, 90);
         } else if (BLUE && WAREHOUSE) {
             hubPose = pos(-44, -16, 90);
-            cycleHubPose = pos(-45, -14.55, 90);
+            cycleHubPose = pos(-48, -15.5, 90);
         }
         capPose = hubPose.minus(pos(2, WIDTH / 2));
         preHubPose = pos(-48, -12, 0);
@@ -367,8 +367,8 @@ public abstract class AutonomousMode extends OpMode {
             // *** To hub ***
             double angleOffset = RED ? -5 : 5;
 //            double angleOffset = 0;
-            queue(from(moddedWhPose.plus(pos(-3, 0, angleOffset))) // FIXME: tune x offset?
-                    .lineToLinearHeading(preWhPose.plus(pos(-3, -4, angleOffset)))
+            queue(from(moddedWhPose.plus(pos(-4, 0, angleOffset))) // FIXME: tune x offset?
+                    .lineToLinearHeading(preWhPose.plus(pos(-4, -4, angleOffset)))
                     .addTemporalMarker(1.15, async(() -> {
                         // last-minute check & fix for intake
                         if (dumpIndicator.update() == FULL) {

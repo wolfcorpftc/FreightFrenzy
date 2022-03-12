@@ -140,7 +140,7 @@ public abstract class TeleOpMode extends OpMode {
             // *** Automatic Carousel Spinner ***
             if (gamepad2.left_bumper && !maskSpinner) {
                 maskSpinner = true;
-                spinner.spinAsync(10, CarouselSpinner.SPIN_TIME, 250);
+                spinner.spinAsync(10, CarouselSpinner.SPIN_TIME, 300);
             }
 
             if (!gamepad2.left_bumper) {
@@ -164,7 +164,7 @@ public abstract class TeleOpMode extends OpMode {
             // *** Override Carousel Spinner ***
             if (gamepad1.left_trigger > 0.4 && gamepad1.right_trigger > 0.4 && !maskSpinnerOverride) {
                 maskSpinnerOverride = true;
-                spinner.stopSpin();
+                 spinner.stopSpin();
             }
 
             if (!(gamepad1.left_trigger > 0.4 && gamepad1.right_trigger > 0.4)) {

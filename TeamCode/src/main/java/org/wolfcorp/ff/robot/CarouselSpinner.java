@@ -10,7 +10,7 @@ import org.wolfcorp.ff.opmode.OpMode;
 import java.util.function.Consumer;
 
 public class CarouselSpinner {
-    public static final double SPIN_TIME = 2400; // millis
+    public static final double SPIN_TIME = 2100; // millis
     public static final Long WAIT_TIME = 1000L; // millis
     public static final double TURN_POWER = 1.0;
     public static Thread spinThread = null;
@@ -18,6 +18,7 @@ public class CarouselSpinner {
     private final CRServo servo;
     private final ElapsedTime spinTimer = new ElapsedTime();
     private final Consumer<Long> sleep;
+    private boolean stopSpin = false;
 
     public CarouselSpinner(HardwareMap hwMap, Consumer<Long> s) {
         servo = hwMap.get(CRServo.class, "spinner");
@@ -62,23 +63,24 @@ public class CarouselSpinner {
      */
     public Thread spinAsync(int times, double spinTime, long waitTime) {
         Runnable runnable = () -> {
-            for (int i = times; i >= 1 && !Thread.currentThread().isInterrupted(); i--) {
+            for (int i = times; i >= 1 && (!Thread.currentThread().isInterrupted() && !stopSpin); i--) {
+                System.out.println(stopSpin + " stop Spin");
                 System.out.println(Thread.currentThread().isInterrupted());
-                if (Thread.currentThread().isInterrupted()) {
+                if (Thread.currentThread().isInterrupted() && !stopSpin) {
                     return;
                 }
                 spinTimer.reset();
                 on();
                 OpMode.dumpIndicator.full();
-                while (spinTimer.milliseconds() < spinTime && !Thread.currentThread().isInterrupted()) {
-                    if (Thread.currentThread().isInterrupted()) {
+                while (spinTimer.milliseconds() < spinTime && !Thread.currentThread().isInterrupted() && !stopSpin) {
+                    if (Thread.currentThread().isInterrupted() || stopSpin) {
                         return;
                     }
                 }
                 off();
                 OpMode.dumpIndicator.overflow();
-                if (i != 1 && !Thread.currentThread().isInterrupted()) {
-                    if (Thread.currentThread().isInterrupted()) {
+                if (i != 1 && !Thread.currentThread().isInterrupted() && !stopSpin) {
+                    if (Thread.currentThread().isInterrupted() || stopSpin) {
                         return;
                     }
                     sleep.accept(waitTime);
@@ -105,7 +107,13 @@ public class CarouselSpinner {
         spinAsync(time, SPIN_TIME, WAIT_TIME).join();
     }
 
+    public void spin(int time, double spinTime, long waitTime) throws InterruptedException{
+        spinAsync(time, spinTime, waitTime).join();
+    }
+
     public void stopSpin() {
+        stopSpin = true;
+        System.out.println(stopSpin + " method");
         if (spinThread != null && !spinThread.isInterrupted()) {
             spinThread.interrupt();
         }
