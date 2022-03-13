@@ -403,7 +403,7 @@ public abstract class AutonomousMode extends OpMode {
                                 outtake.slideToAsync(SUPERTOP);
                         }
                     }))
-                    .addTemporalMarker(1.0, -0.55, outtake::dumpOut)
+                    .addTemporalMarker(1.0, -0.85, outtake::dumpOut)
                     .splineToSplineHeading(cycleHubPose.plus(pos(-2,0)), deg((BLUE ? -1 : 1) * 90)));
             //
              queueLocalizeHub(trueHubPose);
