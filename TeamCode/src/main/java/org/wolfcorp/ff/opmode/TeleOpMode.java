@@ -49,7 +49,7 @@ public abstract class TeleOpMode extends OpMode {
 
         shippingArm.toggleClaw();
         spinner.on();
-        sleep(50);
+        sleep(100);
         spinner.off();
         shippingArm.toggleClaw();
 

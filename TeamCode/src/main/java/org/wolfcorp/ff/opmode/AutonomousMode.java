@@ -21,6 +21,8 @@ import static java.lang.Math.cos;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.acmerobotics.roadrunner.trajectory.MarkerCallback;
+import com.acmerobotics.roadrunner.trajectory.constraints.TrajectoryAccelerationConstraint;
+import com.acmerobotics.roadrunner.trajectory.constraints.TrajectoryVelocityConstraint;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
@@ -285,6 +287,10 @@ public abstract class AutonomousMode extends OpMode {
         // *** Initialization ***
         initHardware();
         outtake.dumpIn();
+        sleep(750);
+        outtake.dumpExcess();
+        sleep(750);
+        outtake.dumpIn();
 
         Match.status("Starting vision init thread");
         initVisionThread = new Thread(this::initVisionWebcam);
@@ -327,9 +333,9 @@ public abstract class AutonomousMode extends OpMode {
                     .lineTo(storageUnitPose.plus(pos(3,-2)).vec()));
             queueCalibration(storageUnitPose);
             queue(fromHere()
-                    .lineToLinearHeading(carouselHubPose.minus(pos(2, 0)))
-                    .addTemporalMarker(0.8, outtake::dumpOut));
-
+                    .lineToLinearHeading(carouselHubPose.plus(pos(0, 4)), getVelocityConstraint(25, 5, TRACK_WIDTH), getAccelerationConstraint(25))
+                    .addTemporalMarker(2.75, outtake::dumpOut)
+            .waitSeconds(0.5));
 
         } else if (CYCLE) {
             queue(fromHere()
@@ -354,14 +360,14 @@ public abstract class AutonomousMode extends OpMode {
                         outtake.dumpIn();
                         outtake.slideToAsync(ZERO);
                     }))
-                    .splineToSplineHeading(preWhPose.plus(pos(-2.75, 4)), deg(0))
+                    .splineToSplineHeading(preWhPose.plus(pos(RED ? -4 : -2.75, 4)), deg(0))
                     .splineToConstantHeading(moddedWhPose.minus(pos(7, 0)).vec()));// from 3.5
             queueWarehouseSensorCalibration(moddedWhPose);
 
 
             // *** Intake ***
             intake(i);
-            queue(() -> drive.strafeRight(0.5, RED ? 5: -5));
+            queue(() -> drive.strafeRight(0.5, RED ? 7: -7));
             queueWarehouseSensorCalibration(pos(-72 + DriveConstants.WIDTH / 2, 42, 0));
             queue(() -> {
                 if (30 - runtime.seconds() <= 5) {
