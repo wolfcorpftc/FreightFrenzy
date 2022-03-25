@@ -933,7 +933,7 @@ public abstract class AutonomousMode extends OpMode {
             Pose2d currentPose = drive.getPoseEstimate();
             Pose2d correctedPose = new Pose2d(
                     currentPose.getX(),
-                    pos(-72 + dist + 6.5, 0).getY(),
+                    pos(-72 + dist + 6.75, 0).getY(),
                     currentPose.getHeading()
             );
             drive.setPoseEstimate(correctedPose);
@@ -941,18 +941,27 @@ public abstract class AutonomousMode extends OpMode {
         queue(predictedPose);
     }
 
+    protected double getCorrectedXReading() {
+        InchSensor xSensor = RED ? rightRangeSensor : leftRangeSensor;
+        return 1.11113 * xSensor.get() - 0.241264;
+    }
+
+    protected double getCorrectedYReading() {
+        return 1.07863 * rangeSensor.get() - 0.318066; // adjust for inaccuracies
+    }
+
     /**
      * Calibrate robot pose at a wall corner using side and forward distance sensors and IMU.
      * @see #queueLocalizeWarehouse(Pose2d)
      */
     protected void localizeWarehouse() {
+        // FIXME: replicate all changes to localize* (Hub, Carousel?)
         double heading = drive.getExternalHeading();
 
-        InchSensor xSensor = RED ? rightRangeSensor : leftRangeSensor;
         // horizontal distance from wall to sensor
-        double wallToXSensor = xSensor.get() * cos(heading);
+        double wallToXSensor = getCorrectedXReading() * cos(heading);
         // sensor point to robot center point
-        Vector2d xSensorToRobot = (RED ? new Vector2d(-5.5, 7.5) : new Vector2d(5.25, -7.25)).rotated(heading);
+        Vector2d xSensorToRobot = (RED ? new Vector2d(-5.5, 7.5) : new Vector2d(5.625, -6.916)).rotated(heading);
         // horizontal distance between wall and robot center point
         double xDist;
         if (RED) {
@@ -962,17 +971,18 @@ public abstract class AutonomousMode extends OpMode {
         }
 
         // same logic below
-        double wallToYSensor = rangeSensor.get() * cos(heading);
-        Vector2d ySensorToRobot = new Vector2d(-2, -6.5).rotated(heading);
+        double wallToYSensor = getCorrectedYReading() * cos(heading);
+        Vector2d ySensorToRobot = new Vector2d(3.75, -6.75).rotated(heading);
         double yDist = new Vector2d(0, -wallToYSensor).plus(ySensorToRobot).getY();
 
 
         Vector2d correctedVec = pos(-72 + xDist, 72 + yDist).vec();
         if (Math.abs(correctedVec.getX()) < 72 && Math.abs(correctedVec.getY()) < 72 && Math.abs(drive.getPoseEstimate().getX()) < Math.abs(correctedVec.getX())) {
-            drive.setPoseEstimate(new Pose2d(correctedVec.getX(), drive.getPoseEstimate().getY() + (RED ? 2 : -2), heading));
+            drive.setPoseEstimate(new Pose2d(correctedVec.getX(), drive.getPoseEstimate().getY(), heading));
         } else {
-            drive.setPoseEstimate(new Pose2d(correctedVec.getX(), drive.getPoseEstimate().getY() + (RED ? 2 : -2), heading));
+            drive.setPoseEstimate(new Pose2d(correctedVec.getX(), drive.getPoseEstimate().getY(), heading));
         }
+        drive.update();
     }
 
     protected void localizeCarousel() {
