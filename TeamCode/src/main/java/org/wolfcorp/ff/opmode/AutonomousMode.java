@@ -984,7 +984,6 @@ public abstract class AutonomousMode extends OpMode {
         } else {
             drive.setPoseEstimate(new Pose2d(correctedVec.getX(), correctedVec.getY(), heading));
         }
-        System.out.println(drive.getPoseEstimate());
     }
 
     protected void localizeCarousel() {
