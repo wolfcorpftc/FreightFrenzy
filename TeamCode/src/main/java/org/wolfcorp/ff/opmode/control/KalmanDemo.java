@@ -5,6 +5,7 @@ import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.wolfcorp.ff.opmode.AutonomousMode;
 import org.wolfcorp.ff.opmode.util.Match;
 import org.wolfcorp.ff.robot.Kalman;
@@ -49,6 +50,7 @@ public class KalmanDemo extends AutonomousMode {
             drive.update();
             HashMap packet = TrajectorySequenceRunner.packetData;
 
+            packet.put("INFARED", infaredDistanceSensor.getDistance(DistanceUnit.INCH));
             packet.put("Encoder X", encoderPos.getX());
             packet.put("Encoder Y", encoderPos.getY());
             packet.put("Range X", sensorPos.getX());
