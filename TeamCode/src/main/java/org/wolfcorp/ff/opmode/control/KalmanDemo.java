@@ -39,10 +39,14 @@ public class KalmanDemo extends AutonomousMode {
             encoderPos = drive.getLocalizer().getPoseEstimate();
             sensorPos = localizeWarehouseReturn();
             if(sensorPos.minus(pastSensorPos).vec().norm() < 5) {
-                predictedPos = kalman.estimatePosition(testPos, sensorPos);
+                predictedPos = kalman.estimatePosition(testPos, sensorPos, drive.getExternalHeading());
+                drive.setPoseEstimate(predictedPos);
+            } else {
+                predictedPos = kalman.estimatePosition(testPos, sensorPos, drive.getExternalHeading());
                 drive.setPoseEstimate(predictedPos);
             }
 
+            drive.update();
             HashMap packet = TrajectorySequenceRunner.packetData;
 
             packet.put("Encoder X", encoderPos.getX());
@@ -56,7 +60,6 @@ public class KalmanDemo extends AutonomousMode {
             telemetry.addData("Range", sensorPos);
             telemetry.addData("Kalman", predictedPos);
             telemetry.update();
-            drive.update();
         }
     }
 

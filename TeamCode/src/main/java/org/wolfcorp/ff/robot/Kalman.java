@@ -91,7 +91,7 @@ public class Kalman {
      * @param position
      * @return
      */
-    public Pose2d estimatePosition(Pose2d control, Pose2d position){
+    public Pose2d estimatePosition(Pose2d control, Pose2d position, double heading){
 
         double[] con = {control.getX(),control.getY()};
         RealVector u = new ArrayRealVector(con);
@@ -109,6 +109,6 @@ public class Kalman {
         double pX = filter.getStateEstimation()[0];
         double pY = filter.getStateEstimation()[1];
 
-        return new Pose2d(pX, pY, position.getHeading());
+        return new Pose2d(pX, pY, heading);
     }
 }
