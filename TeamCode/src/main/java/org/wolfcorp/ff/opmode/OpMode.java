@@ -28,6 +28,7 @@ public abstract class OpMode extends LinearOpMode {
     public static InchSensor rangeSensor;
     public static InchSensor leftRangeSensor;
     public static InchSensor rightRangeSensor;
+    public static InchSensor frontDist;
     public static RevColorSensorV3 upperDumpDistance = null;
     public static RevColorSensorV3 lowerDumpDistance = null;
     public static InchSensor intakeRampDistance = null;
@@ -66,6 +67,7 @@ public abstract class OpMode extends LinearOpMode {
         shippingArm = new ShippingArm(hardwareMap);
         dumpIndicator = new DumpIndicator(hardwareMap);
         rangeSensor = new InchSensor(hardwareMap.get(DistanceSensor.class, "sensor_range"));
+        frontDist = new InchSensor(hardwareMap.get(DistanceSensor.class, "frontDist"));
         if (Match.BLUE)
             leftRangeSensor = new InchSensor(hardwareMap.get(DistanceSensor.class, "leftRangeSensor"));
         else if (Match.RED)

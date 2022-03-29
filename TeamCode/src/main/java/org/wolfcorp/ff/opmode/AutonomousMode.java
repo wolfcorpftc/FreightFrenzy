@@ -340,7 +340,7 @@ public abstract class AutonomousMode extends OpMode {
         } else if (CYCLE) {
             queue(fromHere()
                     .addTemporalMarker(0.6, outtake::dumpOut)
-                    .lineTo(hubPose.vec()));
+                    .lineTo(hubPose.vec(), getVelocityConstraint(50, 5, TRACK_WIDTH), getAccelerationConstraint(45)));
             queueLocalizeHub(trueHubPose);
         }
     }
