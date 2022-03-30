@@ -946,7 +946,7 @@ public abstract class AutonomousMode extends OpMode {
         return 1.11113 * xSensor.get() - 0.241264;
     }
 
-    protected double getCorrectedYReading() {
+    protected double getCorrectedUltrasonicYReading() {
         return 1.07863 * rangeSensor.get() - 0.318066; // adjust for inaccuracies
     }
 
@@ -971,9 +971,30 @@ public abstract class AutonomousMode extends OpMode {
         }
 
         // same logic below
-        double wallToYSensor = getCorrectedYReading() * cos(heading);
-        Vector2d ySensorToRobot = new Vector2d(3.75, -6.75).rotated(heading);
-        double yDist = new Vector2d(0, -wallToYSensor).plus(ySensorToRobot).getY();
+        double wallToYUltrasonicSensor = getCorrectedUltrasonicYReading() * cos(heading);
+        // TODO: Change
+        double wallToDistanceSensor = infaredDistanceSensor.getDistance(DistanceUnit.INCH) * cos(heading);
+        Vector2d yUltrasonicSensorToRobot = new Vector2d(3.75, -6.75).rotated(heading);
+        Vector2d yDistanceSensorToRobot = new Vector2d(-2, -6).rotated(heading);
+        double yUltrasonicDist = new Vector2d(0, -wallToYUltrasonicSensor).plus(yUltrasonicSensorToRobot).getY();
+        double yDistanceDist = new Vector2d(0, -wallToDistanceSensor).plus(yDistanceSensorToRobot).getY();
+        double yDist = 16;
+        // picking the correct distance input
+        // when both are giving good readings
+        if (yDistanceDist < 48 && yUltrasonicDist < 48) {
+            // when ultrasonic sees something on the ground
+            if (yDistanceDist - 4 > yUltrasonicDist) {
+                yDist = yDistanceDist;
+            } else {
+                yDist = yUltrasonicDist;
+            }
+        // when the ultrasonic is giving a bad reading
+        } else if (yDistanceDist < 48) {
+            yDist = yDistanceDist;
+        // when the infared is giving a bad reading
+        } else if (yUltrasonicDist < 48) {
+            yDist = yUltrasonicDist;
+        }
 
         Vector2d correctedVec = pos(-72 + xDist, 72 + yDist).vec();
         if (Double.isInfinite(correctedVec.getX()) || Double.isInfinite(correctedVec.getY()) || Double.isNaN(correctedVec.getX()) || Double.isNaN(correctedVec.getY())){
