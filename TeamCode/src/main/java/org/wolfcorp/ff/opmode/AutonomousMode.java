@@ -354,7 +354,8 @@ public abstract class AutonomousMode extends OpMode {
 
             // *** To warehouse ***
             queue(intake::in);
-            Pose2d moddedWhPose = whPose.plus(pos(0, i == 1 ? 0 : 2 + (RED ? 2 : 0) + i * 2.5));
+            // TODO: angle offset?
+            Pose2d moddedWhPose = whPose.plus(pos(0, i == 1 ? 0 : 2 + (RED ? 2 : 0) + i * 2));
             queue(from(trueHubPose)
                     .addTemporalMarker(0.2, async(() -> {
                         outtake.dumpIn();
@@ -362,9 +363,11 @@ public abstract class AutonomousMode extends OpMode {
                     .addTemporalMarker(0.4, async(() -> {
                         outtake.slideToAsync(ZERO);
                     }))
-                    .splineToSplineHeading(preWhPose.plus(pos(-6, 4)), deg(0))
-                    .splineToConstantHeading(moddedWhPose.minus(pos(7, 0)).vec()));// from 3.5
+                    .splineToSplineHeading(preWhPose.plus(pos(-8, -6)), deg(RED ? -20 : 20))
+                    .splineToSplineHeading(moddedWhPose.plus(pos(-14, 0)), deg(0)));// from 3.5
             queueWarehouseSensorCalibration(moddedWhPose);
+            queue(() -> { throw new InterruptedException();});
+
 
 
             // *** Intake ***
@@ -998,11 +1001,11 @@ public abstract class AutonomousMode extends OpMode {
 
 //        Vector2d correctedVec = pos(-72 + xDist, 72 + yDist).vec();
         Vector2d correctedVec = pos(-72 + xDist, 72 + yUltrasonicDist).vec();
-        if (Double.isInfinite(correctedVec.getX()) || Double.isInfinite(correctedVec.getY()) || Double.isNaN(correctedVec.getX()) || Double.isNaN(correctedVec.getY())){
+        if (!Double.isFinite(correctedVec.getX()) || !Double.isFinite(correctedVec.getY())){
             return;
         }
 //        if (Math.abs(correctedVec.getX()) < 72 && Math.abs(correctedVec.getY()) < 72 && Math.abs(drive.getPoseEstimate().getX()) < Math.abs(correctedVec.getX())) {
-            drive.setPoseEstimate(new Pose2d(correctedVec.getX(), correctedVec.getY(), heading));
+        drive.setPoseEstimate(new Pose2d(correctedVec.getX(), correctedVec.getY(), heading));
     }
 
     protected void localizeCarousel() {
