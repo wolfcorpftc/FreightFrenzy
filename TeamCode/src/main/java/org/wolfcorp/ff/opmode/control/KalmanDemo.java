@@ -83,7 +83,7 @@ public class KalmanDemo extends AutonomousMode {
         }
 
         // same logic below
-        double wallToYSensor = getCorrectedYReading() * cos(heading);
+        double wallToYSensor = getCorrectedUltrasonicYReading() * cos(heading);
         Vector2d ySensorToRobot = new Vector2d(3.75, -6.75).rotated(heading);
         double yDist = new Vector2d(0, -wallToYSensor).plus(ySensorToRobot).getY();
 
