@@ -86,6 +86,8 @@ public class Drivetrain extends MecanumDrive {
     /** Speed multiplier for {@link #drive(double, double, double, double, boolean)}*/
     public double speedMultiplier = 1;
 
+    protected Telemetry.Item motorVeloItem = null;
+
     public Drivetrain(HardwareMap hardwareMap) {
         super(kV, kA, kStatic, TRACK_WIDTH, TRACK_WIDTH, LATERAL_MULTIPLIER);
 
@@ -139,6 +141,8 @@ public class Drivetrain extends MecanumDrive {
         rightBack.setDirection(DcMotor.Direction.FORWARD);
 
         trajectorySequenceRunner = new TrajectorySequenceRunner(follower, HEADING_PID);
+
+        motorVeloItem = Match.createLogItem("Drivetrain velocity", 0);
     }
 
     public TrajectoryBuilder trajectoryBuilder(Pose2d startPose) {
@@ -243,6 +247,7 @@ public class Drivetrain extends MecanumDrive {
 
     public void update() {
         updatePoseEstimate();
+        motorVeloItem.setValue(leftBack.getVelocity());
         if (abort) {
             trajectorySequenceRunner.followTrajectorySequenceAsync(null);
             return;

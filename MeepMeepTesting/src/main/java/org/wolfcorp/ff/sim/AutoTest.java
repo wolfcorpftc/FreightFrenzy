@@ -114,8 +114,8 @@ public class AutoTest {
                 .setBotDimensions(width,length)
                 .followTrajectorySequence(drive -> drive
                         .trajectorySequenceBuilder(hubPose)
-                        .splineToSplineHeading(preWhPose.plus(pos(0, -6)), deg(isRed ? -20 : 20))
-                        .splineToSplineHeading(whPose.minus(pos(5, 0)), deg(0))
+                        .splineToSplineHeading(preWhPose.plus(pos(0, -6)), deg(isRed ? -19 : 19))
+                        .lineToSplineHeading(whPose.minus(pos(5, 0)))
                         .build()
                 )
                 .start();

@@ -214,7 +214,7 @@ public abstract class AutonomousMode extends OpMode {
             cycleHubPose = pos(-45, -12, 90);
         } else if (BLUE && WAREHOUSE) {
             hubPose = pos(-44, -16, 90);
-            cycleHubPose = pos(-48, -7, 90);
+            cycleHubPose = pos(-49, -4, 90);
         }
         capPose = hubPose.minus(pos(2, WIDTH / 2));
         preHubPose = pos(-48, -12, 0);
@@ -336,7 +336,6 @@ public abstract class AutonomousMode extends OpMode {
                     .lineToLinearHeading(carouselHubPose.plus(pos(0, 4)), getVelocityConstraint(25, 5, TRACK_WIDTH), getAccelerationConstraint(25))
                     .addTemporalMarker(2.75, outtake::dumpOut)
             .waitSeconds(0.5));
-
         } else if (CYCLE) {
             queue(fromHere()
                     .addTemporalMarker(1, outtake::dumpOut)
@@ -363,11 +362,10 @@ public abstract class AutonomousMode extends OpMode {
                     .addTemporalMarker(0.4, async(() -> {
                         outtake.slideToAsync(ZERO);
                     }))
-                    .splineToSplineHeading(preWhPose.plus(pos(-8, -6)), deg(RED ? -20 : 20))
+//                    .splineToSplineHeading(preWhPose.plus(pos(-4, -11)), deg(RED ? -20 : 20))
+                    .splineToSplineHeading(preWhPose.plus(pos(-8, -11)), deg(RED ? -24 : 24))
                     .splineToSplineHeading(moddedWhPose.plus(pos(-14, 0)), deg(0)));// from 3.5
             queueWarehouseSensorCalibration(moddedWhPose);
-            queue(() -> { throw new InterruptedException();});
-
 
 
             // *** Intake ***
@@ -379,7 +377,6 @@ public abstract class AutonomousMode extends OpMode {
                     throw new InterruptedException();
                 }
             });
-
 
 
             // *** To hub ***
@@ -409,11 +406,13 @@ public abstract class AutonomousMode extends OpMode {
                         }
                     }))
                     .addTemporalMarker(1.0, -0.6, outtake::dumpOut)
-                    .splineToSplineHeading(cycleHubPose.plus(pos(-2,0)), deg((BLUE ? -1 : 1) * 90)));
+                    .splineToSplineHeading(cycleHubPose.plus(pos(-14, 0)), deg((BLUE ? -1 : 1) * 90))
+                    .splineToSplineHeading(cycleHubPose.plus(pos(-2, 0)), deg((BLUE ? -1 : 1) * 90)));
             //
              //queueLocalizeHub(trueHubPose);
             queue(() -> drive.setPoseEstimate(trueHubPose));
             queue(trueHubPose);
+
 
             // *** Score ***
             queue(() -> {
@@ -483,8 +482,6 @@ public abstract class AutonomousMode extends OpMode {
         });
     }
 
-
-
     public void park() {
         Match.status("Initializing: park");
         // park in storage unit
@@ -505,8 +502,8 @@ public abstract class AutonomousMode extends OpMode {
                         outtake.dumpIn();
                         outtake.slideToAsync(ZERO);
                     }))
-                    .splineToSplineHeading(preWhPose.plus(pos(-3.5, 4)), deg(0))
-                    .lineTo(whPose.plus(pos(-3.5, 5)).vec()));
+                    .splineToSplineHeading(preWhPose.plus(pos(-8, -11)), deg(RED ? -24 : 24))
+                    .splineToSplineHeading(whPose.plus(pos(-14, 0)), deg(0)));// from 3.5
         }
         queue(shippingArm::resetArmAsync);
     }
@@ -999,6 +996,9 @@ public abstract class AutonomousMode extends OpMode {
             yDist = yUltrasonicDist;
         }
 
+        if (Math.abs(yUltrasonicDist) < 24){
+            yUltrasonicDist += ((24-Math.abs(yUltrasonicDist))*0.4);
+        }
 //        Vector2d correctedVec = pos(-72 + xDist, 72 + yDist).vec();
         Vector2d correctedVec = pos(-72 + xDist, 72 + yUltrasonicDist).vec();
         if (!Double.isFinite(correctedVec.getX()) || !Double.isFinite(correctedVec.getY())){
@@ -1109,6 +1109,10 @@ public abstract class AutonomousMode extends OpMode {
         Thread t = new Thread(task);
         t.start();
         return t;
+    }
+
+    public void quit() {
+        queue(() -> { throw new InterruptedException();});
     }
     // endregion
 }
