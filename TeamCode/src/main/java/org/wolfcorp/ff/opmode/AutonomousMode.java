@@ -214,7 +214,7 @@ public abstract class AutonomousMode extends OpMode {
             cycleHubPose = pos(-45, -12, 90);
         } else if (BLUE && WAREHOUSE) {
             hubPose = pos(-44, -16, 90);
-            cycleHubPose = pos(-48, -12.5, 90);
+            cycleHubPose = pos(-48, -9, 90);
         }
         capPose = hubPose.minus(pos(2, WIDTH / 2));
         preHubPose = pos(-48, -12, 0);
@@ -275,7 +275,7 @@ public abstract class AutonomousMode extends OpMode {
         deposit();
         cycle(); // CYCLE only
         park();
-        // getFreight();
+         getFreight();
 //        getFreight(); // CYCLE only
 //        parkShared(); // CYCLE ONLY
 
@@ -369,11 +369,11 @@ public abstract class AutonomousMode extends OpMode {
             intake(i);
             queue(this::localizeWarehouse);
 //            queueWarehouseSensorCalibration(pos(-72 + DriveConstants.WIDTH / 2, 42, 0));
-//            queue(() -> {
-//                if (30 - runtime.seconds() <= 4) {
-//                    throw new InterruptedException();
-//                }
-//            });
+            queue(() -> {
+                if (30 - runtime.seconds() <= 3) {
+                    throw new InterruptedException();
+                }
+            });
 
 
 
@@ -404,7 +404,7 @@ public abstract class AutonomousMode extends OpMode {
                         }
                     }))
                     .addTemporalMarker(1.0, -0.6, outtake::dumpOut)
-                    .splineToSplineHeading(cycleHubPose.plus(pos(-2,0)), deg((BLUE ? -1 : 1) * 90)));
+                    .splineToSplineHeading(cycleHubPose.plus(pos(-3,0)), deg((BLUE ? -1 : 1) * 90)));
             //
              queueLocalizeHub(trueHubPose);
 
@@ -501,8 +501,7 @@ public abstract class AutonomousMode extends OpMode {
                         outtake.slideToAsync(ZERO);
                     }))
                     .splineToSplineHeading(preWhPose.plus(pos(-3.5, 4)), deg(0))
-                    .lineTo(whPose.plus(pos(-3.5, 5)).vec()));
-            queue(this::getFreight);
+                    .lineTo(whPose.plus(pos(-3.5, 9)).vec()));
             queue(this::localizeWarehouse);
         }
         queue(shippingArm::resetArmAsync);

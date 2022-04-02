@@ -66,7 +66,7 @@ public abstract class OpMode extends LinearOpMode {
         spinner = new CarouselSpinner(hardwareMap, this::sleep);
         shippingArm = new ShippingArm(hardwareMap);
         dumpIndicator = new DumpIndicator(hardwareMap);
-        infaredDistanceSensor = new InchSensor(hardwareMap.get(DistanceSensor.class, "distanceSensor"));
+        infaredDistanceSensor = new InchSensor(hardwareMap.get(DistanceSensor.class, "frontDist"));
         rangeSensor = new InchSensor(hardwareMap.get(DistanceSensor.class, "sensor_range"));
         if (Match.BLUE)
             leftRangeSensor = new InchSensor(hardwareMap.get(DistanceSensor.class, "leftRangeSensor"));
