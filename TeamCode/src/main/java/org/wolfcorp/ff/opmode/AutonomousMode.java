@@ -214,7 +214,7 @@ public abstract class AutonomousMode extends OpMode {
             cycleHubPose = pos(-45, -12, 90);
         } else if (BLUE && WAREHOUSE) {
             hubPose = pos(-44, -16, 90);
-            cycleHubPose = pos(-49, -4, 90);
+            cycleHubPose = pos(-48, -9, 90);
         }
         capPose = hubPose.minus(pos(2, WIDTH / 2));
         preHubPose = pos(-48, -12, 0);
@@ -373,11 +373,10 @@ public abstract class AutonomousMode extends OpMode {
             queue(this::localizeWarehouse);
 //            queueWarehouseSensorCalibration(pos(-72 + DriveConstants.WIDTH / 2, 42, 0));
             queue(() -> {
-                if (30 - runtime.seconds() <= 4) {
+                if (30 - runtime.seconds() <= 3) {
                     throw new InterruptedException();
                 }
             });
-
 
             // *** To hub ***
             double angleOffset = RED ? -5 : 5;
@@ -406,8 +405,7 @@ public abstract class AutonomousMode extends OpMode {
                         }
                     }))
                     .addTemporalMarker(1.0, -0.6, outtake::dumpOut)
-                    .splineToSplineHeading(cycleHubPose.plus(pos(-14, 0)), deg((BLUE ? -1 : 1) * 90))
-                    .splineToSplineHeading(cycleHubPose.plus(pos(-2, 0)), deg((BLUE ? -1 : 1) * 90)));
+                    .splineToSplineHeading(cycleHubPose.plus(pos(-3,0)), deg((BLUE ? -1 : 1) * 90)));
             //
              //queueLocalizeHub(trueHubPose);
             queue(() -> drive.setPoseEstimate(trueHubPose));
@@ -502,8 +500,9 @@ public abstract class AutonomousMode extends OpMode {
                         outtake.dumpIn();
                         outtake.slideToAsync(ZERO);
                     }))
-                    .splineToSplineHeading(preWhPose.plus(pos(-8, -11)), deg(RED ? -24 : 24))
-                    .splineToSplineHeading(whPose.plus(pos(-14, 0)), deg(0)));// from 3.5
+                    .splineToSplineHeading(preWhPose.plus(pos(-3.5, 4)), deg(0))
+                    .lineTo(whPose.plus(pos(-3.5, 9)).vec()));
+            queue(this::localizeWarehouse);
         }
         queue(shippingArm::resetArmAsync);
     }
