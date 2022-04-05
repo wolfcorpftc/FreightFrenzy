@@ -188,7 +188,7 @@ public abstract class AutonomousMode extends OpMode {
         if (RED) {
             carouselPose = pos(-52, -72 + WIDTH / 2, 90);
         } else {
-            carouselPose = pos(-55.5, -72 + WIDTH / 2, 90);
+            carouselPose = pos(-58, -72 + WIDTH / 2, 90);
         }
         preCarouselPose = carouselPose.plus(pos(3, 0));
         calibratePreCarouselPose = preCarouselPose.minus(pos(0, 8));
@@ -199,14 +199,14 @@ public abstract class AutonomousMode extends OpMode {
             hubPose = pos(-45, 0, 90);
             cycleHubPose = pos(-48, -8, 90);
         } else if (RED && CAROUSEL && PARK) {
-            carouselHubPose = pos(-24, -33, 180);
+            carouselHubPose = pos(-28, -33, 180);
             hubPose = pos(-45, 0, 90);
             cycleHubPose = pos(-48, -8, 90);
         } else if (BLUE && CAROUSEL && CYCLE) {
             hubPose = pos(-43.5, -8, 90);
             cycleHubPose = pos(-48, -11, 90);
         } else if (BLUE && CAROUSEL && PARK) {
-            carouselHubPose = pos(-24, -33, 180);
+            carouselHubPose = pos(-32, -36, 180);
             hubPose = pos(-45, 0, 90);
             cycleHubPose = pos(-48, -8, 90);
         } else if (RED && WAREHOUSE) {
@@ -308,9 +308,10 @@ public abstract class AutonomousMode extends OpMode {
             queue(shippingArm::armOutAsync); // necessary to prevent the arm from blocking the spinner
             queue(fromHere()
                     .lineTo(calibratePreCarouselPose.vec())
-                    .lineTo(carouselPose.minus(pos(1.5, 10)).vec(), getVelocityConstraint(25, 5, TRACK_WIDTH), getAccelerationConstraint(35)));
+                    .lineTo(carouselPose.minus(pos(0, 10)).vec(), getVelocityConstraint(30, 5, TRACK_WIDTH), getAccelerationConstraint(20)));
             queue(() -> {
-                Thread spin = spinner.spinAsync(1, 1.2 * SPIN_TIME, WAIT_TIME);
+                Thread spin = spinner.spinAsync(1, 2 * SPIN_TIME, WAIT_TIME);
+                drive.setMotorPowers(0.05);
                 Pose2d currentPose = drive.getPoseEstimate();
                 Pose2d correctedPose = new Pose2d(
                         trueCarouselPose.getX(),

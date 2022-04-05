@@ -3,6 +3,7 @@ package org.wolfcorp.ff.opmode;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
@@ -36,6 +37,7 @@ public abstract class TeleOpMode extends OpMode {
         initHardware();
 
         dashboard = FtcDashboard.getInstance();
+        ElapsedTime runtime = new ElapsedTime();
 
         Match.status("Setting pose");
         drive.setPoseEstimate(Match.teleOpInitialPose);
@@ -55,7 +57,7 @@ public abstract class TeleOpMode extends OpMode {
 
 
         waitForStart();
-
+        runtime.reset();
         Match.status("Start!");
         while (opModeIsActive()) {
             // *** Outtake: dump ***
@@ -185,7 +187,7 @@ public abstract class TeleOpMode extends OpMode {
             } else if (gamepad2.left_stick_y > 0.02) {
                 shippingArm.setArmVelocity(armMultiplier * ShippingArm.ARM_IN_SPEED);
             } else {
-                shippingArm.holdPosition();
+                shippingArm.holdPosition(runtime.seconds() > (120 - 45));
             }
 
             // *** Outtake : reset ***
