@@ -69,7 +69,9 @@ public class Drivetrain extends MecanumDrive {
 
     public TrajectorySequenceRunner trajectorySequenceRunner;
 
-    private static final TrajectoryVelocityConstraint VEL_CONSTRAINT = getVelocityConstraint(MAX_VEL, MAX_ANG_VEL, TRACK_WIDTH);
+    private static final TrajectoryVelocityConstraint VEL_NORMAL_CONSTRAINT = getVelocityConstraint(MAX_VEL, MAX_ANG_VEL, TRACK_WIDTH);
+    private static final TrajectoryVelocityConstraint VEL_SLOW_CONSTRAINT = getVelocityConstraint(MAX_VEL/2,MAX_ANG_VEL/2, TRACK_WIDTH);
+    private static TrajectoryVelocityConstraint VEL_CONSTRAINT = VEL_NORMAL_CONSTRAINT;
     private static final TrajectoryAccelerationConstraint ACCEL_CONSTRAINT = getAccelerationConstraint(MAX_ACCEL);
 
     public DcMotorEx leftFront, leftBack, rightBack, rightFront;
@@ -81,7 +83,7 @@ public class Drivetrain extends MecanumDrive {
     private boolean abort = false;
 
     private final BNO055IMU imu;
-    private final VoltageSensor batteryVoltageSensor;
+    public final VoltageSensor batteryVoltageSensor;
 
     /** Speed multiplier for {@link #drive(double, double, double, double, boolean)}*/
     public double speedMultiplier = 1;
@@ -90,6 +92,8 @@ public class Drivetrain extends MecanumDrive {
 
     public Drivetrain(HardwareMap hardwareMap) {
         super(kV, kA, kStatic, TRACK_WIDTH, TRACK_WIDTH, LATERAL_MULTIPLIER);
+
+        VEL_CONSTRAINT = VEL_NORMAL_CONSTRAINT;
 
         TrajectoryFollower follower = new HolonomicPIDVAFollower(TRANSLATIONAL_PID, TRANSLATIONAL_PID, HEADING_PID,
                 new Pose2d(0.5, 0.5, Math.toRadians(5.0)), 0.5);
@@ -143,6 +147,10 @@ public class Drivetrain extends MecanumDrive {
         trajectorySequenceRunner = new TrajectorySequenceRunner(follower, HEADING_PID);
 
         motorVeloItem = Match.createLogItem("Drivetrain velocity", 0);
+    }
+
+    public void enableSlowDrive(){
+        VEL_CONSTRAINT = VEL_SLOW_CONSTRAINT;
     }
 
     public TrajectoryBuilder trajectoryBuilder(Pose2d startPose) {
