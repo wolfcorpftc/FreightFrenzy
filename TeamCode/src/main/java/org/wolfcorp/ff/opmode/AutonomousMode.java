@@ -421,8 +421,8 @@ public abstract class AutonomousMode extends OpMode {
             //
              //queueLocalizeHub(trueHubPose);
             queue(trueHubPose);
-//            queue(() -> drive.setPoseEstimate(new Pose2d(trueHubPose.getX(), trueHubPose.getY(), drive.getExternalHeading())));
-//            queue(new Pose2d(trueHubPose.getX(), trueHubPose.getY(), drive.getExternalHeading()));
+            queue(() -> drive.setPoseEstimate(new Pose2d(trueHubPose.getX(), trueHubPose.getY(), drive.getExternalHeading())));
+            queue(new Pose2d(trueHubPose.getX(), trueHubPose.getY(), drive.getExternalHeading()));
 
 
             // *** Score ***
