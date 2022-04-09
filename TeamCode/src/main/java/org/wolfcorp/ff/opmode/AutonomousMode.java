@@ -213,12 +213,17 @@ public abstract class AutonomousMode extends OpMode {
             hubPose = pos(-45, 0, 90);
             cycleHubPose = pos(-48, -8, 90);
         } else if (RED && WAREHOUSE) {
-            hubPose = pos(-46, -14, 90);
+            hubPose = pos(-44, -14, 90);
             cycleHubPose = pos(-47, -3, 90);
         } else if (BLUE && WAREHOUSE) {
             hubPose = pos(-44, -16, 90);
             cycleHubPose = pos(-48, -6, 90);
         }
+
+        if (SAFETY) {
+            cycleHubPose.plus(pos(0,-15));
+        }
+
         capPose = hubPose.minus(pos(2, WIDTH / 2));
         preHubPose = pos(-48, -12, 0);
         // FIXME: may need to align x-coordinate with hubPose?

@@ -38,7 +38,11 @@ public class Kalman {
     private final double measurementNoise = 0.01d;
     private KalmanFilter filter;
 
-    public Kalman(){
+    public Kalman() {
+        this(new Pose2d(0,0,0));
+    }
+
+    public Kalman(Pose2d startPos) {
         //A and B describe the physic model of the user moving specified as matrices
         A = new Array2DRowRealMatrix(new double[][] {
                 { 1d, 0d, dt, 0d },
@@ -78,7 +82,7 @@ public class Kalman {
 
         // x = [ 0 0 0 0] state consists of position and velocity[pX, pY, vX, vY]
         //TODO: inititate with map center?
-        x = new ArrayRealVector(new double[] { 0, 0, 0, 0 });
+        x = new ArrayRealVector(new double[] { startPos.getX(), startPos.getY(), 0, 0 });
 
         ProcessModel pm = new DefaultProcessModel(A, B, Q, x, PO);
         MeasurementModel mm = new DefaultMeasurementModel(H, R);

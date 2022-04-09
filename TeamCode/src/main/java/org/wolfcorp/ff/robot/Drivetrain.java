@@ -1,5 +1,6 @@
 package org.wolfcorp.ff.robot;
 
+import static org.wolfcorp.ff.opmode.util.Match.RED;
 import static org.wolfcorp.ff.robot.DriveConstants.MAX_ACCEL;
 import static org.wolfcorp.ff.robot.DriveConstants.MAX_ANG_ACCEL;
 import static org.wolfcorp.ff.robot.DriveConstants.MAX_ANG_VEL;
@@ -14,6 +15,8 @@ import static org.wolfcorp.ff.robot.DriveConstants.kA;
 import static org.wolfcorp.ff.robot.DriveConstants.kStatic;
 import static org.wolfcorp.ff.robot.DriveConstants.kV;
 
+import static java.lang.Math.cos;
+
 import androidx.annotation.NonNull;
 
 import com.acmerobotics.dashboard.config.Config;
@@ -23,6 +26,7 @@ import com.acmerobotics.roadrunner.drive.MecanumDrive;
 import com.acmerobotics.roadrunner.followers.HolonomicPIDVAFollower;
 import com.acmerobotics.roadrunner.followers.TrajectoryFollower;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.acmerobotics.roadrunner.trajectory.TrajectoryBuilder;
 import com.acmerobotics.roadrunner.trajectory.constraints.AngularVelocityConstraint;
@@ -46,6 +50,7 @@ import org.wolfcorp.ff.opmode.util.Match;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequence;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequenceBuilder;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequenceRunner;
+import org.wolfcorp.ff.robot.util.InchSensor;
 import org.wolfcorp.ff.robot.util.LynxModuleUtil;
 
 import java.util.ArrayList;
@@ -57,6 +62,14 @@ import java.util.List;
 public class Drivetrain extends MecanumDrive {
     public static double SLAM_ERROR = 5;
     public static double SLAM_FORWARD = 18;
+
+    // Kalman variables
+    protected Pose2d predictedPos;
+    protected Pose2d encoderPos = new Pose2d(0, 0, 0);
+    protected Pose2d sensorPos;
+    protected Pose2d pastSensorPos;
+    private Kalman kalman;
+    private boolean doKalman = false;
 
     public static PIDCoefficients TRANSLATIONAL_PID = new PIDCoefficients(6, 0, 0);
     public static PIDCoefficients HEADING_PID = new PIDCoefficients(6, 0, 0);
@@ -94,6 +107,8 @@ public class Drivetrain extends MecanumDrive {
         super(kV, kA, kStatic, TRACK_WIDTH, TRACK_WIDTH, LATERAL_MULTIPLIER);
 
         VEL_CONSTRAINT = VEL_NORMAL_CONSTRAINT;
+
+        doKalman = false;
 
         TrajectoryFollower follower = new HolonomicPIDVAFollower(TRANSLATIONAL_PID, TRANSLATIONAL_PID, HEADING_PID,
                 new Pose2d(0.5, 0.5, Math.toRadians(5.0)), 0.5);
@@ -253,8 +268,36 @@ public class Drivetrain extends MecanumDrive {
         abort = true;
     }
 
+    public void initKalman(Pose2d startPos) {
+        kalman = new Kalman(startPos);
+    }
+
+    public void kalmon() {
+        doKalman = true;
+    }
+
+    public void kalmoff() {
+        doKalman = false;
+    }
+
+    public void kalmanUpdate() {
+        Pose2d testPos = getLocalizer().getPoseEstimate().minus(encoderPos);
+        encoderPos = getLocalizer().getPoseEstimate();
+        sensorPos = localizeWarehouseReturn();
+        predictedPos = kalman.estimatePosition(testPos, sensorPos, getExternalHeading());
+        setPoseEstimate(predictedPos);
+    }
+
+    public void setEncoderPos(Pose2d newEncoderPos) {
+        encoderPos = newEncoderPos;
+    }
+
     public void update() {
-        updatePoseEstimate();
+        if (doKalman) {
+            kalmanUpdate();
+        } else {
+            updatePoseEstimate();
+        }
         motorVeloItem.setValue(leftBack.getVelocity());
         if (abort) {
             trajectorySequenceRunner.followTrajectorySequenceAsync(null);
@@ -265,8 +308,9 @@ public class Drivetrain extends MecanumDrive {
     }
 
     public void waitForIdle() {
-        while (!Thread.currentThread().isInterrupted() && isBusy())
+        while (!Thread.currentThread().isInterrupted() && isBusy()) {
             update();
+        }
 
         trajectorySequenceRunner.followTrajectorySequenceAsync(null);
     }
@@ -578,5 +622,50 @@ public class Drivetrain extends MecanumDrive {
     public void calibrateY(Pose2d calibratedY) {
         Pose2d current = getPoseEstimate();
         setPoseEstimate(new Pose2d(current.getX(), calibratedY.getY(), current.getHeading()));
+    }
+
+    protected Pose2d localizeWarehouseReturn() {
+        // FIXME: replicate all changes to localize* (Hub, Carousel?)
+        double heading = getExternalHeading();
+
+        // horizontal distance from wall to sensor
+        double wallToXSensor = getCorrectedXReading() * cos(heading);
+        // sensor point to robot center point
+        Vector2d xSensorToRobot = (RED ? new Vector2d(-5.5, 7.5) : new Vector2d(5.625, -6.916)).rotated(heading);
+        // horizontal distance between wall and robot center point
+        double xDist;
+        if (RED) {
+            xDist = -new Vector2d(-wallToXSensor, 0).plus(xSensorToRobot).getX();
+        } else {
+            xDist = new Vector2d(wallToXSensor, 0).plus(xSensorToRobot).getX();
+        }
+
+        // same logic below
+        double wallToYSensor = getCorrectedUltrasonicYReading() * cos(heading);
+        Vector2d ySensorToRobot = new Vector2d(3.75, -6.75).rotated(heading);
+        double yDist = new Vector2d(0, -wallToYSensor).plus(ySensorToRobot).getY();
+
+        Vector2d correctedVec = pos(-72 + xDist, 72 + yDist).vec();
+        if (Double.isInfinite(correctedVec.getX()) || Double.isInfinite(correctedVec.getY()) || Double.isNaN(correctedVec.getX()) || Double.isNaN(correctedVec.getY())){
+            return getPoseEstimate();
+        }
+        if (Math.abs(correctedVec.getX()) < 72 && Math.abs(correctedVec.getY()) < 72 && Math.abs(getPoseEstimate().getX()) < Math.abs(correctedVec.getX())) {
+            return new Pose2d(correctedVec.getX(), correctedVec.getY(), heading);
+        } else {
+            return new Pose2d(correctedVec.getX(), correctedVec.getY(), heading);
+        }
+    }
+
+    public Pose2d pos(double x, double y) {
+        return RED ? new Pose2d(+y, +x) : new Pose2d(+y, -x);
+    }
+
+    protected double getCorrectedXReading() {
+        InchSensor xSensor = RED ? OpMode.rightRangeSensor : OpMode.leftRangeSensor;
+        return 1.11113 * xSensor.get() - 0.241264;
+    }
+
+    protected double getCorrectedUltrasonicYReading() {
+        return 1.07863 * OpMode.rangeSensor.get() - 0.318066; // adjust for inaccuracies
     }
 }
