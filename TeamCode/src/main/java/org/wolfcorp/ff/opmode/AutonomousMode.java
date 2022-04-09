@@ -367,7 +367,7 @@ public abstract class AutonomousMode extends OpMode {
             queue(intake::in);
             // TODO: angle offset?
             Pose2d moddedWhPose = whPose.plus(pos(0, i == 1 ? 0 : 2 + (RED ? 2 : 0) + i * 2));
-            queue(from(new Pose2d(trueHubPose.getX(), trueHubPose.getY(), drive.getExternalHeading()))
+            queue(() -> drive.follow(from(new Pose2d(trueHubPose.getX(), trueHubPose.getY(), drive.getExternalHeading()))
                     .addTemporalMarker(0.2, async(() -> {
                         outtake.dumpIn();
                     }))
@@ -376,7 +376,7 @@ public abstract class AutonomousMode extends OpMode {
                     }))
 //                    .splineToSplineHeading(preWhPose.plus(pos(-4, -11)), deg(RED ? -20 : 20))
                     .splineToSplineHeading(preWhPose.plus(pos(-8, -10)), deg(RED ? -24 : 24))
-                    .splineToSplineHeading(moddedWhPose.plus(pos(-14, 0)), deg(RED ? 10 : -10)));// from 3.5
+                    .splineToSplineHeading(moddedWhPose.plus(pos(-14, 0)), deg(RED ? 10 : -10)).build()));// from 3.5
             queueWarehouseSensorCalibration(moddedWhPose);
 
 
@@ -393,7 +393,7 @@ public abstract class AutonomousMode extends OpMode {
             // *** To hub ***
             double angleOffset = RED ? -5 : 5;
 //            double angleOffset = 0;
-            queue(from(moddedWhPose.plus(pos(0, 0, angleOffset))) // FIXME: TELEPORTS
+            queue(() -> drive.follow(from(moddedWhPose.plus(pos(0, 0, angleOffset)))
                     .lineToLinearHeading(preWhPose.plus(pos(-4, -4, angleOffset)))
                     .addTemporalMarker(1.15, async(() -> {
                         // last-minute check & fix for intake
@@ -416,12 +416,13 @@ public abstract class AutonomousMode extends OpMode {
                                 outtake.slideToAsync(SUPERTOP);
                         }
                     }))
-                    .addTemporalMarker(1.0, -0.4, outtake::dumpOut)
-                    .splineToSplineHeading(cycleHubPose.plus(pos(-3,0)), deg((BLUE ? -1 : 1) * 90)));
+                    .addTemporalMarker(1.0, -0.3, outtake::dumpOut)
+                    .splineToSplineHeading(cycleHubPose.plus(pos(-3,0)), deg((BLUE ? -1 : 1) * 90)).build()));
             //
              //queueLocalizeHub(trueHubPose);
-            queue(() -> drive.setPoseEstimate(new Pose2d(trueHubPose.getX(), trueHubPose.getY(), drive.getExternalHeading())));
-            queue(new Pose2d(trueHubPose.getX(), trueHubPose.getY(), drive.getExternalHeading()));
+            queue(trueHubPose);
+//            queue(() -> drive.setPoseEstimate(new Pose2d(trueHubPose.getX(), trueHubPose.getY(), drive.getExternalHeading())));
+//            queue(new Pose2d(trueHubPose.getX(), trueHubPose.getY(), drive.getExternalHeading()));
 
 
             // *** Score ***
