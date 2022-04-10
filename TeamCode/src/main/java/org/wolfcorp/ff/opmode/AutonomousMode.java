@@ -14,6 +14,7 @@ import static org.wolfcorp.ff.robot.DumpIndicator.Status.FULL;
 import static org.wolfcorp.ff.robot.DumpIndicator.Status.OVERFLOW;
 import static org.wolfcorp.ff.vision.Barcode.EXCESS;
 import static org.wolfcorp.ff.vision.Barcode.SUPERTOP;
+import static org.wolfcorp.ff.vision.Barcode.TOP;
 import static org.wolfcorp.ff.vision.Barcode.ZERO;
 
 import static java.lang.Math.cos;
@@ -214,10 +215,10 @@ public abstract class AutonomousMode extends OpMode {
             cycleHubPose = pos(-48, -8, 90);
         } else if (RED && WAREHOUSE) {
             hubPose = pos(-44, -14, 90);
-            cycleHubPose = pos(-47, -3, 90);
+            cycleHubPose = pos(SAFETY ? -45 : -47, SAFETY ? -6 : -3, 90);
         } else if (BLUE && WAREHOUSE) {
             hubPose = pos(-44, -16, 90);
-            cycleHubPose = pos(-48, -6, 90);
+            cycleHubPose = pos(SAFETY ? -46 : -48, SAFETY ? -9 : -6, 90);
         }
 
         if (SAFETY) {
@@ -351,16 +352,15 @@ public abstract class AutonomousMode extends OpMode {
             .waitSeconds(0.5));
         } else if (CYCLE) {
             queue(fromHere()
-                    .addTemporalMarker(1, outtake::dumpOut)
-                    .lineTo(hubPose.vec()));
+                    .addTemporalMarker(SAFETY ? 2.5 : 1, outtake::dumpOut)
+                    .lineTo(hubPose.vec())
+                    .waitSeconds(SAFETY ? 1 : 0));
             queueLocalizeHub(trueHubPose);
         }
     }
 
     public void cycle() {
-        if (PARK)
-            return;
-        for (int i = 1; i <= SCORING_CYCLES; i++) {
+        for (int i = 1; i <= SCORING_CYCLES + 1; i++) {
             Match.status("Initializing: cycle " + i);
 
             // *** To warehouse ***
@@ -390,6 +390,9 @@ public abstract class AutonomousMode extends OpMode {
                 }
             });
 
+            if (i == SCORING_CYCLES + 1)
+                return;
+
             // *** To hub ***
             double angleOffset = RED ? -5 : 5;
 //            double angleOffset = 0;
@@ -398,10 +401,10 @@ public abstract class AutonomousMode extends OpMode {
                     .addTemporalMarker(1.15, async(() -> {
                         // last-minute check & fix for intake
                         if (dumpIndicator.update() == FULL) {
-                            outtake.slideToAsync(SUPERTOP);
+                            outtake.slideToAsync(SAFETY ? TOP : SUPERTOP);
                         } else if (dumpIndicator.update() == EMPTY) {
                             intake.in();
-                            outtake.slideToAsync(SUPERTOP);
+                            outtake.slideToAsync(SAFETY ? TOP : SUPERTOP);
                         } else {
                             intake.out();
                             outtake.slideToAsync(EXCESS);
@@ -412,8 +415,8 @@ public abstract class AutonomousMode extends OpMode {
                     .addTemporalMarker(1.4, async(() -> {
                         if (dumpIndicator.update() == FULL) {
                             outtake.dumpIn();
-                            if (!outtake.isApproaching(SUPERTOP))
-                                outtake.slideToAsync(SUPERTOP);
+                            if (!outtake.isApproaching(SAFETY ? TOP : SUPERTOP))
+                                outtake.slideToAsync(SAFETY ? TOP: SUPERTOP);
                         }
                     }))
                     .addTemporalMarker(1.0, -0.3, outtake::dumpOut)
@@ -428,15 +431,14 @@ public abstract class AutonomousMode extends OpMode {
             // *** Score ***
             queue(() -> {
                 intake.off();
-                if (!outtake.isApproaching(SUPERTOP)) {
-                    outtake.slideTo(SUPERTOP);
+                if (!outtake.isApproaching(SAFETY ? TOP : SUPERTOP)) {
+                    outtake.slideTo(SAFETY ? TOP : SUPERTOP);
                 }
             });
         }
     }
 
     public void intake(int iteration) {
-//        regularIntake();
         queue(() -> {
             ElapsedTime timer = new ElapsedTime();
             ElapsedTime cloggedTimer = new ElapsedTime();
@@ -482,6 +484,7 @@ public abstract class AutonomousMode extends OpMode {
                 outtake.slideToAsync(EXCESS);
             }
             outtake.dumpExcess();
+            drive.strafeLeft(0.5, SAFETY ? RED ? -6 : 6 : 0);
 //            drive.follow(from(drive.getPoseEstimate()).lineTo(whPose.vec()).build());
 //            if (iteration == 2) {
 //                if (RED) {
@@ -505,18 +508,18 @@ public abstract class AutonomousMode extends OpMode {
                     .lineToLinearHeading(storageUnitPose.minus(pos(8, 0))));
             return;
         }
-        if (CYCLE) {
-            // park in warehouse
-            queue(from(new Pose2d(trueHubPose.getX(), trueHubPose.getY(), drive.getExternalHeading()))
-                    .addTemporalMarker(0.5, async(() -> {
-                        intake.in();
-                        outtake.dumpIn();
-                        outtake.slideToAsync(ZERO);
-                    }))
-                    .splineToSplineHeading(preWhPose.plus(pos(-3.5, 4)), deg(RED ? 10 : -10))
-                    .lineTo(whPose.plus(pos(-3.5, 9)).vec()));
-            queue(this::localizeWarehouse);
-        }
+//        if (CYCLE) {
+//            // park in warehouse
+//            queue(from(new Pose2d(trueHubPose.getX(), trueHubPose.getY(), drive.getExternalHeading()))
+//                    .addTemporalMarker(0.5, async(() -> {
+//                        intake.in();
+//                        outtake.dumpIn();
+//                        outtake.slideToAsync(ZERO);
+//                    }))
+//                    .splineToSplineHeading(preWhPose.plus(pos(-3.5, 4)), deg(RED ? 10 : -10))
+//                    .lineTo(whPose.plus(pos(-3.5, 9)).vec()));
+//            queue(this::localizeWarehouse);
+//        }
         queue(shippingArm::resetArmAsync);
     }
 
