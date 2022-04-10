@@ -88,7 +88,7 @@ public abstract class OpMode extends LinearOpMode {
     protected void resetHardware() {
         Match.status("Resetting robot hardware...");
 
-       drive = null;
+        drive = null;
         intake = null;
         outtake = null;
         spinner = null;

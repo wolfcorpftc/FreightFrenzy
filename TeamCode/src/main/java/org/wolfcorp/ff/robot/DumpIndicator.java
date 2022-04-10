@@ -10,10 +10,17 @@ import org.wolfcorp.ff.opmode.OpMode;
 import java.util.Arrays;
 
 public class DumpIndicator {
-    private final LED leftGreen;
-    private final LED rightGreen;
-    private final LED leftRed;
-    private final LED rightRed;
+    // TODO: {a,b,c,d}{Green,Red}
+    private final LED aGreen;
+    private final LED aRed;
+    private final LED bGreen;
+    private final LED bRed;
+    private final LED cGreen;
+    private final LED cRed;
+    private final LED dGreen;
+    private final LED dRed;
+    private final LED[] reds;
+    private final LED[] greens;
     private final Object lock = new Object();
 
     public enum Status {
@@ -23,47 +30,51 @@ public class DumpIndicator {
     }
 
     public DumpIndicator(HardwareMap hardwareMap) {
-        leftGreen = hardwareMap.get(LED.class, "leftGreen");
-        rightGreen = hardwareMap.get(LED.class, "rightGreen");
-        leftRed = hardwareMap.get(LED.class, "leftRed");
-        rightRed = hardwareMap.get(LED.class, "rightRed");
+        aGreen = hardwareMap.get(LED.class, "aGreen");
+        aRed = hardwareMap.get(LED.class, "aRed");
+        bGreen = hardwareMap.get(LED.class, "bGreen");
+        bRed = hardwareMap.get(LED.class, "bRed");
+        cGreen = hardwareMap.get(LED.class, "cGreen");
+        cRed = hardwareMap.get(LED.class, "cRed");
+        dGreen = hardwareMap.get(LED.class, "dGreen");
+        dRed = hardwareMap.get(LED.class, "dRed");
+
+        reds = new LED[]{aRed, bRed, cRed, dRed};
+        greens = new LED[]{aGreen, bGreen, cGreen, dGreen};
+
         empty();
+    }
+
+    public void enable(boolean green, boolean red) {
+        synchronized (lock) {
+            for (LED led : greens) {
+                led.enable(green);
+            }
+            for (LED led : reds) {
+                led.enable(red);
+            }
+        }
     }
 
     /**
      * Sets the LEDs to orange because the dump is empty.
      */
     public void empty() {
-        synchronized (lock) {
-            leftGreen.enable(true);
-            rightGreen.enable(true);
-            leftRed.enable(true);
-            rightRed.enable(true);
-        }
+        enable(true, true);
     }
 
     /**
      * Sets the LEDs to red because the dump is overflowing (2 elements).
      */
     public void overflow() {
-        synchronized (lock) {
-            leftGreen.enable(true);
-            rightGreen.enable(true);
-            leftRed.enable(false);
-            rightRed.enable(false);
-        }
+        enable(true, false);
     }
 
     /**
      * Sets the LEDs to green because the dump is full (ready to deliver).
      */
     public void full() {
-        synchronized (lock) {
-            leftGreen.enable(false);
-            rightGreen.enable(false);
-            leftRed.enable(true);
-            rightRed.enable(true);
-        }
+        enable(false, true);
     }
 
     /**
