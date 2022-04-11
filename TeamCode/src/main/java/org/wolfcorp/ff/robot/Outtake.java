@@ -35,12 +35,12 @@ public class Outtake {
     public static final int SLIDE_MIN_POSITION = 0;
     public static final int SLIDE_MAX_POSITION = 2100;
 
-    public static final double DUMP_EXCESS_POSITION = 0.92;
-    public static final double DUMP_IN_POSITION = 0.90;
-    public static final double DUMP_OUT_POSITION = 0.40;
+    public static final double DUMP_EXCESS_POSITION = 0.96;
+    public static final double DUMP_IN_POSITION = 0.93;
+    public static final double DUMP_OUT_POSITION = 0.55;
 
     public static final double DUMP_OVERFLOW_DIST = 1.65;
-    public static final double DUMP_FULL_DIST = 1.65;
+    public static final double DUMP_FULL_DIST = 1.8;
 
     /** Milliseconds to wait for after running dumpOut. */
     public static final int DUMP_DELAY = 0;
@@ -72,6 +72,11 @@ public class Outtake {
                 || (!extend && motor.getCurrentPosition() <= SLIDE_MIN_POSITION);
         if (!isOverextension || overextend) {
             motor.setVelocity(extend ? SLIDE_UP_SPEED : SLIDE_DOWN_SPEED);
+            if (extend && motor.getCurrentPosition() > (SLIDE_BOT_POSITION + SLIDE_MIN_POSITION) / 2) {
+                dumpExcess();
+            } else {
+                dumpIn();
+            }
         }
         else {
             Match.status("Overextension");

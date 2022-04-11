@@ -217,7 +217,7 @@ public abstract class AutonomousMode extends OpMode {
             hubPose = pos(-44, -14, 90);
             cycleHubPose = pos(SAFETY ? -45 : -47, SAFETY ? -6 : -3, 90);
         } else if (BLUE && WAREHOUSE) {
-            hubPose = pos(-44, -16, 90);
+            hubPose = pos(SAFETY ? -42 : -44, -16, 90);
             cycleHubPose = pos(SAFETY ? -46 : -48, SAFETY ? -9 : -6, 90);
         }
 
@@ -360,6 +360,9 @@ public abstract class AutonomousMode extends OpMode {
     }
 
     public void cycle() {
+        if (CAROUSEL && PARK) {
+            return;
+        }
         for (int i = 1; i <= SCORING_CYCLES + 1; i++) {
             Match.status("Initializing: cycle " + i);
 
@@ -631,9 +634,6 @@ public abstract class AutonomousMode extends OpMode {
 
     public void epilogue() {
         startScanner();
-        Match.status("Task queue ready, waiting for start; Voltage: " + drive.batteryVoltageSensor.getVoltage());
-        Match.telemetry.addData("Voltage", drive.batteryVoltageSensor.getVoltage());
-        System.out.println("Voltage: " + drive.batteryVoltageSensor.getVoltage());
         waitForStart();
         runtime.reset();
         Match.status("Start!");

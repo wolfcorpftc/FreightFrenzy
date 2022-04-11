@@ -115,7 +115,7 @@ public class ShippingArm {
     }
 
     public void toggleClaw() {
-        if (Math.abs(servo.getPosition() - CLAW_CLOSE_POSITION) < 0.01) {
+        if (Math.abs(servo.getPosition() - CLAW_CLOSE_POSITION) < 0.05) {
             openClaw();
         } else {
             closeClaw();
