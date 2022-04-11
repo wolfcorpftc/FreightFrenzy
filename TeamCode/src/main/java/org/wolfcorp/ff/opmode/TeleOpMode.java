@@ -43,31 +43,27 @@ public abstract class TeleOpMode extends OpMode {
         drive.setPoseEstimate(Match.teleOpInitialPose);
 
         Match.status("Robot initialized, waiting for start");
-        outtake.getServo().setPosition(Outtake.DUMP_IN_POSITION);
-
         if (Match.RED) {
             drive.setExternalHeadingDeg(180);
         }
-
+        outtake.getServo().setPosition(Outtake.DUMP_IN_POSITION);
         shippingArm.toggleClaw();
         spinner.on();
         sleep(100);
         spinner.off();
         shippingArm.toggleClaw();
 
-
         waitForStart();
         runtime.reset();
+
         Match.status("Start!");
         while (opModeIsActive()) {
             // *** Outtake: dump ***
-            if (gamepad2.right_bumper && !maskDump) {
-                maskDump = true;
-                outtake.toggleDump();
-            }
-
             if (!gamepad2.right_bumper) {
                 maskDump = false;
+            } else if (gamepad2.right_bumper && !maskDump) {
+                maskDump = true;
+                outtake.toggleDump();
             }
 
             // *** Drivetrain ***
@@ -101,12 +97,11 @@ public abstract class TeleOpMode extends OpMode {
             }
 
             // *** Slow Mode ***
-            if (gamepad1.left_bumper && !maskSlowMode) {
-                slowMode = !slowMode;
-                maskSlowMode = true;
-            }
             if (!gamepad1.left_bumper) {
                 maskSlowMode = false;
+            } else if (gamepad1.left_bumper && !maskSlowMode) {
+                slowMode = !slowMode;
+                maskSlowMode = true;
             }
 
             // *** Outtake: slide - manual ***
@@ -140,27 +135,23 @@ public abstract class TeleOpMode extends OpMode {
             }
 
             // *** Automatic Carousel Spinner ***
-            if (gamepad2.left_bumper && !maskSpinner) {
+            if (!gamepad2.left_bumper) {
+                maskSpinner = false;
+            } else if (gamepad2.left_bumper && !maskSpinner) {
                 maskSpinner = true;
                 spinner.spinAsync(10, CarouselSpinner.SPIN_TIME, 300);
             }
 
-            if (!gamepad2.left_bumper) {
-                maskSpinner = false;
-            }
-
             // *** Manual Carousel Spinner ***
-            if (gamepad2.left_trigger > 0.8 && !maskManualSpinner) {
+            if (gamepad2.left_trigger < 0.8) {
+                maskManualSpinner = false;
+            } else if (gamepad2.left_trigger > 0.8 && !maskManualSpinner) {
                 maskManualSpinner = true;
                 boolean isOn = spinner.isOn();
                 spinner.stopSpin();
                 if (!isOn) {
                     spinner.on();
                 }
-            }
-
-            if (gamepad2.left_trigger < 0.8) {
-                maskManualSpinner = false;
             }
 
             // *** Override Carousel Spinner ***
@@ -204,12 +195,13 @@ public abstract class TeleOpMode extends OpMode {
             // *** Outtake: dump status ***
             dumpIndicator.update();
 
+            telemetry.addData("voltage", drive.batteryVoltageSensor.getVoltage());
             telemetry.addData("ramp sensor", intakeRampDistance.getDistance(DistanceUnit.INCH));
             telemetry.addData("top distance", upperDumpDistance.getDistance(DistanceUnit.INCH));
             telemetry.addData("bottom disance", lowerDumpDistance.getDistance(DistanceUnit.INCH));
 
             // *** Odometry update ***
-            drive.update();
+            // drive.update();
 
             telemetry.update();
         }
