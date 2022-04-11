@@ -360,6 +360,9 @@ public abstract class AutonomousMode extends OpMode {
     }
 
     public void cycle() {
+        if (CAROUSEL && PARK) {
+            return;
+        }
         for (int i = 1; i <= SCORING_CYCLES + 1; i++) {
             Match.status("Initializing: cycle " + i);
 
