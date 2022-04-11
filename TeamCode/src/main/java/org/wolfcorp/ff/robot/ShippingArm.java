@@ -82,10 +82,11 @@ public class ShippingArm {
     }
 
     public void setArmVelocity(double speed) {
-        if (speed < 0 && motor.getCurrentPosition() < ARM_IN_POSITION) {
-            return;
-        }
-        motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//        if (speed < 0 && motor.getCurrentPosition() < ARM_IN_POSITION) {
+//            return;
+//        }
+        if (motor.getMode() != DcMotor.RunMode.RUN_USING_ENCODER)
+            motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         motor.setVelocity(speed);
     }
 
