@@ -182,23 +182,56 @@ public abstract class TeleOpMode extends OpMode {
             }
 
             // *** Outtake : reset ***
-            if ((gamepad1.dpad_right || gamepad2.dpad_right) && !maskOuttakeReset) {
+            if (gamepad2.dpad_right && !maskOuttakeReset) {
                 outtake.getMotor().setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                 outtake.getMotor().setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                 maskOuttakeReset = true;
             }
 
-            if (!gamepad1.dpad_right && !gamepad2.dpad_right) {
+            if (gamepad2.dpad_up) {
+                if (outtake.getMotor().getMode() == DcMotor.RunMode.RUN_TO_POSITION) {
+                    outtake.resetSlide();
+                }
+                outtake.getMotor().setVelocity(Outtake.SLIDE_UP_SPEED);
+            } else if (gamepad2.dpad_down) {
+                if (outtake.getMotor().getMode() == DcMotor.RunMode.RUN_TO_POSITION) {
+                    outtake.resetSlide();
+                }
+                outtake.getMotor().setVelocity(Outtake.SLIDE_DOWN_SPEED);
+            }
+
+            if (!gamepad2.dpad_right) {
                 maskOuttakeReset = false;
+            }
+
+            // *** Tape measure
+            if (gamepad1.dpad_left) {
+                tapeMeasure.rotateTapeIncrement(-0.001);
+            } else if (gamepad1.dpad_right) {
+                tapeMeasure.rotateTapeIncrement(0.001);
+            }
+            if (gamepad1.dpad_up) {
+                tapeMeasure.pitchTape(-0.25);
+            } else if (gamepad1.dpad_down) {
+                tapeMeasure.pitchTape(0.2);
+            } else {
+                tapeMeasure.pitchTape(0);
+            }
+            if (gamepad1.a && !gamepad1.start && !gamepad2.start) {
+                tapeMeasure.spoolTape(1);
+            } else if (gamepad1.y) {
+                tapeMeasure.spoolTape(-0.6);
+            } else {
+                tapeMeasure.spoolTape(0);
             }
 
             // *** Outtake: dump status ***
             dumpIndicator.update();
 
-            telemetry.addData("voltage", drive.batteryVoltageSensor.getVoltage());
-            telemetry.addData("ramp sensor", intakeRampDistance.getDistance(DistanceUnit.INCH));
-            telemetry.addData("top distance", upperDumpDistance.getDistance(DistanceUnit.INCH));
-            telemetry.addData("bottom disance", lowerDumpDistance.getDistance(DistanceUnit.INCH));
+//            telemetry.addData("voltage", drive.batteryVoltageSensor.getVoltage());
+//            telemetry.addData("ramp sensor", intakeRampDistance.getDistance(DistanceUnit.INCH));
+//            telemetry.addData("top distance", upperDumpDistance.getDistance(DistanceUnit.INCH));
+//            telemetry.addData("bottom disance", lowerDumpDistance.getDistance(DistanceUnit.INCH));
 
             // *** Odometry update ***
             // drive.update();
