@@ -194,7 +194,7 @@ public abstract class AutonomousMode extends OpMode {
         } else {
             carouselPose = pos(-54, -72 + WIDTH / 2, 90);
         }
-        preCarouselPose = carouselPose.plus(pos(4, 0));
+        preCarouselPose = carouselPose.plus(pos(6, 0));
         calibratePreCarouselPose = preCarouselPose.minus(pos(0, 8));
 
         trueHubPose = pos(-48.5, -12, 90);
@@ -210,7 +210,7 @@ public abstract class AutonomousMode extends OpMode {
             hubPose = pos(-43.5, -8, 90);
             cycleHubPose = pos(-48, -11, 90);
         } else if (BLUE && CAROUSEL && PARK) {
-            carouselHubPose = pos(-32, -38, 180);
+            carouselHubPose = pos(-24, -38, 180);
             hubPose = pos(-45, 0, 90);
             cycleHubPose = pos(-48, -8, 90);
         } else if (RED && WAREHOUSE) {
@@ -243,7 +243,7 @@ public abstract class AutonomousMode extends OpMode {
         } else if (BLUE && CAROUSEL && PARK) {
             whPose = trueWhPose.plus(pos(0, 15));
         } else if (RED && WAREHOUSE) {
-            whPose = trueWhPose.plus(pos(0, 9));
+            whPose = trueWhPose.plus(pos(0, 12));
         } else if (BLUE && WAREHOUSE) {
             whPose = trueWhPose.plus(pos(-1, 11));
         }
@@ -324,7 +324,7 @@ public abstract class AutonomousMode extends OpMode {
                     .lineTo(carouselPose.minus(pos(0, 10)).vec(), getVelocityConstraint(30, 5, TRACK_WIDTH), getAccelerationConstraint(20)));
             queue(() -> {
                 Thread spin = spinner.spinAsync(1, 2 * SPIN_TIME, WAIT_TIME);
-                drive.setMotorPowers(0.05);
+                drive.setMotorPowers(0.08);
                 Pose2d currentPose = drive.getPoseEstimate();
                 Pose2d correctedPose = new Pose2d(
                         trueCarouselPose.getX(),
@@ -508,7 +508,7 @@ public abstract class AutonomousMode extends OpMode {
                         outtake.dumpIn();
                         outtake.slideToAsync(ZERO);
                     }))
-                    .lineToLinearHeading(storageUnitPose.minus(pos(8, 0))));
+                    .lineToLinearHeading(storageUnitPose.minus(pos(RED ? 8 : 2.5, 0))));
             return;
         }
 //        if (CYCLE) {
@@ -998,18 +998,18 @@ public abstract class AutonomousMode extends OpMode {
         double yDist = 16;
         // picking the correct distance input
         // when both are giving good readings
-        if (yDistanceDist < 48 && yUltrasonicDist < 48) {
+        if (Math.abs(yDistanceDist) < 48 && Math.abs(yUltrasonicDist) < 48) {
             // when ultrasonic sees something on the ground
-            if (yDistanceDist - 4 > yUltrasonicDist) {
+            if (Math.abs(yDistanceDist) - 4 > Math.abs(yUltrasonicDist)) {
                 yDist = yDistanceDist;
             } else {
                 yDist = yUltrasonicDist;
             }
         // when the ultrasonic is giving a bad reading
-        } else if (yDistanceDist < 48) {
+        } else if (Math.abs(yDistanceDist) < 48) {
             yDist = yDistanceDist;
         // when the infared is giving a bad reading
-        } else if (yUltrasonicDist < 48) {
+        } else if (Math.abs(yUltrasonicDist) < 48) {
             yDist = yUltrasonicDist;
         }
 
@@ -1017,7 +1017,7 @@ public abstract class AutonomousMode extends OpMode {
             yUltrasonicDist += ((24-Math.abs(yUltrasonicDist))*0.4);
         }
 //        Vector2d correctedVec = pos(-72 + xDist, 72 + yDist).vec();
-        Vector2d correctedVec = pos(-72 + xDist, 72 + yUltrasonicDist).vec();
+        Vector2d correctedVec = pos(-72 + xDist, 72 + yDist).vec();
         if (!Double.isFinite(correctedVec.getX()) || !Double.isFinite(correctedVec.getY())){
             return;
         }
