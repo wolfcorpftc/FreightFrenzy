@@ -12,6 +12,7 @@ import org.wolfcorp.ff.robot.DumpIndicator;
 import org.wolfcorp.ff.robot.Intake;
 import org.wolfcorp.ff.robot.Outtake;
 import org.wolfcorp.ff.robot.ShippingArm;
+import org.wolfcorp.ff.robot.TapeMeasure;
 import org.wolfcorp.ff.robot.util.InchSensor;
 
 public abstract class OpMode extends LinearOpMode {
@@ -24,6 +25,7 @@ public abstract class OpMode extends LinearOpMode {
     public static Outtake outtake = null;
     public static CarouselSpinner spinner = null;
     public static ShippingArm shippingArm = null;
+    public static TapeMeasure tapeMeasure = null;
     public static DumpIndicator dumpIndicator = null;
     public static InchSensor infaredDistanceSensor;
     public static InchSensor rangeSensor;
@@ -65,6 +67,7 @@ public abstract class OpMode extends LinearOpMode {
         outtake = new Outtake(hardwareMap);
         spinner = new CarouselSpinner(hardwareMap, this::sleep);
         shippingArm = new ShippingArm(hardwareMap);
+        tapeMeasure = new TapeMeasure(hardwareMap);
         dumpIndicator = new DumpIndicator(hardwareMap);
         infaredDistanceSensor = new InchSensor(hardwareMap.get(DistanceSensor.class, "frontDist"));
         rangeSensor = new InchSensor(hardwareMap.get(DistanceSensor.class, "sensor_range"));

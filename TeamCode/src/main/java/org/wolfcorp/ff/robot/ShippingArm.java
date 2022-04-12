@@ -32,7 +32,6 @@ public class ShippingArm {
         motor = hwMap.get(DcMotorEx.class, "armMotor");
         servo = hwMap.get(Servo.class, "armServo");
 
-        motor.setDirection(DcMotor.Direction.REVERSE);
         motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
