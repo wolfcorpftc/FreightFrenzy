@@ -9,8 +9,10 @@ import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.wolfcorp.ff.opmode.util.Match;
 import org.wolfcorp.ff.robot.CarouselSpinner;
+import org.wolfcorp.ff.robot.DumpIndicator;
 import org.wolfcorp.ff.robot.Outtake;
 import org.wolfcorp.ff.robot.ShippingArm;
+import org.wolfcorp.ff.robot.TapeMeasure;
 import org.wolfcorp.ff.vision.Barcode;
 
 // NOTE ABOUT TELEOP: Direction of robot is SWAPPED
@@ -123,10 +125,16 @@ public abstract class TeleOpMode extends OpMode {
             if (gamepad2.b && !gamepad2.start && !gamepad1.start && !maskIntake) {
                 maskIntake = true;
                 intake.toggleOut();
+                if (dumpIndicator.update() == DumpIndicator.Status.OVERFLOW && intake.isOn()) {
+                    outtake.dumpExcess();
+                } else {
+                    outtake.dumpIn();
+                }
             } else if (gamepad2.x && !maskIntake) {
                 maskIntake = true;
                 // the dump must be at the bottom-most position when intake is on
                 outtake.slideToAsync(Barcode.ZERO);
+                outtake.dumpIn();
                 intake.toggleIn();
             }
 
@@ -205,22 +213,24 @@ public abstract class TeleOpMode extends OpMode {
             }
 
             // *** Tape measure
-            if (gamepad1.dpad_left) {
-                tapeMeasure.rotateTapeIncrement(-0.001);
-            } else if (gamepad1.dpad_right) {
-                tapeMeasure.rotateTapeIncrement(0.001);
+            if (runtime.seconds() > (120 - 45) || true) {
+                if (gamepad1.dpad_left) {
+                    tapeMeasure.rotateTapeIncrement(-0.01 * (slowMode ? 0.35 : 1));
+                } else if (gamepad1.dpad_right) {
+                    tapeMeasure.rotateTapeIncrement(0.01 * (slowMode ? 0.35 : 1));
+                }
             }
             if (gamepad1.dpad_up) {
-                tapeMeasure.pitchTape(-0.25);
+                tapeMeasure.pitchTape(-0.25 * (slowMode ? 0.3 : 1));
             } else if (gamepad1.dpad_down) {
                 tapeMeasure.pitchTape(0.2);
             } else {
                 tapeMeasure.pitchTape(0);
             }
-            if (gamepad1.a && !gamepad1.start && !gamepad2.start) {
+            if ((gamepad1.a && !gamepad1.start && !gamepad2.start) || gamepad2.dpad_left) {
                 tapeMeasure.spoolTape(1);
             } else if (gamepad1.y) {
-                tapeMeasure.spoolTape(-0.6);
+                tapeMeasure.spoolTape(-1);
             } else {
                 tapeMeasure.spoolTape(0);
             }
@@ -232,6 +242,8 @@ public abstract class TeleOpMode extends OpMode {
 //            telemetry.addData("ramp sensor", intakeRampDistance.getDistance(DistanceUnit.INCH));
 //            telemetry.addData("top distance", upperDumpDistance.getDistance(DistanceUnit.INCH));
 //            telemetry.addData("bottom disance", lowerDumpDistance.getDistance(DistanceUnit.INCH));
+//            telemetry.addData("distance sensor", infaredDistanceSensor.getDistance(DistanceUnit.INCH));
+//            telemetry.addData("tapeRotate position", tapeMeasure.getRotate().getPosition());
 
             // *** Odometry update ***
             // drive.update();

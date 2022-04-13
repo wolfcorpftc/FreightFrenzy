@@ -190,7 +190,7 @@ public abstract class AutonomousMode extends OpMode {
 
         trueCarouselPose = pos(-48 + 1 - LENGTH / 2, -72 + WIDTH / 2, 90);
         if (RED) {
-            carouselPose = pos(-54, -72 + WIDTH / 2, 90);
+            carouselPose = pos(-57, -72 + WIDTH / 2, 90);
         } else {
             carouselPose = pos(-54, -72 + WIDTH / 2, 90);
         }
@@ -203,7 +203,7 @@ public abstract class AutonomousMode extends OpMode {
             hubPose = pos(-45, 0, 90);
             cycleHubPose = pos(-48, -8, 90);
         } else if (RED && CAROUSEL && PARK) {
-            carouselHubPose = pos(-28, -34, 180);
+            carouselHubPose = pos(-30, -35, 180);
             hubPose = pos(-45, 0, 90);
             cycleHubPose = pos(-48, -8, 90);
         } else if (BLUE && CAROUSEL && CYCLE) {
@@ -347,15 +347,15 @@ public abstract class AutonomousMode extends OpMode {
                     .lineTo(storageUnitPose.plus(pos(3,-2)).vec()));
             queueCalibration(storageUnitPose);
             queue(fromHere()
-                    .lineToLinearHeading(carouselHubPose.plus(pos(0, 4)), getVelocityConstraint(25, 5, TRACK_WIDTH), getAccelerationConstraint(25))
-                    .addTemporalMarker(2.75, outtake::dumpOut)
-            .waitSeconds(0.5));
+                    .lineToLinearHeading(carouselHubPose.plus(pos(0, 4)), getVelocityConstraint(40, 5, TRACK_WIDTH), getAccelerationConstraint(25))
+                    .addTemporalMarker(2, outtake::dumpOut)
+                    .waitSeconds(0.5));
         } else if (CYCLE) {
             queue(fromHere()
-                    .addTemporalMarker(SAFETY ? 2.5 : 1, outtake::dumpOut)
+                    .addTemporalMarker(SAFETY ? 2 : 1, outtake::dumpOut)
                     .lineTo(hubPose.vec())
-                    .waitSeconds(SAFETY ? 1 : 0));
-            queueLocalizeHub(trueHubPose);
+                    .waitSeconds(SAFETY ? 1.5 : 0));
+            // queueLocalizeHub(trueHubPose);
         }
     }
 
@@ -995,7 +995,7 @@ public abstract class AutonomousMode extends OpMode {
         Vector2d yDistanceSensorToRobot = new Vector2d(-2, -6).rotated(heading);
         double yUltrasonicDist = new Vector2d(0, -wallToYUltrasonicSensor).plus(yUltrasonicSensorToRobot).getY();
         double yDistanceDist = new Vector2d(0, -wallToDistanceSensor).plus(yDistanceSensorToRobot).getY();
-        double yDist = 16;
+        double yDist = 24;
         // picking the correct distance input
         // when both are giving good readings
         if (Math.abs(yDistanceDist) < 48 && Math.abs(yUltrasonicDist) < 48) {

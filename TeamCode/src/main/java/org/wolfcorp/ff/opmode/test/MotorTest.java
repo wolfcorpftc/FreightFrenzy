@@ -33,10 +33,10 @@ public class MotorTest extends LinearOpMode {
         timer.reset();
         while (opModeIsActive()) {
             // Drivetrain
-//            drive.setMotorPowers(0, 0, 0, 1);
-//            sleep(5000);
-//            drive.setMotorPowers(0, 0, 0, -1);
-//            sleep(5000);
+            drive.setMotorPowers(0, 0, 0, 1);
+            sleep(5000);
+            drive.setMotorPowers(0, 0, 0, -1);
+            sleep(5000);
             drive.setMotorPowers(0, 0, 1, 0);
             sleep(5000);
             drive.setMotorPowers(0, 0, -1, 0);

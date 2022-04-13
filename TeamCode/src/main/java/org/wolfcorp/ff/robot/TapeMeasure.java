@@ -11,9 +11,10 @@ import org.wolfcorp.ff.opmode.OpMode;
 public class TapeMeasure {
     private static final double TAPE_PITCH_TICKS_PER_REV = 1425.1;
     public static final double TAPE_PITCH_MAX_SPEED = 117 / 60.0 * TAPE_PITCH_TICKS_PER_REV;
+    private static final double TAPE_FORWARD_ROTATE = 0.81;
 
-    private final DcMotorEx tapePitch;
     private final Servo tapeRotate;
+    private final DcMotorEx tapePitch;
     private final CRServo tapeSpool;
 
     public TapeMeasure(HardwareMap hwMap) {
@@ -25,10 +26,11 @@ public class TapeMeasure {
         tapePitch.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         tapePitch.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         tapePitch.setPower(0);
+        tapeRotate.setPosition(TAPE_FORWARD_ROTATE);
     }
 
     public void rotateTape(double position) {
-        tapeRotate.setPosition(position);
+        tapeRotate.setPosition(Math.min(Math.max(position, 0),1));
     }
 
     public void rotateTapeIncrement(double increment) {
@@ -41,5 +43,17 @@ public class TapeMeasure {
 
     public void spoolTape(double speed) {
         tapeSpool.setPower(speed);
+    }
+
+    public DcMotorEx getMotor() {
+        return tapePitch;
+    }
+
+    public CRServo getSpool() {
+        return tapeSpool;
+    }
+
+    public Servo getRotate() {
+        return tapeRotate;
     }
 }
