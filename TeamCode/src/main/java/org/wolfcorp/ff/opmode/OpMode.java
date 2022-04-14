@@ -1,6 +1,5 @@
 package org.wolfcorp.ff.opmode;
 
-import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cRangeSensor;
 import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
@@ -27,7 +26,7 @@ public abstract class OpMode extends LinearOpMode {
     public static ShippingArm shippingArm = null;
     public static TapeMeasure tapeMeasure = null;
     public static DumpIndicator dumpIndicator = null;
-    public static InchSensor infaredDistanceSensor;
+    public static InchSensor altRangeSensor;
     public static InchSensor rangeSensor;
     public static InchSensor leftRangeSensor;
     public static InchSensor rightRangeSensor;
@@ -69,7 +68,7 @@ public abstract class OpMode extends LinearOpMode {
         shippingArm = new ShippingArm(hardwareMap);
         tapeMeasure = new TapeMeasure(hardwareMap);
         dumpIndicator = new DumpIndicator(hardwareMap);
-        infaredDistanceSensor = new InchSensor(hardwareMap.get(DistanceSensor.class, "frontDist"));
+        altRangeSensor = new InchSensor(hardwareMap.get(DistanceSensor.class, "frontDist"));
         rangeSensor = new InchSensor(hardwareMap.get(DistanceSensor.class, "sensor_range"));
         if (Match.BLUE)
             leftRangeSensor = new InchSensor(hardwareMap.get(DistanceSensor.class, "leftRangeSensor"));

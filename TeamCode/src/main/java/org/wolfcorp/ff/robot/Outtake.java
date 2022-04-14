@@ -37,7 +37,7 @@ public class Outtake {
 
     public static final double DUMP_EXCESS_POSITION = 0.96;
     public static final double DUMP_IN_POSITION = 0.93;
-    public static final double DUMP_OUT_POSITION = 0.55;
+    public static final double DUMP_OUT_POSITION = 0.53;
 
     public static final double DUMP_OVERFLOW_DIST = 1.65;
     public static final double DUMP_FULL_DIST = 1.8;

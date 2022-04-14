@@ -27,6 +27,7 @@ public class TapeMeasure {
         tapePitch.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         tapePitch.setPower(0);
         tapeRotate.setPosition(TAPE_FORWARD_ROTATE);
+        spoolTape(0);
     }
 
     public void rotateTape(double position) {

@@ -31,7 +31,6 @@ import org.wolfcorp.ff.BuildConfig;
 import org.wolfcorp.ff.opmode.util.Match;
 import org.wolfcorp.ff.opmode.util.RobotRunnable;
 import org.wolfcorp.ff.robot.Intake;
-import org.wolfcorp.ff.robot.Kalman;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequence;
 import org.wolfcorp.ff.robot.trajectorysequence.TrajectorySequenceBuilder;
 import org.wolfcorp.ff.robot.util.InchSensor;
@@ -988,7 +987,7 @@ public abstract class KalmanAutonomousMode extends OpMode {
         // same logic below
         double wallToYUltrasonicSensor = getCorrectedUltrasonicYReading() * cos(heading);
         // TODO: Change
-        double wallToDistanceSensor = infaredDistanceSensor.getDistance(DistanceUnit.INCH) * cos(heading);
+        double wallToDistanceSensor = altRangeSensor.getDistance(DistanceUnit.INCH) * cos(heading);
         Vector2d yUltrasonicSensorToRobot = new Vector2d(3.75, -6.75).rotated(heading);
         Vector2d yDistanceSensorToRobot = new Vector2d(-2, -6).rotated(heading);
         double yUltrasonicDist = new Vector2d(0, -wallToYUltrasonicSensor).plus(yUltrasonicSensorToRobot).getY();

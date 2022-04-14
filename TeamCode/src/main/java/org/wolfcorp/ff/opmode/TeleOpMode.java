@@ -124,12 +124,12 @@ public abstract class TeleOpMode extends OpMode {
             // *** Intake ***
             if (gamepad2.b && !gamepad2.start && !gamepad1.start && !maskIntake) {
                 maskIntake = true;
-                intake.toggleOut();
-                if (dumpIndicator.update() == DumpIndicator.Status.OVERFLOW && intake.isOn()) {
+                if (dumpIndicator.update() == DumpIndicator.Status.OVERFLOW && !intake.isOn()) {
                     outtake.dumpExcess();
                 } else {
                     outtake.dumpIn();
                 }
+                intake.toggleOut();
             } else if (gamepad2.x && !maskIntake) {
                 maskIntake = true;
                 // the dump must be at the bottom-most position when intake is on
@@ -215,9 +215,9 @@ public abstract class TeleOpMode extends OpMode {
             // *** Tape measure
             if (runtime.seconds() > (120 - 45) || true) {
                 if (gamepad1.dpad_left) {
-                    tapeMeasure.rotateTapeIncrement(-0.01 * (slowMode ? 0.35 : 1));
+                    tapeMeasure.rotateTapeIncrement(-1 * (slowMode ? 0.0015 : 0.006));
                 } else if (gamepad1.dpad_right) {
-                    tapeMeasure.rotateTapeIncrement(0.01 * (slowMode ? 0.35 : 1));
+                    tapeMeasure.rotateTapeIncrement(1 * (slowMode ? 0.0015 : 0.006));
                 }
             }
             if (gamepad1.dpad_up) {
@@ -244,6 +244,9 @@ public abstract class TeleOpMode extends OpMode {
 //            telemetry.addData("bottom disance", lowerDumpDistance.getDistance(DistanceUnit.INCH));
 //            telemetry.addData("distance sensor", infaredDistanceSensor.getDistance(DistanceUnit.INCH));
 //            telemetry.addData("tapeRotate position", tapeMeasure.getRotate().getPosition());
+            telemetry.addData("distance", altRangeSensor.getDistance(DistanceUnit.INCH));
+            telemetry.addData("distance", rangeSensor.getDistance(DistanceUnit.INCH));
+
 
             // *** Odometry update ***
             // drive.update();
