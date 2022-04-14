@@ -393,6 +393,7 @@ public abstract class AutonomousMode extends OpMode {
 
             // *** Intake ***
             intake(i);
+            System.out.println("localizing " + i);
             queue(this::localizeWarehouse);
 //            queueWarehouseSensorCalibration(pos(-72 + DriveConstants.WIDTH / 2, 42, 0));
             queue(() -> {
@@ -405,7 +406,7 @@ public abstract class AutonomousMode extends OpMode {
                 return;
 
             // *** To hub ***
-            double angleOffset = RED ? -5 : 5;
+            double angleOffset = -8;
 //            double angleOffset = 0;
             queue(() -> drive.follow(from(moddedWhPose.plus(pos(0, 0, angleOffset)))
                     .lineToLinearHeading(preWhPose.plus(pos(-4, -4, angleOffset)))
