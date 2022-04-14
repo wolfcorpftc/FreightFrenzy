@@ -203,7 +203,7 @@ public abstract class AutonomousMode extends OpMode {
             hubPose = pos(-45, 0, 90);
             cycleHubPose = pos(-48, -8, 90);
         } else if (RED && CAROUSEL && PARK) {
-            carouselHubPose = pos(-28, -34, 180);
+            carouselHubPose = pos(-28, -33, 180);
             hubPose = pos(-45, 0, 90);
             cycleHubPose = pos(-48, -8, 90);
         } else if (BLUE && CAROUSEL && CYCLE) {
@@ -397,7 +397,7 @@ public abstract class AutonomousMode extends OpMode {
                 return;
 
             // *** To hub ***
-            double angleOffset = RED ? -5 : 5;
+            double angleOffset = -7;
 //            double angleOffset = 0;
             queue(() -> drive.follow(from(moddedWhPose.plus(pos(0, 0, angleOffset)))
                     .lineToLinearHeading(preWhPose.plus(pos(-4, -4, angleOffset)))
