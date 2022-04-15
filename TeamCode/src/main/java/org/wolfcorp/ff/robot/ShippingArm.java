@@ -26,7 +26,7 @@ public class ShippingArm {
     public static final int ARM_OUTERMOST_POSITION = (int) (230.0 / 360 * ARM_TICKS_PER_REV * ARM_GEAR_RATIO);
 
     public static final double CLAW_OPEN_POSITION = 0.5;
-    public static final double CLAW_CLOSE_POSITION = 0.95;
+    public static final double CLAW_CLOSE_POSITION = 0.93;
 
     public ShippingArm(HardwareMap hwMap) {
         motor = hwMap.get(DcMotorEx.class, "armMotor");

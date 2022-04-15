@@ -60,7 +60,7 @@ public abstract class AutonomousMode extends OpMode {
 
     // region Vision Fields
     protected OpenCvCamera camera = null;
-    protected BarcodeScanner scanner;
+    protected PartialBarcodeScanner scanner;
     protected Guide guide;
     protected VuforiaNavigator navigator;
     protected Barcode barcode;
@@ -201,7 +201,7 @@ public abstract class AutonomousMode extends OpMode {
             hubPose = pos(-45, 0, 90);
             cycleHubPose = pos(-48, -8, 90);
         } else if (RED && CAROUSEL && PARK) {
-            carouselHubPose = pos(-30, -34, 180);
+            carouselHubPose = pos(-30, -31, 180);
             hubPose = pos(-45, 0, 90);
             cycleHubPose = pos(-48, -8, 90);
         } else if (BLUE && CAROUSEL && CYCLE) {
@@ -512,8 +512,8 @@ public abstract class AutonomousMode extends OpMode {
         // park in storage unit
         if (CAROUSEL && PARK) {
             queue(from(carouselHubPose)
+                    .addTemporalMarker(0.1, outtake::dumpIn)
                     .addTemporalMarker(1, async(() -> {
-                        outtake.dumpIn();
                         outtake.slideToAsync(ZERO);
                     }))
                     .lineToLinearHeading(storageUnitPose.minus(pos(RED ? 8 : 2.5, 0))));
@@ -665,7 +665,7 @@ public abstract class AutonomousMode extends OpMode {
         navigator = new VuforiaNavigator(hardwareMap, telemetry);
         camera = navigator.createOpenCvPassthru();
         guide = new TFWarehouseGuide(navigator.getLocalizer(), hardwareMap);
-        scanner = new BarcodeScanner(camera);
+        scanner = new PartialBarcodeScanner(camera);
     }
 
     /**

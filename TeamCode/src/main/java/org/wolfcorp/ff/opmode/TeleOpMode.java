@@ -215,9 +215,9 @@ public abstract class TeleOpMode extends OpMode {
             // *** Tape measure
             if (runtime.seconds() > (120 - 45) || true) {
                 if (gamepad1.dpad_left) {
-                    tapeMeasure.rotateTapeIncrement(-1 * (slowMode ? 0.0015 : 0.006));
+                    tapeMeasure.rotateTapeIncrement(-1 * (slowMode ? 0.0025 : 0.006));
                 } else if (gamepad1.dpad_right) {
-                    tapeMeasure.rotateTapeIncrement(1 * (slowMode ? 0.0015 : 0.006));
+                    tapeMeasure.rotateTapeIncrement(1 * (slowMode ? 0.0025 : 0.006));
                 }
             }
             if (gamepad1.dpad_up) {
@@ -227,9 +227,9 @@ public abstract class TeleOpMode extends OpMode {
             } else {
                 tapeMeasure.pitchTape(0);
             }
-            if ((gamepad1.a && !gamepad1.start && !gamepad2.start) || gamepad2.dpad_left) {
+            if ((gamepad1.a && !gamepad1.start && !gamepad2.start) || gamepad2.right_stick_y > 0.4) {
                 tapeMeasure.spoolTape(1);
-            } else if (gamepad1.y) {
+            } else if (gamepad1.y || gamepad2.right_stick_y < -0.4) {
                 tapeMeasure.spoolTape(-1);
             } else {
                 tapeMeasure.spoolTape(0);
