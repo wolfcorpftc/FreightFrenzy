@@ -215,9 +215,9 @@ public abstract class TeleOpMode extends OpMode {
             // *** Tape measure
             if (runtime.seconds() > (120 - 45) || true) {
                 if (gamepad1.dpad_left) {
-                    tapeMeasure.rotateTapeIncrement(-1 * (slowMode ? 0.0025 : 0.006));
+                    tapeMeasure.rotateTapeIncrement(-1 * (slowMode ? 0.003 : 0.006));
                 } else if (gamepad1.dpad_right) {
-                    tapeMeasure.rotateTapeIncrement(1 * (slowMode ? 0.0025 : 0.006));
+                    tapeMeasure.rotateTapeIncrement(1 * (slowMode ? 0.003 : 0.006));
                 }
             }
             if (gamepad1.dpad_up) {
@@ -243,7 +243,7 @@ public abstract class TeleOpMode extends OpMode {
 //            telemetry.addData("top distance", upperDumpDistance.getDistance(DistanceUnit.INCH));
 //            telemetry.addData("bottom disance", lowerDumpDistance.getDistance(DistanceUnit.INCH));
 //            telemetry.addData("distance sensor", infaredDistanceSensor.getDistance(DistanceUnit.INCH));
-//            telemetry.addData("tapeRotate position", tapeMeasure.getRotate().getPosition());
+            telemetry.addData("tapeRotate position", tapeMeasure.getRotate().getPosition());
             telemetry.addData("distance", altRangeSensor.getDistance(DistanceUnit.INCH));
             telemetry.addData("distance", rangeSensor.getDistance(DistanceUnit.INCH));
 

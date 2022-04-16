@@ -394,7 +394,6 @@ public abstract class AutonomousMode extends OpMode {
 
             // *** Intake ***
             intake(i);
-            System.out.println("localizing " + i);
             queue(this::localizeWarehouse);
 //            queueWarehouseSensorCalibration(pos(-72 + DriveConstants.WIDTH / 2, 42, 0));
             queue(() -> {
@@ -1040,10 +1039,10 @@ public abstract class AutonomousMode extends OpMode {
 //        if (Math.abs(correctedVec.getX()) < 72 && Math.abs(correctedVec.getY()) < 72 && Math.abs(drive.getPoseEstimate().getX()) < Math.abs(correctedVec.getX())) {
         drive.setPoseEstimate(new Pose2d(correctedVec.getX(), correctedVec.getY(), heading));
         pastWarehouseYDist = yDist + (currentCycle < 3 ? 2 : 0);
-        System.out.println("past y dist " + pastWarehouseYDist);
-        System.out.println("y dist " + yDist);
-        System.out.println("ultra " + ultrasonicGood + " dist " + yUltrasonicDist);
-        System.out.println("altUltra " + altUltrasonicGood + " dist " + yAltUltrasonicDist);
+//        System.out.println("past y dist " + pastWarehouseYDist);
+//        System.out.println("y dist " + yDist);
+//        System.out.println("ultra " + ultrasonicGood + " dist " + yUltrasonicDist);
+//        System.out.println("altUltra " + altUltrasonicGood + " dist " + yAltUltrasonicDist);
     }
 
     protected void localizeCarousel() {
