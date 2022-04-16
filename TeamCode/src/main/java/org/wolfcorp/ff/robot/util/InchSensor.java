@@ -24,6 +24,7 @@ public class InchSensor {
     }
 
     public double get() {
+        System.out.println("x dist: " + get(DistanceUnit.INCH));
         return get(DistanceUnit.INCH);
     }
 

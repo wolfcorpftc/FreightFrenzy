@@ -34,7 +34,7 @@ public class DriveConstants {
      * from {@link org.wolfcorp.ff.robot.opmode.DriveVelocityPIDTuner}.
      */
     public static PIDFCoefficients MOTOR_VELO_PID = new PIDFCoefficients(14, 0, 0,
-            14);
+            13);
             // getMotorVelocityF(MAX_RPM / 60 * TICKS_PER_REV));
 
     /*
@@ -97,13 +97,13 @@ public class DriveConstants {
 
      */
     /** Maximum velocity */
-    public static double MAX_VEL = 58;
+    public static double MAX_VEL = 56;
     /** Maximum acceleration */
     public static double MAX_ACCEL = 45;
     /** Maximum angular velocity */
-    public static double MAX_ANG_VEL = 5.5;
+    public static double MAX_ANG_VEL = 5;
     /** Maximum angular acceleration */
-    public static double MAX_ANG_ACCEL = 5.5;
+    public static double MAX_ANG_ACCEL = 5;
 
     public static double encoderTicksToInches(double ticks) {
         return WHEEL_RADIUS * 2 * Math.PI * GEAR_RATIO * ticks / TICKS_PER_REV;

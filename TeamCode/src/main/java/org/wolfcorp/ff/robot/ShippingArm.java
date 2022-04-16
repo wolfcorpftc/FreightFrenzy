@@ -36,6 +36,7 @@ public class ShippingArm {
         motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         motor.setPower(0);
+        closeClaw();
     }
 
     public void armInAsync(double multiplier) {
@@ -114,7 +115,7 @@ public class ShippingArm {
     }
 
     public void toggleClaw() {
-        if (Math.abs(servo.getPosition() - CLAW_CLOSE_POSITION) < 0.01) {
+        if (Math.abs(servo.getPosition() - CLAW_CLOSE_POSITION) < 0.05) {
             openClaw();
         } else {
             closeClaw();
