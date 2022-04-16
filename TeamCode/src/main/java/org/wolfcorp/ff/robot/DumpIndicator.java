@@ -15,6 +15,10 @@ public class DumpIndicator {
     private final LED aRed;
     private final LED bGreen;
     private final LED bRed;
+    private final LED cGreen;
+    private final LED cRed;
+    private final LED dGreen;
+    private final LED dRed;
     private final LED[] reds;
     private final LED[] greens;
     private final Object lock = new Object();
@@ -30,9 +34,13 @@ public class DumpIndicator {
         aRed = hardwareMap.get(LED.class, "aRed");
         bGreen = hardwareMap.get(LED.class, "bGreen");
         bRed = hardwareMap.get(LED.class, "bRed");
+        cGreen = hardwareMap.get(LED.class, "cGreen");
+        cRed = hardwareMap.get(LED.class, "cRed");
+        dGreen = hardwareMap.get(LED.class, "dGreen");
+        dRed = hardwareMap.get(LED.class, "dRed");
 
-        reds = new LED[]{aRed, bRed};
-        greens = new LED[]{aGreen, bGreen};
+        reds = new LED[]{aRed, bRed, cRed, dRed};
+        greens = new LED[]{aGreen, bGreen, cGreen, dGreen};
 
         empty();
     }

@@ -243,7 +243,7 @@ public abstract class TeleOpMode extends OpMode {
 //            telemetry.addData("top distance", upperDumpDistance.getDistance(DistanceUnit.INCH));
 //            telemetry.addData("bottom disance", lowerDumpDistance.getDistance(DistanceUnit.INCH));
 //            telemetry.addData("distance sensor", infaredDistanceSensor.getDistance(DistanceUnit.INCH));
-//            telemetry.addData("tapeRotate position", tapeMeasure.getRotate().getPosition());
+            telemetry.addData("tapeRotate position", tapeMeasure.getRotate().getPosition());
             telemetry.addData("distance", altRangeSensor.getDistance(DistanceUnit.INCH));
             telemetry.addData("distance", rangeSensor.getDistance(DistanceUnit.INCH));
 
