@@ -72,8 +72,10 @@ public class Outtake {
                 || (!extend && motor.getCurrentPosition() <= SLIDE_MIN_POSITION);
         if (!isOverextension || overextend) {
             motor.setVelocity(extend ? SLIDE_UP_SPEED : SLIDE_DOWN_SPEED);
-            if (extend && motor.getCurrentPosition() > (SLIDE_BOT_POSITION + SLIDE_MIN_POSITION) / 2) {
+            if (extend && motor.getCurrentPosition() > (SLIDE_BOT_POSITION + SLIDE_MIN_POSITION) / 2 && motor.getCurrentPosition() < SLIDE_MID_POSITION) {
                 dumpExcess();
+            } else if (motor.getCurrentPosition() > SLIDE_MID_POSITION) {
+
             } else {
                 dumpIn();
             }
