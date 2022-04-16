@@ -22,6 +22,7 @@ import static java.lang.Math.cos;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.acmerobotics.roadrunner.trajectory.MarkerCallback;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
@@ -208,15 +209,15 @@ public abstract class AutonomousMode extends OpMode {
             hubPose = pos(-43.5, -8, 90);
             cycleHubPose = pos(-48, -11, 90);
         } else if (BLUE && CAROUSEL && PARK) {
-            carouselHubPose = pos(-26, -38, 180);
+            carouselHubPose = pos(-20, -38, 180);
             hubPose = pos(-45, 0, 90);
             cycleHubPose = pos(-48, -8, 90);
         } else if (RED && WAREHOUSE) {
             hubPose = pos(-44, -14, 90);
             cycleHubPose = pos(SAFETY ? -45 : -47, SAFETY ? -6 : -3, 90);
         } else if (BLUE && WAREHOUSE) {
-            hubPose = pos(SAFETY ? -42 : -44, -16, 90);
-            cycleHubPose = pos(SAFETY ? -46 : -48, SAFETY ? -12 : -6, 90);
+            hubPose = pos(SAFETY ? -40 : -39, SAFETY ? -16 : -16, 90);
+            cycleHubPose = pos(SAFETY ? -46 : -48, SAFETY ? -14 : -9, 90);
         }
 
         if (SAFETY) {
@@ -321,7 +322,7 @@ public abstract class AutonomousMode extends OpMode {
                     .lineTo(carouselPose.minus(pos(0, 10)).vec(), getVelocityConstraint(30, 5, TRACK_WIDTH), getAccelerationConstraint(20)));
             queue(() -> {
                 Thread spin = spinner.spinAsync(1, 2 * SPIN_TIME, WAIT_TIME);
-                drive.setMotorPowers(0.08);
+//                drive.setMotorPowers(0.08);
                 Pose2d currentPose = drive.getPoseEstimate();
                 Pose2d correctedPose = new Pose2d(
                         trueCarouselPose.getX(),
@@ -350,9 +351,9 @@ public abstract class AutonomousMode extends OpMode {
                     .waitSeconds(0.5));
         } else if (CYCLE) {
             queue(fromHere()
-                    .addTemporalMarker(SAFETY ? 2 : 0.75, outtake::dumpOut)
+                    .addTemporalMarker(SAFETY ? 2.25 : 1.25, outtake::dumpOut)
                     .lineTo(hubPose.vec())
-                    .waitSeconds(SAFETY ? 1.5 : 0));
+                    .waitSeconds(SAFETY ? 0.5 : 0));
             // queueLocalizeHub(trueHubPose);
         }
     }
@@ -375,9 +376,9 @@ public abstract class AutonomousMode extends OpMode {
                     increment = 4 + Math.min(i, 3) * 2;
             } else {
                 if (i == 1)
-                    increment = 0;
+                    increment = -4;
                 else
-                    increment = 2 + Math.min(i, 3) * 2;
+                    increment = 0 + Math.min(i, 3) * 2;
             }
             Pose2d moddedWhPose = whPose.plus(pos(0, increment));
             queue(() -> drive.follow(from(new Pose2d(trueHubPose.getX(), trueHubPose.getY(), drive.getExternalHeading()))
@@ -386,8 +387,8 @@ public abstract class AutonomousMode extends OpMode {
                         outtake.slideToAsync(ZERO);
                     }))
 //                    .splineToSplineHeading(preWhPose.plus(pos(-4, -11)), deg(RED ? -20 : 20))
-                    .splineToSplineHeading(preWhPose.plus(pos(-8, -10)), deg(RED ? -24 : 24))
-                    .splineToSplineHeading(moddedWhPose.plus(pos(-14, 0)), deg(RED ? 10 : -10)).build()));// from 3.5
+                    .splineToSplineHeading(preWhPose.plus(pos(-5, -10)), deg(RED ? -24 : 24))
+                    .splineToSplineHeading(moddedWhPose.plus(pos(-12, 0)), deg(RED ? 10 : -10)).build()));// from 3.5
             queueWarehouseSensorCalibration(moddedWhPose);
 
 
@@ -406,10 +407,13 @@ public abstract class AutonomousMode extends OpMode {
                 return;
 
             // *** To hub ***
-            double angleOffset = -8;
+            double angleOffset = -5;
 //            double angleOffset = 0;
-            queue(() -> drive.follow(from(moddedWhPose.plus(pos(0, 0, angleOffset)))
+            // FIXME: COLLISION ISSUE, WEIRD SPLINE IF TRY CHANGING
+            queue(() -> drive.follow(from(new Pose2d(drive.getPoseEstimate().getX(), drive.getPoseEstimate().getY(), 0).plus(pos(0, 0, angleOffset)))
                     .lineToLinearHeading(preWhPose.plus(pos(-4, -4, angleOffset)))
+                    .addTemporalMarker(0.1, () -> intake.out(0.3))
+                    .addTemporalMarker(0.25, () -> intake.out())
                     .addTemporalMarker(1.15, async(() -> {
                         // last-minute check & fix for intake
                         outtake.slideToAsync(SAFETY ? TOP : SUPERTOP);
@@ -420,17 +424,18 @@ public abstract class AutonomousMode extends OpMode {
                             intake.out();
                             sleep(100);
 //                            outtake.dumpExcess();
-                        }
-                    }))
-                    .addTemporalMarker(1.4, async(() -> {
-                        if (dumpIndicator.update() == FULL) {
-                            outtake.dumpIn();
-                            if (!outtake.isApproaching(SAFETY ? TOP : SUPERTOP))
-                                outtake.slideToAsync(SAFETY ? TOP: SUPERTOP);
-                        }
-                    }))
-                    .addTemporalMarker(1.0, -0.3, outtake::dumpOut)
-                    .splineToSplineHeading(cycleHubPose.plus(pos(-3,0)), deg((BLUE ? -1 : 1) * 90)).build()));
+                            }
+                        }))
+                        .addTemporalMarker(1.4, async(() -> {
+                            if (dumpIndicator.update() == FULL) {
+                                outtake.dumpIn();
+                                if (!outtake.isApproaching(SAFETY ? TOP : SUPERTOP))
+                                    outtake.slideToAsync(SAFETY ? TOP: SUPERTOP);
+                            }
+                        }))
+                        .addTemporalMarker(1.0, -0.3, outtake::dumpOut)
+                        .splineToSplineHeading(cycleHubPose.plus(pos(-3,0)), deg((BLUE ? -1 : 1) * 90)).build())
+            );
             //
              //queueLocalizeHub(trueHubPose);
             queue(trueHubPose);
@@ -483,17 +488,16 @@ public abstract class AutonomousMode extends OpMode {
                     if (!outtake.isApproaching(EXCESS)) {
                         outtake.slideToAsync(EXCESS);
                     }
-//                    outtake.dumpExcess();
+                    outtake.dumpExcess();
                 } else {
                     drive.setMotorPowers(0); // -0.05
-                    intake.out();
                 }
             }
             drive.setMotorPowers(0);
-            intake.out();
-            if (!outtake.isApproaching(EXCESS)) {
-                outtake.slideToAsync(EXCESS);
-            }
+//            if (!outtake.isApproaching(EXCESS)) {
+//                intake.out();
+//            }
+            outtake.slideToAsync(EXCESS);
             outtake.dumpExcess();
             drive.strafeLeft(0.5, SAFETY ? RED ? -6 : 6 : 0);
 //            drive.follow(from(drive.getPoseEstimate()).lineTo(whPose.vec()).build());
@@ -516,7 +520,7 @@ public abstract class AutonomousMode extends OpMode {
                     .addTemporalMarker(1, async(() -> {
                         outtake.slideToAsync(ZERO);
                     }))
-                    .lineToLinearHeading(storageUnitPose.minus(pos(RED ? 8 : 2.5, 0))));
+                    .lineToLinearHeading(storageUnitPose.minus(pos(RED ? 8 : 0, 0))));
             return;
         }
 //        if (CYCLE) {

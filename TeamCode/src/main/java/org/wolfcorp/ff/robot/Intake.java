@@ -98,7 +98,11 @@ public class Intake {
      * Makes the intake spit out / repel game elements. Intended for TeleOp.
      */
     public void out() {
-        motor.setVelocity(OUT_SPEED);
+        out(1.0);
+    }
+
+    public void out(double factor) {
+        motor.setVelocity(OUT_SPEED * factor);
     }
 
     /**
