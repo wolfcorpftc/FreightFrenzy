@@ -29,6 +29,10 @@ public abstract class TeleOpMode extends OpMode {
     private boolean maskOuttakeReset = false;
     private boolean maskSpinnerOverride = false;
     private boolean maskToggleClaw = false;
+    private boolean maskRotateRight = false;
+    private boolean rotatingRight = false;
+    private boolean maskRotateLeft = false;
+    private boolean rotatingLeft = false;
 
     private boolean slowMode = false;
 
@@ -60,6 +64,54 @@ public abstract class TeleOpMode extends OpMode {
 
         Match.status("Start!");
         while (opModeIsActive()) {
+
+            /*if (!gamepad1.dpad_left) {
+                maskRotateLeft = false;
+            }
+            else {
+                if (slowMode && !maskRotateLeft) {
+                    maskRotateLeft = true;
+                    rotatingLeft = !rotatingLeft;
+                    rotatingRight = false;
+                } else {
+                    tapeMeasure.rotateTapeIncrement(-TapeMeasure.TAPE_ROTATE_SPEED);
+                }
+            }
+            if (rotatingLeft && !rotatingRight && slowMode) {
+                tapeMeasure.rotateTapeIncrement(-TapeMeasure.TAPE_SLOW_ROTATE_SPEED);
+            }
+
+            if (!gamepad1.dpad_right) {
+                maskRotateRight = false;
+            }
+            else {
+                if (slowMode && !maskRotateRight) {
+                    maskRotateRight = true;
+                    rotatingRight = !rotatingRight;
+                    rotatingLeft = false;
+                } else {
+                    tapeMeasure.rotateTapeIncrement(TapeMeasure.TAPE_ROTATE_SPEED);
+                }
+            }
+            if (rotatingRight && !rotatingLeft && slowMode) {
+                tapeMeasure.rotateTapeIncrement(TapeMeasure.TAPE_SLOW_ROTATE_SPEED);
+            }*/
+
+            if (gamepad1.dpad_up) {
+                tapeMeasure.pitchTape(-0.25 * (slowMode ? 0.3 : 1));
+            } else if (gamepad1.dpad_down) {
+                tapeMeasure.pitchTape(0.2);
+            } else {
+                tapeMeasure.pitchTape(0);
+            }
+            if ((gamepad1.a && !gamepad1.start && !gamepad2.start) || gamepad2.right_stick_y > 0.4) {
+                tapeMeasure.spoolTape(1);
+            } else if (gamepad1.y || gamepad2.right_stick_y < -0.4) {
+                tapeMeasure.spoolTape(-1);
+            } else {
+                tapeMeasure.spoolTape(0);
+            }
+
             // *** Outtake: dump ***
             if (!gamepad2.right_bumper) {
                 maskDump = false;
@@ -103,6 +155,10 @@ public abstract class TeleOpMode extends OpMode {
                 maskSlowMode = false;
             } else if (gamepad1.left_bumper && !maskSlowMode) {
                 slowMode = !slowMode;
+                if (!slowMode) {
+                    rotatingLeft = false;
+                    rotatingRight = false;
+                }
                 maskSlowMode = true;
             }
 
@@ -220,20 +276,6 @@ public abstract class TeleOpMode extends OpMode {
                     tapeMeasure.rotateTapeIncrement(1 * (slowMode ? 0.003 : 0.006));
                 }
             }
-            if (gamepad1.dpad_up) {
-                tapeMeasure.pitchTape(-0.25 * (slowMode ? 0.3 : 1));
-            } else if (gamepad1.dpad_down) {
-                tapeMeasure.pitchTape(0.2);
-            } else {
-                tapeMeasure.pitchTape(0);
-            }
-            if ((gamepad1.a && !gamepad1.start && !gamepad2.start) || gamepad2.right_stick_y > 0.4) {
-                tapeMeasure.spoolTape(1);
-            } else if (gamepad1.y || gamepad2.right_stick_y < -0.4) {
-                tapeMeasure.spoolTape(-1);
-            } else {
-                tapeMeasure.spoolTape(0);
-            }
 
             // *** Outtake: dump status ***
             dumpIndicator.update();
@@ -244,8 +286,8 @@ public abstract class TeleOpMode extends OpMode {
 //            telemetry.addData("bottom disance", lowerDumpDistance.getDistance(DistanceUnit.INCH));
 //            telemetry.addData("distance sensor", infaredDistanceSensor.getDistance(DistanceUnit.INCH));
             telemetry.addData("tapeRotate position", tapeMeasure.getRotate().getPosition());
-            telemetry.addData("distance", altRangeSensor.getDistance(DistanceUnit.INCH));
-            telemetry.addData("distance", rangeSensor.getDistance(DistanceUnit.INCH));
+//            telemetry.addData("distance", altRangeSensor.getDistance(DistanceUnit.INCH));
+//            telemetry.addData("distance", rangeSensor.getDistance(DistanceUnit.INCH));
 
 
             // *** Odometry update ***

@@ -411,7 +411,7 @@ public abstract class AutonomousMode extends OpMode {
             // FIXME: COLLISION ISSUE, WEIRD SPLINE IF TRY CHANGING
             queue(() -> drive.follow(from(new Pose2d(drive.getPoseEstimate().getX(), drive.getPoseEstimate().getY(), 0).plus(pos(0, 0, angleOffset)))
                     .lineToLinearHeading(preWhPose.plus(pos(-4, -4, angleOffset)))
-                    .addTemporalMarker(0.1, () -> intake.out(0.3))
+                    .addTemporalMarker(0.1, () -> intake.out(0.4))
                     .addTemporalMarker(0.25, () -> intake.out())
                     .addTemporalMarker(1.15, async(() -> {
                         // last-minute check & fix for intake
