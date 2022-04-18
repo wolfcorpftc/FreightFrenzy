@@ -215,9 +215,9 @@ public abstract class TeleOpMode extends OpMode {
             // *** Tape measure
             if (runtime.seconds() > (120 - 45) || true) {
                 if (gamepad1.dpad_left) {
-                    tapeMeasure.rotateTapeIncrement(-1 * (slowMode ? 0.0025 : 0.006));
+                    tapeMeasure.rotateTapeIncrement(-1 * (slowMode ? 0.004 : 0.006));
                 } else if (gamepad1.dpad_right) {
-                    tapeMeasure.rotateTapeIncrement(1 * (slowMode ? 0.0025 : 0.006));
+                    tapeMeasure.rotateTapeIncrement(1 * (slowMode ? 0.004 : 0.006));
                 }
             }
             if (gamepad1.dpad_up) {

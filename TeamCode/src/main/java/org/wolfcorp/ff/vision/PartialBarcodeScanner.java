@@ -53,7 +53,7 @@ public class PartialBarcodeScanner extends BarcodeScanner {
         Scalar matchColor = new Scalar(0, 255, 0);
         Scalar mismatchColor = new Scalar(255, 0, 0);
         Scalar leftColor = mismatchColor, midColor = mismatchColor, rightColor = mismatchColor;
-        if (max < 20000) {
+        if (max < 60000) {
             barcode = Barcode.TOP;
             barcodeItem.setValue("right");
             targetLevelItem.setValue("top");

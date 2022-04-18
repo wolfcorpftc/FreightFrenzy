@@ -11,7 +11,7 @@ import org.wolfcorp.ff.opmode.OpMode;
 public class TapeMeasure {
     private static final double TAPE_PITCH_TICKS_PER_REV = 1425.1;
     public static final double TAPE_PITCH_MAX_SPEED = 117 / 60.0 * TAPE_PITCH_TICKS_PER_REV;
-    private static final double TAPE_FORWARD_ROTATE = 0.25;
+    private static final double TAPE_FORWARD_ROTATE = 0.53;
 
     private final Servo tapeRotate;
     private final DcMotorEx tapePitch;
