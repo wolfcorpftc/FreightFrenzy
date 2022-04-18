@@ -46,12 +46,20 @@ public class CarouselSpinner {
      */
     public void on() {
         servo.setPower(TURN_POWER);
+        servo.setPower(TURN_POWER);
+        servo.setPower(TURN_POWER);
+        servo.setPower(TURN_POWER);
+        servo.setPower(TURN_POWER);
     }
 
     /**
      * Turns the carousel spinner off.
      */
     public void off() {
+        servo.setPower(0);
+        servo.setPower(0);
+        servo.setPower(0);
+        servo.setPower(0);
         servo.setPower(0);
     }
 
