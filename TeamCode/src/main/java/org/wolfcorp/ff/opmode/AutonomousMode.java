@@ -408,7 +408,6 @@ public abstract class AutonomousMode extends OpMode {
             // *** To hub ***
             double angleOffset = -5;
 //            double angleOffset = 0;
-            // FIXME: COLLISION ISSUE, WEIRD SPLINE IF TRY CHANGING
             queue(() -> drive.follow(from(new Pose2d(drive.getPoseEstimate().getX(), drive.getPoseEstimate().getY(), 0).plus(pos(0, 0, angleOffset)))
                     .lineToLinearHeading(preWhPose.plus(pos(-4, -4, angleOffset)))
                     .addTemporalMarker(0.1, () -> intake.out(0.4))
