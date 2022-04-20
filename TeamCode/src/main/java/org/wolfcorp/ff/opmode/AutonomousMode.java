@@ -12,6 +12,7 @@ import static org.wolfcorp.ff.robot.Drivetrain.getVelocityConstraint;
 import static org.wolfcorp.ff.robot.DumpIndicator.Status.EMPTY;
 import static org.wolfcorp.ff.robot.DumpIndicator.Status.FULL;
 import static org.wolfcorp.ff.robot.DumpIndicator.Status.OVERFLOW;
+import static org.wolfcorp.ff.vision.Barcode.BOT;
 import static org.wolfcorp.ff.vision.Barcode.EXCESS;
 import static org.wolfcorp.ff.vision.Barcode.SUPERTOP;
 import static org.wolfcorp.ff.vision.Barcode.TOP;
@@ -61,7 +62,7 @@ public abstract class AutonomousMode extends OpMode {
 
     // region Vision Fields
     protected OpenCvCamera camera = null;
-    protected PartialBarcodeScanner scanner;
+    protected BarcodeScanner scanner;
     protected Guide guide;
     protected VuforiaNavigator navigator;
     protected Barcode barcode;
@@ -189,7 +190,7 @@ public abstract class AutonomousMode extends OpMode {
 
         trueCarouselPose = pos(-48 + 1 - LENGTH / 2, -72 + WIDTH / 2, 90);
         if (RED) {
-            carouselPose = pos(-57, -72 + WIDTH / 2, 90);
+            carouselPose = pos(-59, -72 + WIDTH / 2, 90);
         } else {
             carouselPose = pos(-54, -72 + WIDTH / 2, 90);
         }
@@ -209,7 +210,7 @@ public abstract class AutonomousMode extends OpMode {
             hubPose = pos(-43.5, -8, 90);
             cycleHubPose = pos(-48, -11, 90);
         } else if (BLUE && CAROUSEL && PARK) {
-            carouselHubPose = pos(-20, -38, 180);
+            carouselHubPose = pos(-21, -37, 180);
             hubPose = pos(-45, 0, 90);
             cycleHubPose = pos(-48, -8, 90);
         } else if (RED && WAREHOUSE) {
@@ -219,6 +220,12 @@ public abstract class AutonomousMode extends OpMode {
             hubPose = pos(SAFETY ? -40 : -39, SAFETY ? -16 : -16, 90);
             cycleHubPose = pos(SAFETY ? -46 : -48, SAFETY ? -14 : -9, 90);
         }
+        if (WAREHOUSE) {
+            hubPose = hubPose.plus(pos(1, 0));
+        } else {
+            hubPose = hubPose.plus(pos(0, -1));
+        }
+//        cycleHubPose = cycleHubPose.plus(pos(1,0));
 
         if (SAFETY) {
             cycleHubPose.plus(pos(0,-15));
@@ -350,10 +357,10 @@ public abstract class AutonomousMode extends OpMode {
                     .addTemporalMarker(2, outtake::dumpOut)
                     .waitSeconds(0.5));
         } else if (CYCLE) {
-            queue(fromHere()
-                    .addTemporalMarker(SAFETY ? 2.25 : 1.25, outtake::dumpOut)
-                    .lineTo(hubPose.vec())
-                    .waitSeconds(SAFETY ? 0.5 : 0));
+            queue(() -> drive.follow(drive.from(initialPose)
+                    .addTemporalMarker(SAFETY ? 2 : 1.25, outtake::dumpOut)
+                    .lineTo(hubPose.plus(pos(barcode == BOT && RED ? 2 : 0, 0)).vec())
+                    .waitSeconds(SAFETY ? 1.5 : 0).build()));
             // queueLocalizeHub(trueHubPose);
         }
     }
@@ -667,7 +674,7 @@ public abstract class AutonomousMode extends OpMode {
         navigator = new VuforiaNavigator(hardwareMap, telemetry);
         camera = navigator.createOpenCvPassthru();
         guide = new TFWarehouseGuide(navigator.getLocalizer(), hardwareMap);
-        scanner = new PartialBarcodeScanner(camera);
+        scanner = new BarcodeScanner(camera);
     }
 
     /**
@@ -690,7 +697,7 @@ public abstract class AutonomousMode extends OpMode {
             }
         });
         guide = new WarehouseGuide(camera);
-        scanner = new PartialBarcodeScanner(camera);
+        scanner = new BarcodeScanner(camera);
     }
     // endregion
 
@@ -996,6 +1003,10 @@ public abstract class AutonomousMode extends OpMode {
         } else {
             xDist = new Vector2d(wallToXSensor, 0).plus(xSensorToRobot).getX();
         }
+        Match.log("xDist = " + xDist);
+        System.out.println("xDist = " + xDist);
+        if (xDist < 0 || xDist > 12)
+            xDist = 7.85;
 
         // same logic below
         double wallToYUltrasonicSensor = getCorrectedUltrasonicYReading() * cos(heading);

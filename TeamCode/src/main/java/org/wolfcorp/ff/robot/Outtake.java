@@ -28,9 +28,9 @@ public class Outtake {
 
     public static final int SLIDE_TOP_POSITION = 1800;
     public static final int SLIDE_SUPERTOP_POSITION = 1900;
-    public static final int SLIDE_MID_POSITION = 1100;
+    public static final int SLIDE_MID_POSITION = 1000;
     public static final int SLIDE_EXCESS_POSITION = 50;
-    public static final int SLIDE_BOT_POSITION = 20;
+    public static final int SLIDE_BOT_POSITION = 160;
 
     public static final int SLIDE_MIN_POSITION = 0;
     public static final int SLIDE_MAX_POSITION = 2100;

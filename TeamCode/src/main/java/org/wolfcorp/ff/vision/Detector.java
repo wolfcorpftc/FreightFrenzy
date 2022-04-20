@@ -15,7 +15,7 @@ public abstract class Detector extends OpenCvPipeline {
     public void start() {
         Match.log("Started streaming");
         camera.setPipeline(this);
-        camera.startStreaming(320, 240, OpenCvCameraRotation.SIDEWAYS_LEFT);
+        camera.startStreaming(320, 240, OpenCvCameraRotation.UPSIDE_DOWN);
     }
 
     public void stop() {
