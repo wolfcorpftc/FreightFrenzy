@@ -47,6 +47,7 @@ import org.wolfcorp.ff.vision.VuforiaNavigator;
 import org.wolfcorp.ff.vision.WarehouseGuide;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.function.Supplier;
 
 public abstract class AutonomousMode extends OpMode {
@@ -146,6 +147,7 @@ public abstract class AutonomousMode extends OpMode {
      * @see ConditionalTask
      */
     private final ArrayList<Object> tasks = new ArrayList<>();
+    private final HashMap<String, Object> dynamicTasks = new HashMap<>();
     private final ElapsedTime runtime = new ElapsedTime();
     // endregion
 
@@ -357,10 +359,15 @@ public abstract class AutonomousMode extends OpMode {
                     .addTemporalMarker(2, outtake::dumpOut)
                     .waitSeconds(0.5));
         } else if (CYCLE) {
-            queue(() -> drive.follow(drive.from(initialPose)
+            dynamicTasks.put("normal", drive.from(initialPose)
                     .addTemporalMarker(SAFETY ? 2 : 1.25, outtake::dumpOut)
-                    .lineTo(hubPose.plus(pos(barcode == BOT && RED ? 2 : 0, 0)).vec())
-                    .waitSeconds(SAFETY ? 1.5 : 0).build()));
+                    .lineTo(hubPose.vec())
+                    .waitSeconds(SAFETY ? 1.5 : 0).build());
+            dynamicTasks.put("botRed", drive.from(initialPose)
+                    .addTemporalMarker(SAFETY ? 2 : 1.25, outtake::dumpOut)
+                    .lineTo(hubPose.plus(pos(2, 0)).vec())
+                    .waitSeconds(SAFETY ? 1.5 : 0).build());
+            queue(() -> drive.follow((TrajectorySequence) dynamicTasks.get(barcode == BOT && RED ? "botRed" : "normal")));
             // queueLocalizeHub(trueHubPose);
         }
     }
@@ -734,7 +741,7 @@ public abstract class AutonomousMode extends OpMode {
                     if (BuildConfig.DEBUG) {
                         throw new IllegalArgumentException("Please initialize the dynamic task `" + task + "`");
                     } else {
-                        continue;
+                        task = dynamicTasks.getOrDefault(task, new Object());
                     }
                 } else if (task instanceof ConditionalTask) {
                     if (((ConditionalTask) task).runnable()) {
