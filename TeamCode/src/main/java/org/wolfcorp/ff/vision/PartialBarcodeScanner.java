@@ -19,7 +19,7 @@ public class PartialBarcodeScanner extends BarcodeScanner {
         Imgproc.cvtColor(input, mat, Imgproc.COLOR_RGBA2RGB);
         Imgproc.cvtColor(mat, mat, Imgproc.COLOR_RGB2HSV);
 
-        Scalar lowerBound = new Scalar(30,100,100);
+        Scalar lowerBound = new Scalar(30,100,50);
         Scalar upperBound = new Scalar(80,255,255);
         Core.inRange(mat, lowerBound, upperBound, mat);
 

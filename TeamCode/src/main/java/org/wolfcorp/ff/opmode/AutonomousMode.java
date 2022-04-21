@@ -358,6 +358,15 @@ public abstract class AutonomousMode extends OpMode {
                     .lineToLinearHeading(carouselHubPose.plus(pos(0, 4)), getVelocityConstraint(40, 5, TRACK_WIDTH), getAccelerationConstraint(25))
                     .addTemporalMarker(2, outtake::dumpOut)
                     .waitSeconds(0.5));
+
+            queue(fromHere()
+                    .lineTo(storageUnitPose.plus(pos(3 + 16, -2)).vec()));
+            queueCalibration(storageUnitPose);
+            queue(fromHere()
+                    .lineToLinearHeading(carouselHubPose.plus(pos(0, 4)))
+                    .addTemporalMarker(2.3, outtake::dumpOut)
+                    .waitSeconds(0.5)
+                    .addTemporalMarker);
         } else if (CYCLE) {
             dynamicTasks.put("normal", drive.from(initialPose)
                     .addTemporalMarker(SAFETY ? 2 : 1.25, outtake::dumpOut)

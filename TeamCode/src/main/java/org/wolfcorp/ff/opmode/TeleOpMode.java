@@ -278,8 +278,15 @@ public abstract class TeleOpMode extends OpMode {
             }
 
             // *** Outtake: dump status ***
-            dumpIndicator.update();
-
+            if (runtime.seconds() > (120 -45)) {
+                if (slowMode) {
+                    dumpIndicator.overflow();
+                } else {
+                    dumpIndicator.full();
+                }
+            } else {
+                dumpIndicator.update();
+            }
 //            telemetry.addData("voltage", drive.batteryVoltageSensor.getVoltage());
 //            telemetry.addData("ramp sensor", intakeRampDistance.getDistance(DistanceUnit.INCH));
 //            telemetry.addData("top distance", upperDumpDistance.getDistance(DistanceUnit.INCH));
