@@ -331,7 +331,7 @@ public abstract class AutonomousMode extends OpMode {
                     .lineTo(carouselPose.minus(pos(0, 10)).vec(), getVelocityConstraint(30, 5, TRACK_WIDTH), getAccelerationConstraint(20)));
             queue(() -> {
                 Thread spin = spinner.spinAsync(1, 2 * SPIN_TIME, WAIT_TIME);
-//                drive.setMotorPowers(0.08);
+                drive.setMotorPowers(0.07);
                 Pose2d currentPose = drive.getPoseEstimate();
                 Pose2d correctedPose = new Pose2d(
                         trueCarouselPose.getX(),
@@ -357,6 +357,8 @@ public abstract class AutonomousMode extends OpMode {
             queue(fromHere()
                     .lineToLinearHeading(carouselHubPose.plus(pos(0, 4)), getVelocityConstraint(40, 5, TRACK_WIDTH), getAccelerationConstraint(25))
                     .addTemporalMarker(2, outtake::dumpOut)
+                    .waitSeconds(0.75)
+                    .addTemporalMarker(outtake::dumpIn)
                     .waitSeconds(0.5));
         } else if (CYCLE) {
             dynamicTasks.put("normal", drive.from(initialPose)
@@ -411,7 +413,7 @@ public abstract class AutonomousMode extends OpMode {
             queue(this::localizeWarehouse);
 //            queueWarehouseSensorCalibration(pos(-72 + DriveConstants.WIDTH / 2, 42, 0));
             queue(() -> {
-                if (30 - runtime.seconds() <= 3) {
+                if (30 - runtime.seconds() <= 4) {
                     throw new InterruptedException();
                 }
             });
@@ -424,7 +426,6 @@ public abstract class AutonomousMode extends OpMode {
 //            double angleOffset = 0;
             queue(() -> drive.follow(from(new Pose2d(drive.getPoseEstimate().getX(), drive.getPoseEstimate().getY(), 0).plus(pos(0, 0, angleOffset)))
                     .lineToLinearHeading(preWhPose.plus(pos(-4, -4, angleOffset)))
-                    .addTemporalMarker(0.1, () -> intake.out(0.4))
                     .addTemporalMarker(0.25, () -> intake.out())
                     .addTemporalMarker(1.15, async(() -> {
                         // last-minute check & fix for intake
@@ -511,6 +512,7 @@ public abstract class AutonomousMode extends OpMode {
 //            }
             outtake.slideToAsync(EXCESS);
             outtake.dumpExcess();
+            intake.out(0.4);
             drive.strafeLeft(0.5, SAFETY ? RED ? -6 : 6 : 0);
 //            drive.follow(from(drive.getPoseEstimate()).lineTo(whPose.vec()).build());
 //            if (iteration == 2) {
