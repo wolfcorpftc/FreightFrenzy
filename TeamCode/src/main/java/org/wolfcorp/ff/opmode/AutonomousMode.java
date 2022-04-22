@@ -363,11 +363,11 @@ public abstract class AutonomousMode extends OpMode {
         } else if (CYCLE) {
             dynamicTasks.put("normal", drive.from(initialPose)
                     .addTemporalMarker(SAFETY ? 2 : 1.25, outtake::dumpOut)
-                    .lineTo(hubPose.vec())
+                    .lineTo(hubPose.plus(pos(-2,0)).vec())
                     .waitSeconds(SAFETY ? 1.5 : 0).build());
             dynamicTasks.put("botRed", drive.from(initialPose)
                     .addTemporalMarker(SAFETY ? 2 : 1.25, outtake::dumpOut)
-                    .lineTo(hubPose.plus(pos(2, 0)).vec())
+                    .lineTo(hubPose.vec())
                     .waitSeconds(SAFETY ? 1.5 : 0).build());
             queue(() -> drive.follow((TrajectorySequence) dynamicTasks.get(barcode == BOT && RED ? "botRed" : "normal")));
             // queueLocalizeHub(trueHubPose);
@@ -405,7 +405,7 @@ public abstract class AutonomousMode extends OpMode {
 //                    .splineToSplineHeading(preWhPose.plus(pos(-4, -11)), deg(RED ? -20 : 20))
                     .splineToSplineHeading(preWhPose.plus(pos(-5, -10)), deg(RED ? -24 : 24))
                     .splineToSplineHeading(moddedWhPose.plus(pos(-12, 0)), deg(RED ? 10 : -10)).build()));// from 3.5
-            queueWarehouseSensorCalibration(moddedWhPose);
+//            queueWarehouseSensorCalibration(moddedWhPose);
 
 
             // *** Intake ***
@@ -478,11 +478,11 @@ public abstract class AutonomousMode extends OpMode {
                 if (dumpIndicator.update() == EMPTY) {
                     timer.reset();
                     if (!clog) {
+                        drive.setMotorPowers(0.2);
+                        intake.getMotor().setVelocity(clogFlag ? -0.6 * Intake.MAX_SPEED : Intake.IN_SPEED);
                         if ((Math.abs(intake.getMotor().getVelocity()) > 0.1 * Intake.MAX_SPEED)) {
                             cloggedTimer.reset();
                         }
-                        intake.getMotor().setVelocity(clogFlag ? -0.6 * Intake.MAX_SPEED : Intake.IN_SPEED);
-                        drive.setMotorPowers(0.2);
                     } else {
                         intake.getMotor().setVelocity(Intake.MAX_SPEED);
                         drive.setMotorPowers(-0.3);
