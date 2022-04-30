@@ -484,10 +484,21 @@ public class Drivetrain extends MecanumDrive {
         // wheelSpeeds[3] = x * (slowModeCondition ? smX : 1) + y * (slowModeCondition ? smY : 1) - rotation * (slowModeCondition ? smH : 1); // RB
 
         // FIXME: wheelSpeeds doesn't match setMotorPowers
-        wheelSpeeds[0] = x + y + rotation; // LF
-        wheelSpeeds[1] = x - y - rotation; // RF
-        wheelSpeeds[2] = x - y + rotation; // LB
-        wheelSpeeds[3] = x + y - rotation; // RB
+//        if (rotation != 0) {
+            wheelSpeeds[0] = x + y + rotation; // LF
+            wheelSpeeds[1] = x - y - rotation; // RF
+            wheelSpeeds[2] = x - y + rotation; // LB
+            wheelSpeeds[3] = x + y - rotation; // RB
+//        }
+        /*
+        else {
+            double angle = getExternalHeading();
+            wheelSpeeds[0] = x + y - angle; // LF
+            wheelSpeeds[1] = x - y + angle; // RF
+            wheelSpeeds[2] = x - y - angle; // LB
+            wheelSpeeds[3] = x + y + angle; // RB
+        }
+        */
 
         normalize(wheelSpeeds);
 
