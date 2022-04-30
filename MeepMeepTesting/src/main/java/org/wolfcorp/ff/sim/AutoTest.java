@@ -58,7 +58,7 @@ public class AutoTest {
         elementMidPose = elementLeftPose.minus(pos(0, 8.4));
         elementRightPose = elementMidPose.minus(pos(0, 8.4));
 
-        whPose = pos(-72 + width / 2, 42, 180);
+        whPose = pos(-72 + width / 2, 42, 0);
         hubPose = pos(-48.5 + width / 2, -12, 90);
         cycleHubPose = pos(-48, -11.5, 90);
         preHubPose = pos(-48, -12, 0);
@@ -98,16 +98,9 @@ public class AutoTest {
 
     public void start() {
         initPoses();
-        initialPose = pos(-72 + width / 2, 42);
-        cycleHubPose = pos(-44, -3, isRed ? -75 : 75);
-
-        parkPose = pos(-72 + width / 2, 27, 0);
-        Pose2d transition = pos(-42, 44, 90);
-//        initialPose = parkPose;
-        initialPose = hubPose;
-
-        Pose2d intakePose = pos(-48 + length / 2, 72 - width / 2, 90);
-        // Declare a MeepMeep instance
+        hubPose = pos(-48.5, -12, 90);
+        whPose = pos(-72 + width / 2, 48, 0);
+        preWhPose = pos(-72 + width / 2, 12, 0);
         // With a field size of 800 pixels
         MeepMeep mm = new MeepMeep(600)
                 // Set field image
@@ -120,40 +113,12 @@ public class AutoTest {
                 .setConstraints(60, 60, Math.toRadians(180), Math.toRadians(180), 15)
                 .setBotDimensions(width,length)
                 .followTrajectorySequence(drive -> drive
-                        .trajectorySequenceBuilder(initialPose)
-                        .splineToSplineHeading(preWhPose, 0)
-                        .lineTo(parkPose.vec())
-                        .splineToSplineHeading(transition, deg(0))
-                        .splineToSplineHeading(intakePose, deg(0))
+                        .trajectorySequenceBuilder(hubPose)
+                        .splineToSplineHeading(preWhPose.plus(pos(0, -6)), deg(isRed ? -19 : 19))
+                        .lineToSplineHeading(whPose.minus(pos(5, 0)))
                         .build()
                 )
                 .start();
-
-    }
-
-    public void original() {
-        initPoses();
-        initialPose = pos(-72 + width / 2, 45, 0);
-        preWhPose = pos(-72 + width / 2, 12, 0);
-        cycleHubPose = pos(-45, -10, 90);
-
-        // Declare a MeepMeep instance
-        // With a field size of 800 pixels
-        new MeepMeep(600)
-                // Set field image
-                .setBackground(MeepMeep.Background.FIELD_FREIGHT_FRENZY)
-                // Set theme
-                .setTheme(new ColorSchemeRedDark())
-                // Background opacity from 0-1
-                .setBackgroundAlpha(1f)
-                // Set constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
-                .setConstraints(60, 60, Math.toRadians(180), Math.toRadians(180), 15)
-                .setBotDimensions(width,length)
-                .followTrajectorySequence(drive -> drive
-                        .trajectorySequenceBuilder(initialPose)
-                        .lineToLinearHeading(preWhPose.plus(pos(0, -4)))
-                        .splineToSplineHeading(cycleHubPose, deg((!isRed ? -1 : 1) * 90))
-                        .build()).start();
 
     }
 

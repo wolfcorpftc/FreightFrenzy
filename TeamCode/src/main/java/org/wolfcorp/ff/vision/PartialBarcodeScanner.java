@@ -19,7 +19,7 @@ public class PartialBarcodeScanner extends BarcodeScanner {
         Imgproc.cvtColor(input, mat, Imgproc.COLOR_RGBA2RGB);
         Imgproc.cvtColor(mat, mat, Imgproc.COLOR_RGB2HSV);
 
-        Scalar lowerBound = new Scalar(30,100,100);
+        Scalar lowerBound = new Scalar(30,100,50);
         Scalar upperBound = new Scalar(80,255,255);
         Core.inRange(mat, lowerBound, upperBound, mat);
 
@@ -27,15 +27,11 @@ public class PartialBarcodeScanner extends BarcodeScanner {
             // casting int-division to int to suppress linter
             leftROI  = new Rect(
                     new Point(0, 0),
-                    new Point((int)(mat.width() / 3), mat.height())
+                    new Point((int)(mat.width() / 2), mat.height())
             );
             midROI   = new Rect(
-                    new Point((int)(mat.width() / 3) + 1, 0),
-                    new Point((int)(2 * mat.width() / 3), mat.height())
-            );
-            rightROI = new Rect(
-                    new Point((int)(2 * mat.width() / 3) + 1, 0),
-                    new Point(mat.width(), mat.height())
+                    new Point((int)(mat.width() / 2) + 1, 0),
+                    new Point((int)(mat.width()), mat.height())
             );
         }
 
@@ -57,7 +53,7 @@ public class PartialBarcodeScanner extends BarcodeScanner {
         Scalar matchColor = new Scalar(0, 255, 0);
         Scalar mismatchColor = new Scalar(255, 0, 0);
         Scalar leftColor = mismatchColor, midColor = mismatchColor, rightColor = mismatchColor;
-        if (max < 10000) {
+        if (max < 60000) {
             barcode = Barcode.TOP;
             barcodeItem.setValue("right");
             targetLevelItem.setValue("top");
@@ -78,7 +74,6 @@ public class PartialBarcodeScanner extends BarcodeScanner {
 
         Imgproc.rectangle(input, leftROI, leftColor);
         Imgproc.rectangle(input, midROI, midColor);
-        Imgproc.rectangle(input, rightROI, rightColor);
 
         return input;
     }

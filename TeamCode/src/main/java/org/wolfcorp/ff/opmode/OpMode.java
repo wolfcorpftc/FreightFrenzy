@@ -1,6 +1,5 @@
 package org.wolfcorp.ff.opmode;
 
-import com.qualcomm.hardware.modernrobotics.ModernRoboticsI2cRangeSensor;
 import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
@@ -12,6 +11,7 @@ import org.wolfcorp.ff.robot.DumpIndicator;
 import org.wolfcorp.ff.robot.Intake;
 import org.wolfcorp.ff.robot.Outtake;
 import org.wolfcorp.ff.robot.ShippingArm;
+import org.wolfcorp.ff.robot.TapeMeasure;
 import org.wolfcorp.ff.robot.util.InchSensor;
 
 public abstract class OpMode extends LinearOpMode {
@@ -24,7 +24,9 @@ public abstract class OpMode extends LinearOpMode {
     public static Outtake outtake = null;
     public static CarouselSpinner spinner = null;
     public static ShippingArm shippingArm = null;
+    public static TapeMeasure tapeMeasure = null;
     public static DumpIndicator dumpIndicator = null;
+    public static InchSensor altRangeSensor;
     public static InchSensor rangeSensor;
     public static InchSensor leftRangeSensor;
     public static InchSensor rightRangeSensor;
@@ -65,7 +67,9 @@ public abstract class OpMode extends LinearOpMode {
         outtake = new Outtake(hardwareMap);
         spinner = new CarouselSpinner(hardwareMap, this::sleep);
         shippingArm = new ShippingArm(hardwareMap);
+        tapeMeasure = new TapeMeasure(hardwareMap);
         dumpIndicator = new DumpIndicator(hardwareMap);
+        altRangeSensor = new InchSensor(hardwareMap.get(DistanceSensor.class, "frontDist"));
         rangeSensor = new InchSensor(hardwareMap.get(DistanceSensor.class, "sensor_range"));
         frontDist = new InchSensor(hardwareMap.get(DistanceSensor.class, "frontDist"));
         if (Match.BLUE)
@@ -88,7 +92,7 @@ public abstract class OpMode extends LinearOpMode {
     protected void resetHardware() {
         Match.status("Resetting robot hardware...");
 
-       drive = null;
+        drive = null;
         intake = null;
         outtake = null;
         spinner = null;

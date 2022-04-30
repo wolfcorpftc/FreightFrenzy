@@ -14,7 +14,7 @@ import org.wolfcorp.ff.robot.Drivetrain;
 public class MotorTest extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
-        Match.setupTelemetry();
+        // Match.setupTelemetry();
         FtcDashboard dashboard = FtcDashboard.getInstance();
         Drivetrain drive = new Drivetrain(hardwareMap);
         ElapsedTime timer = new ElapsedTime();
@@ -33,9 +33,22 @@ public class MotorTest extends LinearOpMode {
         timer.reset();
         while (opModeIsActive()) {
             // Drivetrain
-            drive.setMotorPowers(0, 0, 0, 0.5);
+            drive.setMotorPowers(0, 0, 0, 1);
             sleep(5000);
-            drive.setMotorPowers(0, 0, 0, -0.5);
+            drive.setMotorPowers(0, 0, 0, -1);
+            sleep(5000);
+            drive.setMotorPowers(0, 0, 1, 0);
+            sleep(5000);
+            drive.setMotorPowers(0, 0, -1, 0);
+            sleep(5000);
+            drive.setMotorPowers(0, 1, 0, 0);
+            sleep(5000);
+            drive.setMotorPowers(0, -1, 0, 0);
+            sleep(5000);
+            drive.setMotorPowers(1, 0, 0, 0);
+            sleep(5000);
+            drive.setMotorPowers(-1, 0, 0, 0);
+            sleep(5000);
             drive.update(); // odometry update
             telemetry.addData("LF Power", drive.leftFront.getPower());
             telemetry.addData("LF Current", drive.leftFront.getCurrent(CurrentUnit.MILLIAMPS));

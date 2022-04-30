@@ -25,18 +25,18 @@ public class ShippingArm {
     public static final int ARM_OUT_POSITION = (int) (91.0 / 360 * ARM_TICKS_PER_REV * ARM_GEAR_RATIO);
     public static final int ARM_OUTERMOST_POSITION = (int) (230.0 / 360 * ARM_TICKS_PER_REV * ARM_GEAR_RATIO);
 
-    public static final double CLAW_OPEN_POSITION = 0.69;
-    public static final double CLAW_CLOSE_POSITION = 1;
+    public static final double CLAW_OPEN_POSITION = 0.5;
+    public static final double CLAW_CLOSE_POSITION = 0.93;
 
     public ShippingArm(HardwareMap hwMap) {
         motor = hwMap.get(DcMotorEx.class, "armMotor");
         servo = hwMap.get(Servo.class, "armServo");
 
-        motor.setDirection(DcMotor.Direction.REVERSE);
         motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         motor.setPower(0);
+        closeClaw();
     }
 
     public void armInAsync(double multiplier) {
@@ -82,10 +82,11 @@ public class ShippingArm {
     }
 
     public void setArmVelocity(double speed) {
-        if (speed < 0 && motor.getCurrentPosition() < ARM_IN_POSITION) {
-            return;
-        }
-        motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//        if (speed < 0 && motor.getCurrentPosition() < ARM_IN_POSITION) {
+//            return;
+//        }
+        if (motor.getMode() != DcMotor.RunMode.RUN_USING_ENCODER)
+            motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         motor.setVelocity(speed);
     }
 
@@ -114,7 +115,7 @@ public class ShippingArm {
     }
 
     public void toggleClaw() {
-        if (Math.abs(servo.getPosition() - CLAW_CLOSE_POSITION) < 0.01) {
+        if (Math.abs(servo.getPosition() - CLAW_CLOSE_POSITION) < 0.05) {
             openClaw();
         } else {
             closeClaw();
